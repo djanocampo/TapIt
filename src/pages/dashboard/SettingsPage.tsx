@@ -1,0 +1,225 @@
+import React, { useState } from 'react';
+import { useTapIt } from '../../store';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+import { Toggle } from '../../components/ui/Toggle';
+import { 
+  Settings, 
+  User, 
+  Mail, 
+  Lock, 
+  Bell, 
+  Download, 
+  ShieldAlert, 
+  Check, 
+  Sparkles,
+  RotateCcw
+} from 'lucide-react';
+import { triggerConfetti } from '../../lib/utils';
+
+export const SettingsPage: React.FC = () => {
+  const { currentUser, resetAllData, profiles, links, cards } = useTapIt();
+
+  const [name, setName] = useState(currentUser.name);
+  const [email, setEmail] = useState(currentUser.email);
+  const [username, setUsername] = useState(currentUser.username);
+
+  const [currentPass, setCurrentPass] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+
+  const [notifyTaps, setNotifyTaps] = useState(true);
+  const [notifyClicks, setNotifyClicks] = useState(true);
+  const [weeklyDigest, setWeeklyDigest] = useState(true);
+
+  const handleSaveAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaved(true);
+    triggerConfetti();
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleExportData = () => {
+    const exportPayload = {
+      user: currentUser,
+      profiles,
+      links,
+      cards,
+      exportedAt: new Date().toISOString(),
+      platform: 'TapIt Smart Identity Platform',
+    };
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tapit-data-export-${currentUser.username}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-8 max-w-4xl">
+      {/* Header */}
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold text-white font-display">Account Settings</h2>
+        <p className="text-xs sm:text-sm text-slate-400">
+          Manage your personal account credentials, notifications, privacy preferences, and data exports.
+        </p>
+      </div>
+
+      {/* Profile Details Form */}
+      <form onSubmit={handleSaveAccount} className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <User className="w-4 h-4 text-cyan-400" />
+          Personal Credentials
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <Input
+            label="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            helperText={`tapit.app/@${username}`}
+            required
+          />
+        </div>
+
+        <Input
+          label="Email Address"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <div className="flex items-center justify-end">
+          <Button variant="primary" size="md" type="submit" leftIcon={isSaved ? <Check className="w-4 h-4" /> : undefined}>
+            {isSaved ? 'Account Updated!' : 'Save Account Changes'}
+          </Button>
+        </div>
+      </form>
+
+      {/* Password Change */}
+      <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <Lock className="w-4 h-4 text-purple-400" />
+          Security & Password
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Current Password"
+            type="password"
+            placeholder="••••••••••••"
+            value={currentPass}
+            onChange={(e) => setCurrentPass(e.target.value)}
+          />
+          <Input
+            label="New Password"
+            type="password"
+            placeholder="New secure password"
+            value={newPass}
+            onChange={(e) => setNewPass(e.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center justify-end">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              alert('Password updated successfully.');
+              setCurrentPass('');
+              setNewPass('');
+            }}
+          >
+            Update Password
+          </Button>
+        </div>
+      </div>
+
+      {/* Notification Preferences */}
+      <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <Bell className="w-4 h-4 text-emerald-400" />
+          Notification Preferences
+        </h3>
+
+        <div className="space-y-4 divide-y divide-slate-800">
+          <div className="pt-2">
+            <Toggle
+              label="Real-time NFC Tap Alerts"
+              description="Get instant notifications whenever someone taps your physical NFC cards"
+              checked={notifyTaps}
+              onChange={setNotifyTaps}
+            />
+          </div>
+          <div className="pt-4">
+            <Toggle
+              label="Link Click Notifications"
+              description="Notify when a visitor clicks a key portfolio or contact link"
+              checked={notifyClicks}
+              onChange={setNotifyClicks}
+            />
+          </div>
+          <div className="pt-4">
+            <Toggle
+              label="Weekly Analytics Digest"
+              description="Summary of weekly impressions, new tappers, and top-clicked links"
+              checked={weeklyDigest}
+              onChange={setWeeklyDigest}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Data Export & Danger Zone */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {/* Data Export */}
+        <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 shadow-xl space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <Download className="w-4 h-4 text-cyan-400" />
+            Export Data
+          </h4>
+          <p className="text-xs text-slate-400">
+            Download a full JSON archive containing all your profiles, custom links, and registered NFC card tokens.
+          </p>
+          <Button variant="secondary" size="sm" onClick={handleExportData} leftIcon={<Download className="w-4 h-4" />}>
+            Export JSON Archive
+          </Button>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-rose-950/20 border border-rose-500/30 rounded-3xl p-6 shadow-xl space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+            <ShieldAlert className="w-4 h-4" />
+            Danger Zone
+          </h4>
+          <p className="text-xs text-slate-400">
+            Reset all state, mock profiles, links, and simulated cards back to factory default demo mode.
+          </p>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => {
+              if (window.confirm('Reset all demo state and mock data back to defaults?')) {
+                resetAllData();
+              }
+            }}
+            leftIcon={<RotateCcw className="w-4 h-4" />}
+          >
+            Reset All Demo Data
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
