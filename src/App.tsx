@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { TapItProvider } from './store';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Layouts
 import { RootLayout } from './layouts/RootLayout';
@@ -16,6 +17,7 @@ import { QRSharePage } from './pages/public/QRSharePage';
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { InviteRegistrationPage } from './pages/auth/InviteRegistrationPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
@@ -57,6 +59,7 @@ export const App: React.FC = () => {
             <Route path="/qr-share" element={<QRSharePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/invite/:token" element={<InviteRegistrationPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>
@@ -72,8 +75,15 @@ export const App: React.FC = () => {
           <Route path="/p/:profileSlug" element={<PublicProfilePage />} />
           <Route path="/:username/:profileSlug" element={<PublicProfilePage />} />
 
-          {/* User Dashboard Routes */}
-          <Route path="/dashboard" element={<DashboardLayout />}>
+          {/* User Dashboard Routes (Protected: Admin) */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'user']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<DashboardOverview />} />
             <Route path="profiles" element={<MyProfilesPage />} />
             <Route path="profiles/edit/:id" element={<ProfileEditorPage />} />
@@ -85,8 +95,15 @@ export const App: React.FC = () => {
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 
-          {/* Administrator Suite Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
+          {/* Administrator Suite Routes (Protected: Admin Only) */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<AdminOverview />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="profiles" element={<ProfileDirectoryPage />} />

@@ -1,86 +1,135 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { Button } from '../ui/Button';
-import { Radio, Smartphone, QrCode, Menu, X, ArrowRight, ShieldCheck, Sparkles, LayoutDashboard } from 'lucide-react';
+import { 
+  Plus, 
+  Radio, 
+  Smartphone, 
+  QrCode, 
+  Menu, 
+  X, 
+  ArrowRight, 
+  ShieldCheck, 
+  Sparkles, 
+  LayoutDashboard, 
+  LogIn, 
+  User,
+  LogOut 
+} from 'lucide-react';
+
+import tapItLogo from '../../assets/tapit-logo.png';
 
 export const Navbar: React.FC = () => {
-  const { currentRole } = useTapIt();
+  const { currentRole, currentUser, isAuthenticated, logout } = useTapIt();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { label: 'Features', path: '/features' },
-    { label: 'How It Works', path: '/how-it-works' },
-    { label: 'QR Sharing', path: '/qr-share' },
-    { label: 'Card Activation', path: '/t/NEW_TAP_77' },
+    { label: 'Home', href: '#home', path: '/' },
+    { label: 'About Us', href: '#about', path: '/#about' },
+    { label: 'Pricing', href: '#pricing', path: '/#pricing' },
   ];
 
+  const handleNavClick = (href: string) => {
+    setMobileMenuOpen(false);
+    if (location.pathname === '/') {
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    setMobileMenuOpen(false);
+    logout();
+    navigate('/login');
+  };
+
   return (
-    <header className="sticky top-10 z-40 bg-[#070a13]/85 backdrop-blur-xl border-b border-slate-800/80">
+    <header className="sticky top-0 z-50 bg-[#040c1a]/85 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-0.5 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform duration-200">
-              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                <Radio className="w-5 h-5 text-cyan-400 group-hover:rotate-12 transition-transform duration-200" />
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-extrabold tracking-tight text-white font-display flex items-center gap-1">
-                TapIt
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium -mt-1 tracking-wider uppercase">Smart NFC Platform</span>
-            </div>
+        <div className="flex items-center justify-between h-15 sm:h-20">
+          {/* Left Brand Logo */}
+          <Link to="/" className="flex items-center gap-2 group py-2">
+            <img
+              src={tapItLogo}
+              alt="TapIt"
+              className="h-11 sm:h-12 lg:h-[75px] w-auto object-contain group-hover:scale-105 transition-transform duration-200"
+            />
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
+          {/* Center Floating Glass Pill Menu */}
+          <nav className="hidden md:flex items-center gap-1 bg-[#0b162c]/70 border border-white/10 rounded-full px-2 py-1.5 backdrop-blur-xl shadow-2xl">
             {navLinks.map((link) => {
-              const isActive = location.pathname === link.path;
               return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`text-sm font-medium transition-colors ${
-                    isActive ? 'text-cyan-400 font-semibold' : 'text-slate-300 hover:text-white'
-                  }`}
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={(e) => {
+                    if (location.pathname === '/') {
+                      e.preventDefault();
+                      handleNavClick(link.href);
+                    }
+                  }}
+                  className="text-xs lg:text-sm font-medium px-4 py-1.5 rounded-full transition-all duration-200 text-slate-300 hover:text-white hover:bg-white/[0.06]"
                 >
                   {link.label}
-                </Link>
+                </a>
               );
             })}
           </nav>
 
-          {/* Right actions */}
-          <div className="hidden md:flex items-center gap-3">
-            {currentRole === 'admin' ? (
-              <Link to="/admin">
-                <Button variant="accent" size="sm" leftIcon={<ShieldCheck className="w-4 h-4" />}>
-                  Admin Console
-                </Button>
-              </Link>
-            ) : currentRole === 'user' ? (
-              <div className="flex items-center gap-2">
-                <Link to="/dashboard">
-                  <Button variant="glow" size="sm" leftIcon={<LayoutDashboard className="w-4 h-4" />}>
-                    Open Dashboard
-                  </Button>
-                </Link>
-              </div>
+          {/* Right Action: Log In / Portal / Sign Out */}
+          <div className="hidden md:flex items-center gap-2.5">
+            {isAuthenticated && currentUser ? (
+              <>
+                {currentUser.role === 'admin' ? (
+                  <>
+                    <Link to="/admin">
+                      <Button variant="primary" size="sm" className="rounded-full px-3.5 font-bold" leftIcon={<ShieldCheck className="w-4 h-4" />}>
+                        Admin Suite
+                      </Button>
+                    </Link>
+                    <Link to="/dashboard">
+                      <Button variant="secondary" size="sm" className="rounded-full px-3.5 font-bold" leftIcon={<LayoutDashboard className="w-4 h-4" />}>
+                        Dashboard
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <Link to="/dashboard">
+                    <Button variant="glow" size="sm" className="rounded-full px-4 font-bold" leftIcon={<LayoutDashboard className="w-4 h-4" />}>
+                      My Dashboard
+                    </Button>
+                  </Link>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="p-2 rounded-full text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-500/30 transition"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
             ) : (
-              <div className="flex items-center gap-3">
-                <Link to="/login" className="text-sm font-medium text-slate-300 hover:text-white px-3 py-2">
-                  Sign In
+              <>
+                <Link
+                  to="/login"
+                  className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white px-3.5 py-1.5 rounded-full hover:bg-white/[0.08] transition"
+                >
+                  Log In
                 </Link>
-                <Link to="/register">
-                  <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                    Create Your TapIt
+                <Link to="/login">
+                  <Button variant="glow" size="sm" className="rounded-full px-4 font-bold">
+                    Get Started
                   </Button>
                 </Link>
-              </div>
+              </>
             )}
           </div>
 
@@ -88,9 +137,9 @@ export const Navbar: React.FC = () => {
           <div className="flex md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none"
+              className="p-2.5 rounded-full text-slate-300 hover:text-white bg-slate-900/80 border border-slate-800 focus:outline-none"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -98,30 +147,57 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-slate-950 border-b border-slate-800 px-4 pt-3 pb-6 space-y-3">
+        <div className="md:hidden bg-[#070e1c] border-b border-slate-800/80 px-4 pt-3 pb-6 space-y-3">
           <div className="space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800/80"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              return (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={(e) => {
+                    if (location.pathname === '/') {
+                      e.preventDefault();
+                    }
+                    handleNavClick(link.href);
+                  }}
+                  className="block px-4 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800/80"
+                >
+                  {link.label}
+                </a>
+              );
+            })}
           </div>
-          <div className="pt-3 border-t border-slate-800 flex flex-col gap-2">
-            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="primary" className="w-full justify-center">
-                Go to Dashboard
-              </Button>
-            </Link>
-            <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="secondary" className="w-full justify-center">
-                Sign In
-              </Button>
-            </Link>
+          <div className="pt-3 border-t border-slate-800/80 flex flex-col gap-2">
+            {isAuthenticated && currentUser ? (
+              <>
+                <Link to={currentUser.role === 'admin' ? '/admin' : '/dashboard'} onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="glow" className="w-full justify-center rounded-full">
+                    Enter {currentUser.role === 'admin' ? 'Admin Suite' : 'Dashboard'}
+                  </Button>
+                </Link>
+                <Button
+                  variant="secondary"
+                  className="w-full justify-center rounded-full text-rose-400 hover:text-rose-300"
+                  onClick={handleLogout}
+                  leftIcon={<LogOut className="w-4 h-4" />}
+                >
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="secondary" className="w-full justify-center rounded-full">
+                    Log In
+                  </Button>
+                </Link>
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="glow" className="w-full justify-center rounded-full">
+                    Create Your TapIt
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

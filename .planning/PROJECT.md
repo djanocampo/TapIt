@@ -7,10 +7,14 @@ TapIt is a modern, high-converting, smart digital identity, link management, and
 > **Tap. Connect. Analyze.**
 > *Your digital identity, one tap away.*
 
-## Key Personas & Roles
-1. **Visitor / Guest**: Taps NFC or scans QR, views mobile-first public profile, saves contact (.vcf vCard), clicks links, views socials.
-2. **Registered User (e.g., Djan Ocampo)**: Manages multiple profiles (Professional, Personal, Creator, Business), customizes themes/fonts/buttons, manages links (drag & drop reorder, live click stats), assigns/activates/disables physical NFC cards, generates branded QR codes, tracks deep analytics (views, NFC taps, QR scans, CTR).
-3. **Administrator**: Platform overview, user moderation, profile directory, NFC card token inventory & batch generation, suspicious tap monitor, system settings.
+## Key Personas & Roles (Strictly 2 Users)
+1. **Admin (Role: Admin)**: `admin@tapit.app`
+   - **Admin Console (`/admin`)**: Hardware token inventory batch provisioning, system telemetry, Web NFC chip programmer & flasher, and platform controls.
+   - **User Dashboard (`/dashboard`)**: Full preview and cross-management access.
+2. **Djan (Role: User)**: `djan.ocampo@tapit.app`
+   - **User Dashboard (`/dashboard`)**: Manages digital profiles (Professional, Personal, Creator, Business), custom themes, links, QR Studio, and assigned NFC smart cards.
+   - **Restricted Access**: Cannot access `/admin` (auto-redirects to `/dashboard`).
+3. **Public Visitors**: Mobile-first public profile view (`/@djan`, `/t/:token`), vCard (.vcf) contact saving, and NFC contactless tap landing.
 
 ## Technology Stack
 - **Framework**: React 18 + Vite + TypeScript

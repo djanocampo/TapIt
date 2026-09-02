@@ -33,7 +33,7 @@ export const RegisterPage: React.FC = () => {
     setIsLoading(true);
     setTimeout(() => {
       triggerConfetti();
-      setRole('user');
+      setRole('admin');
       navigate('/dashboard');
     }, 700);
   };

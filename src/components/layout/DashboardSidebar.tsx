@@ -1,8 +1,8 @@
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { 
-  Home, 
+  LayoutDashboard, 
   UserSquare2, 
   Link2, 
   CreditCard, 
@@ -15,8 +15,11 @@ import {
   ChevronRight,
   Shield,
   Layers,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
+
+import tapItLogo from '../../assets/tapit-logo.png';
 
 interface DashboardSidebarProps {
   collapsed?: boolean;
@@ -24,10 +27,11 @@ interface DashboardSidebarProps {
 }
 
 export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCloseMobile }) => {
-  const { currentUser, currentRole, profiles, activeProfile, setActiveProfileId, openSimulator } = useTapIt();
+  const navigate = useNavigate();
+  const { currentUser, currentRole, profiles, activeProfile, setActiveProfileId, openSimulator, logout } = useTapIt();
 
   const navItems = [
-    { label: 'Overview', path: '/dashboard', icon: Home, end: true },
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
     { label: 'My Profiles', path: '/dashboard/profiles', icon: UserSquare2 },
     { label: 'My Links', path: '/dashboard/links', icon: Link2 },
     { label: 'My TapIt Cards', path: '/dashboard/cards', icon: CreditCard },
@@ -38,18 +42,13 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCloseMobil
   ];
 
   return (
-    <aside className="w-64 bg-[#090d16] border-r border-slate-800/80 flex flex-col h-full shrink-0 select-none">
+    <aside className="w-64 bg-[#050a17] border-r border-white/[0.08] flex flex-col h-full shrink-0 select-none">
       {/* Top Header */}
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-0.5">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <Radio className="w-4 h-4 text-cyan-400" />
-            </div>
-          </div>
-          <span className="text-lg font-extrabold text-white font-display">TapIt</span>
+      <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 group">
+          <img src={tapItLogo} alt="TapIt" className="h-7 w-auto object-contain group-hover:scale-105 transition-transform" />
         </Link>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">
           SaaS v1.0
         </span>
       </div>
@@ -95,8 +94,8 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCloseMobil
               className={({ isActive }) =>
                 `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 group ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/10 text-cyan-400 font-semibold border border-cyan-500/30 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-sky-500/15 text-cyan-300 font-bold border border-cyan-400/40 shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
                 }`
               }
             >
@@ -108,43 +107,46 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCloseMobil
             </NavLink>
           );
         })}
-
-        {/* Admin Link if authorized or demo */}
-        {currentRole === 'admin' && (
-          <div className="pt-3 mt-3 border-t border-slate-800/80">
-            <Link
-              to="/admin"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-purple-400 bg-purple-950/30 border border-purple-500/30 hover:bg-purple-900/40 transition"
-            >
-              <Shield className="w-4 h-4" />
-              <span>Admin Management</span>
-            </Link>
-          </div>
-        )}
       </nav>
 
       {/* Simulator Quick Action in sidebar */}
-      <div className="p-3 border-t border-slate-800">
+      <div className="p-3 border-t border-white/[0.08]">
         <button
           onClick={() => openSimulator()}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500/15 via-purple-500/15 to-cyan-500/15 hover:from-cyan-500/25 hover:to-purple-500/25 border border-cyan-500/30 text-cyan-300 py-2 rounded-xl text-xs font-semibold transition shadow-sm"
+          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-cyan-500/20 hover:from-cyan-500/30 hover:to-sky-500/30 border border-cyan-400/40 text-cyan-300 py-2 rounded-xl text-xs font-bold transition shadow-md"
         >
           <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
           <span>Simulate NFC Tap</span>
         </button>
       </div>
 
-      {/* User Chip */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/60 flex items-center gap-3">
-        <img
-          src={currentUser.avatar}
-          alt={currentUser.name}
-          className="w-9 h-9 rounded-full object-cover border border-cyan-500/40 shrink-0"
-        />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-slate-100 truncate">{currentUser.name}</p>
-          <p className="text-[10px] text-slate-400 truncate">@{currentUser.username}</p>
+      {/* User Chip & Sign Out */}
+      <div className="p-3 border-t border-slate-800/80 bg-slate-950/60 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <img
+            src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'}
+            alt={currentUser?.name || 'User'}
+            className="w-9 h-9 rounded-full object-cover border border-cyan-500/40 shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-slate-100 truncate">{currentUser?.name || 'User'}</p>
+            <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
+              Role: {currentUser?.role === 'admin' ? 'Admin' : 'User'}
+            </p>
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            logout();
+            navigate('/login');
+          }}
+          className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-500/30 transition shrink-0"
+          title="Sign Out"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </aside>
   );

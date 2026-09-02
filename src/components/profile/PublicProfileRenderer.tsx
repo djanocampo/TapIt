@@ -124,12 +124,7 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
       }`}
     >
       {/* Top Header Bar */}
-      <div className="w-full flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: theme.badgeBg }}>
-          <Radio className="w-3.5 h-3.5 animate-pulse" style={{ color: theme.accentColor }} />
-          <span style={{ color: theme.accentColor }}>TapIt Live</span>
-        </div>
-
+      <div className="w-full flex items-center justify-end mb-4">
         {onOpenShare && (
           <button
             onClick={onOpenShare}
@@ -174,6 +169,24 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
           </p>
         </div>
 
+        {/* Direct Contact Badges (Controlled by checkboxes) */}
+        {((profile.email && profile.showEmail) || (profile.phone && profile.showPhone)) && (
+          <div className="flex items-center justify-center gap-3 text-xs flex-wrap pt-0.5" style={{ color: theme.subtextColor }}>
+            {profile.email && profile.showEmail && (
+              <a href={`mailto:${profile.email}`} className="flex items-center gap-1 hover:underline">
+                <Mail className="w-3 h-3 text-cyan-400" />
+                <span>{profile.email}</span>
+              </a>
+            )}
+            {profile.phone && profile.showPhone && (
+              <a href={`tel:${profile.phone}`} className="flex items-center gap-1 hover:underline">
+                <Phone className="w-3 h-3 text-cyan-400" />
+                <span>{profile.phone}</span>
+              </a>
+            )}
+          </div>
+        )}
+
         {/* Meta badges: Company / Location */}
         {(profile.company || profile.location) && (
           <div className="flex items-center justify-center gap-3 text-xs flex-wrap" style={{ color: theme.subtextColor }}>
@@ -198,21 +211,6 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
             {profile.bio}
           </p>
         )}
-
-        {/* Save Contact vCard CTA */}
-        <div className="pt-1 w-full max-w-xs">
-          <button
-            onClick={handleDownloadContact}
-            className={`w-full py-2.5 px-4 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg hover:opacity-95 ${getButtonShapeClass()}`}
-            style={{
-              backgroundColor: theme.accentColor,
-              color: '#070a13',
-            }}
-          >
-            <Download className="w-4 h-4" />
-            <span>Save Contact (.vcf)</span>
-          </button>
-        </div>
       </div>
 
       {/* Links List */}

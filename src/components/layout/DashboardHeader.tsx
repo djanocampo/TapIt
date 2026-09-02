@@ -37,17 +37,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <header className="bg-[#090d16]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 sticky top-10 z-30 flex items-center justify-between gap-4">
-      {/* Left: Mobile Toggle & Breadcrumb */}
+    <header className="bg-[#050a17]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 lg:px-8 py-3 sm:py-4 sticky top-0 z-30 flex items-center justify-between gap-4">
+      {/* Left: Title & Breadcrumb */}
       <div className="flex items-center gap-3">
-        {onOpenMobileMenu && (
-          <button
-            onClick={onOpenMobileMenu}
-            className="md:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        )}
         <div>
           <h1 className="text-base sm:text-xl font-bold text-white font-display tracking-tight flex items-center gap-2">
             {title || 'Dashboard'}

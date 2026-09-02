@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { 
   ShieldCheck, 
@@ -12,7 +12,8 @@ import {
   Radio, 
   ShieldAlert,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  LogOut
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -20,7 +21,8 @@ interface AdminSidebarProps {
 }
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({ onCloseMobile }) => {
-  const { currentUser } = useTapIt();
+  const navigate = useNavigate();
+  const { currentUser, logout } = useTapIt();
 
   const navItems = [
     { label: 'Admin Overview', path: '/admin', icon: ShieldCheck, end: true },
@@ -32,16 +34,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ onCloseMobile }) => 
   ];
 
   return (
-    <aside className="w-64 bg-[#080812] border-r border-purple-900/30 flex flex-col h-full shrink-0 select-none">
+    <aside className="w-64 bg-[#050a17] border-r border-white/[0.08] flex flex-col h-full shrink-0 select-none">
       {/* Admin Header */}
-      <div className="p-4 border-b border-purple-900/40 bg-purple-950/20 flex items-center justify-between">
+      <div className="p-4 border-b border-white/[0.06] bg-cyan-950/20 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-500/40 text-purple-400">
+          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-400/30 text-cyan-300">
             <ShieldAlert className="w-4 h-4" />
           </div>
           <div>
             <span className="text-sm font-extrabold text-white font-display block">TapIt Admin</span>
-            <span className="text-[10px] text-purple-400 font-mono">ROOT_LEVEL_ACCESS</span>
+            <span className="text-[10px] text-cyan-400 font-mono">ROOT_LEVEL_ACCESS</span>
           </div>
         </div>
       </div>
@@ -50,7 +52,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ onCloseMobile }) => 
       <div className="p-3">
         <Link
           to="/dashboard"
-          className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/90 border border-slate-800 hover:border-slate-700 px-3 py-2 rounded-xl transition"
+          className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-[#0a162c] border border-white/10 hover:border-cyan-400/40 px-3 py-2 rounded-xl transition shadow-sm"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Return to User Dashboard</span>
@@ -70,8 +72,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ onCloseMobile }) => 
               className={({ isActive }) =>
                 `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 group ${
                   isActive
-                    ? 'bg-purple-600/20 text-purple-300 font-semibold border border-purple-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-sky-500/15 text-cyan-300 font-bold border border-cyan-400/40 shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
                 }`
               }
             >
@@ -86,27 +88,41 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ onCloseMobile }) => 
       </nav>
 
       {/* Security Status Box */}
-      <div className="p-3 mx-3 my-3 bg-purple-950/30 border border-purple-800/40 rounded-xl">
-        <div className="flex items-center gap-2 text-xs font-bold text-purple-300 mb-1">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+      <div className="p-3 mx-3 my-3 bg-cyan-950/30 border border-cyan-500/30 rounded-xl">
+        <div className="flex items-center gap-2 text-xs font-bold text-cyan-300 mb-1">
+          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
           <span>Security Guard: ON</span>
         </div>
         <p className="text-[11px] text-slate-400">
-          NFC token anti-collision & anti-cloning checks active across 6,294 provisioned chips.
+          NFC token anti-collision & anti-cloning checks active.
         </p>
       </div>
 
-      {/* Admin User Chip */}
-      <div className="p-3 border-t border-purple-900/30 bg-[#05050b] flex items-center gap-3">
-        <img
-          src={currentUser.avatar}
-          alt={currentUser.name}
-          className="w-8 h-8 rounded-full object-cover border border-purple-500/40"
-        />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-          <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">Super Administrator</span>
+      {/* Admin User Chip & Sign Out */}
+      <div className="p-3 border-t border-white/[0.08] bg-[#040813] flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <img
+            src={currentUser?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'}
+            alt={currentUser?.name || 'Admin'}
+            className="w-8 h-8 rounded-full object-cover border border-cyan-400/40 shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-white truncate">{currentUser?.name || 'Admin'}</p>
+            <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Role: Admin</span>
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            logout();
+            navigate('/login');
+          }}
+          className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-500/30 transition shrink-0"
+          title="Sign Out"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </aside>
   );

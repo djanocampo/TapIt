@@ -13,18 +13,16 @@ import {
   Users, 
   Plus, 
   CreditCard, 
-  QrCode, 
-  Palette, 
   Clock, 
-  ExternalLink,
-  Smartphone,
   Sparkles,
-  ArrowUpRight
+  Copy,
+  Check
 } from 'lucide-react';
 import { formatRelativeTime } from '../../lib/utils';
 
 export const DashboardOverview: React.FC = () => {
   const { currentUser, profiles, activeProfile, links, cards, notifications, openSimulator } = useTapIt();
+  const [copied, setCopied] = React.useState(false);
 
   // Active profile's links and card
   const profileLinks = links.filter((l) => l.profileId === activeProfile.id);
@@ -34,10 +32,17 @@ export const DashboardOverview: React.FC = () => {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
+  const handleCopyLink = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    navigator.clipboard.writeText(`${origin}/@${activeProfile.slug}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="space-y-8">
       {/* Top Banner Greeting */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-cyan-950/50 via-slate-900 to-purple-950/40 border border-slate-800 shadow-xl relative overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-cyan-950/60 via-[#081224] to-[#050a17] border border-white/[0.08] shadow-2xl relative overflow-hidden backdrop-blur-xl">
         <div className="space-y-1 relative z-10">
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full mb-1">
             <Sparkles className="w-3 h-3 text-cyan-300" />
@@ -47,16 +52,24 @@ export const DashboardOverview: React.FC = () => {
             {greeting}, {currentUser.name.split(' ')[0]} 👋
           </h2>
           <p className="text-xs sm:text-sm text-slate-300">
-            Your digital identity is live and ready to connect. Here is your networking summary.
+            Your digital identity is live and ready to connect. Here is your networking telemetry.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 relative z-10 flex-wrap">
-          <Link to="/dashboard/links">
-            <Button variant="secondary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-              Add Link
-            </Button>
-          </Link>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
+              copied
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                : 'bg-[#081224] hover:bg-white/[0.08] text-slate-200 hover:text-white border-white/[0.1]'
+            }`}
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
+            <span>{copied ? 'Copied Profile Link!' : 'Copy Profile Link'}</span>
+          </button>
+
           <Link to="/dashboard/cards">
             <Button variant="secondary" size="sm" leftIcon={<CreditCard className="w-4 h-4" />}>
               My Cards
@@ -80,7 +93,7 @@ export const DashboardOverview: React.FC = () => {
           value={2847}
           change={18.4}
           icon={Eye}
-          variant="purple"
+          variant="cyan"
         />
         <MetricCard
           title="NFC Taps"
@@ -94,20 +107,20 @@ export const DashboardOverview: React.FC = () => {
           value={4521}
           change={12.8}
           icon={MousePointerClick}
-          variant="emerald"
+          variant="cyan"
         />
         <MetricCard
           title="Unique Visitors"
           value={1932}
           change={9.6}
           icon={Users}
-          variant="amber"
+          variant="cyan"
         />
       </div>
 
       {/* CHARTS & RECENT ACTIVITY GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left: Traffic Chart */}
+        {/* Left: Traffic Chart & Top Links */}
         <div className="lg:col-span-8 space-y-8">
           <TrafficChart timeframe="weekly" />
           <TopLinksTable links={profileLinks} />
@@ -116,7 +129,7 @@ export const DashboardOverview: React.FC = () => {
         {/* Right: Active Card & Recent Activity Feed */}
         <div className="lg:col-span-4 space-y-6">
           {/* Active NFC Card Widget */}
-          <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
+          <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-5 shadow-xl space-y-4 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                 <CreditCard className="w-4 h-4 text-cyan-400" />
@@ -141,20 +154,20 @@ export const DashboardOverview: React.FC = () => {
           </div>
 
           {/* Recent Activity Stream */}
-          <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
+          <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-5 shadow-xl space-y-4 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-purple-400" />
+                <Clock className="w-4 h-4 text-cyan-400" />
                 Live Activity Feed
               </h3>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
             </div>
 
             <div className="space-y-3">
               {notifications.slice(0, 5).map((item) => (
                 <div
                   key={item.id}
-                  className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition space-y-1"
+                  className="p-3 rounded-2xl bg-[#050c18] border border-white/[0.06] hover:border-cyan-500/30 transition space-y-1"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-xs font-bold text-slate-100">{item.title}</span>

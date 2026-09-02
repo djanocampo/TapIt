@@ -14,13 +14,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#070a13] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
     
     const variants = {
-      primary: 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-semibold shadow-lg shadow-cyan-500/20 focus:ring-cyan-400',
-      secondary: 'bg-slate-800/80 hover:bg-slate-750 text-slate-100 border border-slate-700/80 hover:border-slate-600 focus:ring-slate-400',
-      outline: 'border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 focus:ring-cyan-400',
-      ghost: 'text-slate-300 hover:text-white hover:bg-slate-800/50 focus:ring-slate-400',
+      primary: 'bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-sky-300 text-slate-950 font-extrabold shadow-lg shadow-cyan-500/30 border border-cyan-300/40 focus:ring-cyan-400',
+      secondary: 'bg-[#0b162c] hover:bg-[#102244] text-white border border-white/10 hover:border-cyan-400/40 shadow-md focus:ring-cyan-400',
+      outline: 'border border-cyan-400/50 text-cyan-300 hover:bg-cyan-500/15 hover:border-cyan-300 focus:ring-cyan-400',
+      ghost: 'text-slate-300 hover:text-white hover:bg-white/[0.08] focus:ring-cyan-400',
       danger: 'bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 hover:border-rose-500/50 focus:ring-rose-400',
-      glow: 'bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:opacity-95 text-white font-semibold shadow-lg shadow-purple-500/25 border border-white/20 focus:ring-purple-400',
-      accent: 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-semibold shadow-lg shadow-purple-500/20 focus:ring-purple-400',
+      glow: 'bg-gradient-to-r from-cyan-400 via-sky-300 to-cyan-400 hover:opacity-95 text-slate-950 font-black shadow-lg shadow-cyan-400/40 border border-cyan-200/50 focus:ring-cyan-400',
+      accent: 'bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 hover:to-sky-300 text-slate-950 font-bold shadow-lg shadow-cyan-500/25 border border-cyan-400/40 focus:ring-cyan-400',
     };
 
     const sizes = {

@@ -1,10 +1,11 @@
-export type UserRole = 'guest' | 'user' | 'admin';
+export type UserRole = 'admin' | 'user';
 
 export interface User {
   id: string;
   name: string;
   username: string;
   email: string;
+  password?: string;
   role: UserRole;
   avatar: string;
   bio?: string;
@@ -12,6 +13,17 @@ export interface User {
   status: 'active' | 'suspended' | 'pending';
   createdAt: string;
   lastLoginAt: string;
+}
+
+export interface UserInvite {
+  id: string;
+  inviteToken: string;
+  initialName: string;
+  cardToken: string;
+  material: CardMaterial;
+  createdAt: string;
+  isUsed: boolean;
+  usedByUserId?: string;
 }
 
 export type ThemeStyle = 
@@ -55,7 +67,9 @@ export interface Profile {
   avatar: string;
   coverImage?: string;
   email?: string;
+  showEmail?: boolean;
   phone?: string;
+  showPhone?: boolean;
   location?: string;
   website?: string;
   company?: string;

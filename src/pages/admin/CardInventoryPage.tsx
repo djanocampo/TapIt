@@ -4,6 +4,7 @@ import { NFCCard, CardMaterial } from '../../types';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { WebNFCWriterModal } from '../../components/nfc/WebNFCWriterModal';
 import { 
   CreditCard, 
   Search, 
@@ -14,12 +15,14 @@ import {
   ShieldCheck, 
   Cpu, 
   CheckCircle2, 
-  Trash2 
+  Trash2,
+  Zap,
+  User as UserIcon
 } from 'lucide-react';
 import { formatNumber, triggerConfetti } from '../../lib/utils';
 
 export const CardInventoryPage: React.FC = () => {
-  const { cards, profiles, generateBatchCards, toggleCardStatus, updateCard } = useTapIt();
+  const { cards, profiles, allUsers, generateBatchCards, toggleCardStatus, updateCard } = useTapIt();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -28,10 +31,20 @@ export const CardInventoryPage: React.FC = () => {
   const [batchCount, setBatchCount] = useState(5);
   const [batchMaterial, setBatchMaterial] = useState<CardMaterial>('matte-black');
 
+  // Web NFC Admin Modal State
+  const [isNfcWriterOpen, setIsNfcWriterOpen] = useState(false);
+  const [writerCard, setWriterCard] = useState<NFCCard | null>(null);
+
   const filteredCards = cards.filter((c) => {
+    const assignedUser = allUsers.find(u => u.id === c.userId);
+    const assignedProfile = profiles.find(p => p.id === c.profileId);
+
     const matchesSearch = 
       c.cardToken.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.name.toLowerCase().includes(searchQuery.toLowerCase());
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (assignedUser?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (assignedProfile?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -43,32 +56,53 @@ export const CardInventoryPage: React.FC = () => {
     setIsBatchModalOpen(false);
   };
 
+  const handleOpenWriter = (card?: NFCCard) => {
+    setWriterCard(card || cards[0] || null);
+    setIsNfcWriterOpen(true);
+  };
+
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white font-display">NFC Hardware Inventory</h2>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Provision, track, and batch generate encrypted hardware NFC tokens and card identifiers.
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#081224]/90 border border-white/[0.08] shadow-xl backdrop-blur-xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-bold text-white font-display">NFC Hardware Inventory</h2>
+            <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
+              {cards.length} Total Registered Cards
+            </span>
+          </div>
+          <p className="text-xs text-slate-400">
+            Admin tool: Provision, batch generate, and program physical NFC hardware tokens using Web NFC.
           </p>
         </div>
 
-        <Button
-          variant="glow"
-          size="md"
-          onClick={() => setIsBatchModalOpen(true)}
-          leftIcon={<Plus className="w-4 h-4" />}
-        >
-          Batch Provision Tokens
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="glow"
+            size="md"
+            onClick={() => handleOpenWriter()}
+            leftIcon={<Zap className="w-4 h-4" />}
+          >
+            Web NFC Flasher & Inspector
+          </Button>
+
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setIsBatchModalOpen(true)}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            Batch Provision Tokens
+          </Button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
         <div className="w-full sm:w-80">
           <Input
-            placeholder="Search by card token (e.g. 8xK29mQ) or name..."
+            placeholder="Search by token, card name, user..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             leftIcon={<Search className="w-4 h-4" />}
@@ -89,78 +123,128 @@ export const CardInventoryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Cards Table */}
-      <div className="bg-[#0d1322] border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
+      {/* Cards Table with Exact User-Requested Headers */}
+      <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl shadow-xl overflow-hidden backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 uppercase tracking-wider font-semibold">
-                <th className="py-3.5 px-4 font-medium">Hardware Token & Finish</th>
+              <tr className="border-b border-white/[0.08] bg-[#040813] text-slate-400 uppercase tracking-wider font-semibold">
+                <th className="py-3.5 px-4 font-medium">Hardware Token</th>
+                <th className="py-3.5 px-4 font-medium">User</th>
                 <th className="py-3.5 px-4 font-medium">Assigned Profile</th>
                 <th className="py-3.5 px-4 font-medium">Status</th>
-                <th className="py-3.5 px-4 text-right font-medium">Taps Recorded</th>
-                <th className="py-3.5 px-4 text-right font-medium">Actions</th>
+                <th className="py-3.5 px-4 font-medium">Taps Recorded</th>
+                <th className="py-3.5 px-4 text-right font-medium">Admin Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-200">
+            <tbody className="divide-y divide-white/[0.06] text-slate-200">
               {filteredCards.map((card) => {
+                const assignedUser = allUsers.find((u) => u.id === card.userId);
                 const assignedProfile = profiles.find((p) => p.id === card.profileId);
 
                 return (
-                  <tr key={card.id} className="hover:bg-slate-900/40 transition">
+                  <tr key={card.id} className="hover:bg-white/[0.03] transition">
+                    {/* 1. Hardware Token */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-cyan-400">
+                        <div className="p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 shrink-0">
                           <Radio className="w-4 h-4 animate-pulse" />
                         </div>
                         <div>
-                          <p className="font-bold text-white">{card.name}</p>
-                          <p className="text-[11px] text-cyan-400 font-mono font-semibold">
-                            tapit.app/t/{card.cardToken}
+                          <p className="font-bold text-white font-mono text-xs text-cyan-300">
+                            {card.cardToken}
                           </p>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-wider">
-                            Finish: {card.material}
+                          <p className="text-[11px] text-slate-300">
+                            {card.name}
+                          </p>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                            Finish: {card.material === 'white-ceramic' ? 'Pure White' : 'Matte Black'}
                           </span>
                         </div>
                       </div>
                     </td>
 
+                    {/* 2. User (If null, displays Unassigned) */}
                     <td className="py-3.5 px-4">
-                      {assignedProfile ? (
-                        <span className="text-slate-200 font-semibold flex items-center gap-1">
-                          💼 {assignedProfile.name} (@{assignedProfile.slug})
-                        </span>
+                      {assignedUser ? (
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={assignedUser.avatar}
+                            alt={assignedUser.name}
+                            className="w-7 h-7 rounded-full object-cover border border-cyan-500/30 shrink-0"
+                          />
+                          <div>
+                            <p className="font-bold text-white text-xs">{assignedUser.name}</p>
+                            <p className="text-[10px] text-cyan-400 font-mono">@{assignedUser.username}</p>
+                          </div>
+                        </div>
                       ) : (
-                        <span className="text-slate-500 italic">Unassigned (Unclaimed)</span>
+                        <span className="text-slate-500 italic text-xs font-medium">
+                          Unassigned
+                        </span>
                       )}
                     </td>
 
+                    {/* 3. Assigned Profile */}
+                    <td className="py-3.5 px-4">
+                      {assignedProfile ? (
+                        <div className="space-y-0.5">
+                          <span className="text-slate-100 font-bold text-xs flex items-center gap-1.5">
+                            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                            {assignedProfile.name}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-mono block">
+                            tapit.app/@{assignedProfile.slug}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-500 italic text-xs font-medium">
+                          Unassigned
+                        </span>
+                      )}
+                    </td>
+
+                    {/* 4. Status */}
                     <td className="py-3.5 px-4">
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                           card.status === 'active'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             : card.status === 'unclaimed'
-                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                         }`}
                       >
                         {card.status}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-cyan-300">
+                    {/* 5. Taps Recorded */}
+                    <td className="py-3.5 px-4 font-mono font-bold text-cyan-300 text-xs">
                       {formatNumber(card.taps)} taps
                     </td>
 
+                    {/* 6. Admin Actions */}
                     <td className="py-3.5 px-4 text-right">
-                      <Button
-                        variant={card.status === 'active' ? 'danger' : 'secondary'}
-                        size="xs"
-                        onClick={() => toggleCardStatus(card.id)}
-                      >
-                        {card.status === 'active' ? 'Force Disable' : 'Reactivate'}
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenWriter(card)}
+                          className="px-2.5 py-1 rounded-lg bg-cyan-950/50 hover:bg-cyan-900/60 border border-cyan-400/30 text-cyan-300 text-[11px] font-bold flex items-center gap-1 transition shadow-sm"
+                          title="Flash this token onto a physical NFC card"
+                        >
+                          <Zap className="w-3 h-3 text-cyan-400" />
+                          <span>Flash Chip</span>
+                        </button>
+
+                        <Button
+                          variant={card.status === 'active' ? 'danger' : 'secondary'}
+                          size="xs"
+                          onClick={() => toggleCardStatus(card.id)}
+                        >
+                          {card.status === 'active' ? 'Disable' : 'Reactivate'}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -169,6 +253,14 @@ export const CardInventoryPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* WEB NFC WRITER MODAL (ADMIN ONLY) */}
+      <WebNFCWriterModal
+        isOpen={isNfcWriterOpen}
+        onClose={() => setIsNfcWriterOpen(false)}
+        card={writerCard}
+        profile={profiles.find((p) => p.id === (writerCard?.profileId || profiles[0]?.id))}
+      />
 
       {/* BATCH GENERATOR MODAL */}
       <Modal
@@ -205,9 +297,6 @@ export const CardInventoryPage: React.FC = () => {
               className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
             >
               <option value="matte-black">Matte Black NFC Card</option>
-              <option value="cyber-cyan">Cyber Glow Cyan Card</option>
-              <option value="gold-metal">Gold Metal Hybrid Card</option>
-              <option value="aurora-violet">Aurora Violet Card</option>
               <option value="white-ceramic">White Ceramic Card</option>
             </select>
           </div>

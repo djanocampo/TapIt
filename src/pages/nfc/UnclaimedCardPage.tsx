@@ -26,11 +26,6 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
   const handleClaim = () => {
     setIsProcessing(true);
     setTimeout(() => {
-      // If currently guest, switch to user mode for demo convenience
-      if (currentRole === 'guest') {
-        setRole('user');
-      }
-
       const res = claimCard(cardToken, selectedProfileId, customCardName);
       setIsProcessing(false);
       if (res.success) {

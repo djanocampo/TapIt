@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -13,16 +14,18 @@ import {
   ShieldAlert, 
   Check, 
   Sparkles,
-  RotateCcw
+  RotateCcw,
+  LogOut
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 
 export const SettingsPage: React.FC = () => {
-  const { currentUser, resetAllData, profiles, links, cards } = useTapIt();
+  const navigate = useNavigate();
+  const { currentUser, resetAllData, logout, profiles, links, cards } = useTapIt();
 
-  const [name, setName] = useState(currentUser.name);
-  const [email, setEmail] = useState(currentUser.email);
-  const [username, setUsername] = useState(currentUser.username);
+  const [name, setName] = useState(currentUser?.name || '');
+  const [email, setEmail] = useState(currentUser?.email || '');
+  const [username, setUsername] = useState(currentUser?.username || '');
 
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
@@ -197,27 +200,40 @@ export const SettingsPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Danger Zone */}
+        {/* Danger Zone & Sign Out */}
         <div className="bg-rose-950/20 border border-rose-500/30 rounded-3xl p-6 shadow-xl space-y-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
             <ShieldAlert className="w-4 h-4" />
-            Danger Zone
+            Account Session & Reset
           </h4>
           <p className="text-xs text-slate-400">
-            Reset all state, mock profiles, links, and simulated cards back to factory default demo mode.
+            Sign out of your active session or reset demo state back to defaults.
           </p>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => {
-              if (window.confirm('Reset all demo state and mock data back to defaults?')) {
-                resetAllData();
-              }
-            }}
-            leftIcon={<RotateCcw className="w-4 h-4" />}
-          >
-            Reset All Demo Data
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap pt-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+              leftIcon={<LogOut className="w-4 h-4" />}
+            >
+              Sign Out
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                if (window.confirm('Reset all demo state and mock data back to defaults?')) {
+                  resetAllData();
+                }
+              }}
+              leftIcon={<RotateCcw className="w-4 h-4" />}
+            >
+              Reset All Demo Data
+            </Button>
+          </div>
         </div>
       </div>
     </div>

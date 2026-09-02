@@ -1,21 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTapIt } from '../../store';
-import { LinkItem, LinkCategory } from '../../types';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Modal } from '../../components/ui/Modal';
+import { LinkItem } from '../../types';
 import { Toggle } from '../../components/ui/Toggle';
 import { 
   Link2, 
-  Plus, 
-  ArrowUp, 
-  ArrowDown, 
-  Edit3, 
-  Trash2, 
-  Copy, 
   ExternalLink, 
   MousePointerClick, 
-  GripVertical,
   Briefcase,
   Linkedin,
   Github,
@@ -30,189 +20,131 @@ import {
   Twitter,
   Globe,
   Sparkles,
-  Layers
+  BarChart3,
+  TrendingUp,
+  Activity
 } from 'lucide-react';
-import { formatNumber, triggerConfetti } from '../../lib/utils';
+import { formatNumber } from '../../lib/utils';
 
-const PRESET_ICONS = [
-  { id: 'Briefcase', label: 'Portfolio', icon: Briefcase },
-  { id: 'Linkedin', label: 'LinkedIn', icon: Linkedin },
-  { id: 'Github', label: 'GitHub', icon: Github },
-  { id: 'FileText', label: 'Resume', icon: FileText },
-  { id: 'Mail', label: 'Email', icon: Mail },
-  { id: 'Instagram', label: 'Instagram', icon: Instagram },
-  { id: 'Twitter', label: 'X / Twitter', icon: Twitter },
-  { id: 'Youtube', label: 'YouTube', icon: Youtube },
-  { id: 'Music', label: 'Spotify', icon: Music },
-  { id: 'Coffee', label: 'Buy Me Coffee', icon: Coffee },
-  { id: 'CreditCard', label: 'Store / NFC Order', icon: CreditCard },
-  { id: 'Calendar', label: 'Book Meeting', icon: Calendar },
-  { id: 'Globe', label: 'Custom Website', icon: Globe },
-];
+const PRESET_ICONS: Record<string, React.ElementType> = {
+  Briefcase,
+  Linkedin,
+  Github,
+  FileText,
+  Mail,
+  Instagram,
+  Twitter,
+  Youtube,
+  Music,
+  Coffee,
+  CreditCard,
+  Calendar,
+  Globe,
+};
 
 export const MyLinksPage: React.FC = () => {
-  const { profiles, activeProfile, setActiveProfileId, links, addLink, updateLink, deleteLink, toggleLinkActive, reorderLinks } = useTapIt();
+  const { profiles, activeProfile, setActiveProfileId, links, toggleLinkActive } = useTapIt();
 
   const profileLinks = links
     .filter((l) => l.profileId === activeProfile.id)
-    .sort((a, b) => a.position - b.position);
+    .sort((a, b) => b.clicks - a.clicks); // Sorted by most clicked for monitoring!
 
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
-
-  const [formTitle, setFormTitle] = useState('');
-  const [formUrl, setFormUrl] = useState('');
-  const [formIcon, setFormIcon] = useState('Globe');
-  const [formCategory, setFormCategory] = useState<LinkCategory>('work');
-
-  const handleOpenAdd = () => {
-    setEditingLinkId(null);
-    setFormTitle('');
-    setFormUrl('');
-    setFormIcon('Globe');
-    setFormCategory('work');
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEdit = (link: LinkItem) => {
-    setEditingLinkId(link.id);
-    setFormTitle(link.title);
-    setFormUrl(link.url);
-    setFormIcon(link.icon);
-    setFormCategory(link.category);
-    setIsModalOpen(true);
-  };
-
-  const handleSaveLink = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formTitle.trim() || !formUrl.trim()) return;
-
-    if (editingLinkId) {
-      updateLink(editingLinkId, {
-        title: formTitle,
-        url: formUrl.startsWith('http') || formUrl.startsWith('mailto:') || formUrl.startsWith('tel:') ? formUrl : `https://${formUrl}`,
-        icon: formIcon,
-        category: formCategory,
-      });
-    } else {
-      addLink({
-        profileId: activeProfile.id,
-        title: formTitle,
-        url: formUrl.startsWith('http') || formUrl.startsWith('mailto:') || formUrl.startsWith('tel:') ? formUrl : `https://${formUrl}`,
-        icon: formIcon,
-        category: formCategory,
-        position: profileLinks.length,
-        isActive: true,
-      });
-      triggerConfetti();
-    }
-
-    setIsModalOpen(false);
-  };
-
-  const handleMove = (index: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= profileLinks.length) return;
-
-    const reordered = [...profileLinks];
-    const [moved] = reordered.splice(index, 1);
-    reordered.splice(newIndex, 0, moved);
-
-    reorderLinks(activeProfile.id, reordered.map((l) => l.id));
-  };
-
-  const handleDuplicate = (link: LinkItem) => {
-    addLink({
-      profileId: activeProfile.id,
-      title: `${link.title} (Copy)`,
-      url: link.url,
-      icon: link.icon,
-      category: link.category,
-      position: profileLinks.length,
-      isActive: true,
-    });
-  };
+  const totalClicks = profileLinks.reduce((acc, l) => acc + l.clicks, 0);
+  const activeCount = profileLinks.filter((l) => l.isActive).length;
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white font-display">Link Management</h2>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Add, reorder, and analyze links for your active profile (<strong>{activeProfile.name}</strong>).
+      {/* Top Header with Profile Dropdown on the far right (Monitoring Only) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#081224]/90 border border-white/[0.08] shadow-xl backdrop-blur-xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-bold text-white font-display">Links Monitoring & Telemetry</h2>
+            <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
+              {profileLinks.length} Tracked Links
+            </span>
+          </div>
+          <p className="text-xs text-slate-400">
+            Real-time click engagement and traffic telemetry for <strong>{activeProfile.name}</strong> profile.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Profile Switcher */}
+        {/* Profile Dropdown Aligned to the Right */}
+        <div className="flex items-center gap-2 shrink-0">
+          <label className="text-xs text-slate-400 font-semibold hidden sm:inline">Profile:</label>
           <select
             value={activeProfile.id}
             onChange={(e) => setActiveProfileId(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded-xl px-3 py-2 focus:border-cyan-500 focus:outline-none"
+            className="bg-[#050c18] border border-cyan-500/30 hover:border-cyan-400 text-xs font-bold text-cyan-300 rounded-xl px-3.5 py-2 focus:outline-none shadow-sm cursor-pointer"
           >
             {profiles.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option key={p.id} value={p.id} className="bg-[#081224] text-white">
                 {p.name} Profile
               </option>
             ))}
           </select>
-
-          <Button variant="glow" size="md" onClick={handleOpenAdd} leftIcon={<Plus className="w-4 h-4" />}>
-            Add New Link
-          </Button>
         </div>
       </div>
 
-      {/* Links List with Drag & Drop Controls */}
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-[#081224]/90 border border-white/[0.08] rounded-2xl p-4 shadow-lg flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
+            <MousePointerClick className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div>
+            <span className="text-xs text-slate-400 font-medium">Total Link Clicks</span>
+            <p className="text-xl font-bold text-white font-display">{formatNumber(totalClicks)}</p>
+          </div>
+        </div>
+
+        <div className="bg-[#081224]/90 border border-white/[0.08] rounded-2xl p-4 shadow-lg flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+            <Activity className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <span className="text-xs text-slate-400 font-medium">Active / Visible Links</span>
+            <p className="text-xl font-bold text-white font-display">{activeCount} / {profileLinks.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-[#081224]/90 border border-white/[0.08] rounded-2xl p-4 shadow-lg flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30">
+            <TrendingUp className="w-5 h-5 text-sky-400" />
+          </div>
+          <div>
+            <span className="text-xs text-slate-400 font-medium">Top Performing Link</span>
+            <p className="text-xs font-bold text-cyan-300 truncate max-w-[160px]">
+              {profileLinks[0]?.title || 'No links yet'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Links Monitoring List */}
       <div className="space-y-3">
         {profileLinks.length === 0 ? (
-          <div className="text-center py-12 bg-[#0d1322] border border-slate-800 rounded-3xl space-y-3">
+          <div className="text-center py-16 bg-[#081224]/90 border border-white/[0.08] rounded-3xl space-y-2 backdrop-blur-xl">
             <Link2 className="w-10 h-10 text-slate-600 mx-auto" />
-            <h3 className="text-base font-bold text-white">No links added to this profile yet</h3>
+            <h3 className="text-base font-bold text-white">No tracked links found for {activeProfile.name}</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Add your portfolio, social profiles, resumes, or any destination URL you want to share via NFC.
+              Links can be configured inside the Profile Editor under the "Links" card.
             </p>
-            <Button variant="primary" size="sm" onClick={handleOpenAdd} leftIcon={<Plus className="w-4 h-4" />}>
-              Add First Link
-            </Button>
           </div>
         ) : (
-          profileLinks.map((link, index) => {
-            const IconComponent = PRESET_ICONS.find((i) => i.id === link.icon)?.icon || Globe;
+          profileLinks.map((link) => {
+            const IconComponent = PRESET_ICONS[link.icon] || Globe;
 
             return (
               <div
                 key={link.id}
-                className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl ${
                   link.isActive
-                    ? 'bg-[#0d1322] border-slate-800 hover:border-slate-700 shadow-xl'
-                    : 'bg-slate-950/60 border-slate-850 opacity-60'
+                    ? 'bg-[#081224]/90 border-white/[0.08] hover:border-cyan-500/30 shadow-xl'
+                    : 'bg-slate-950/60 border-white/[0.04] opacity-60'
                 }`}
               >
-                {/* Reorder arrows + Icon + Title */}
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  {/* Move Up/Down Controls */}
-                  <div className="flex sm:flex-col items-center gap-0.5 shrink-0">
-                    <button
-                      onClick={() => handleMove(index, 'up')}
-                      disabled={index === 0}
-                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-20 disabled:hover:bg-transparent"
-                      title="Move up"
-                    >
-                      <ArrowUp className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleMove(index, 'down')}
-                      disabled={index === profileLinks.length - 1}
-                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-20 disabled:hover:bg-transparent"
-                      title="Move down"
-                    >
-                      <ArrowDown className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
+                {/* Icon + Title + URL */}
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
                   <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shrink-0">
                     <IconComponent className="w-5 h-5" />
                   </div>
@@ -220,7 +152,7 @@ export const MyLinksPage: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h4 className="text-sm font-bold text-white truncate">{link.title}</h4>
-                      <span className="text-[10px] font-medium bg-slate-800 text-slate-400 px-2 py-0.2 rounded-md uppercase tracking-wider hidden sm:inline">
+                      <span className="text-[10px] font-medium bg-white/[0.06] text-slate-300 px-2 py-0.5 rounded-md uppercase tracking-wider hidden sm:inline">
                         {link.category}
                       </span>
                     </div>
@@ -236,8 +168,8 @@ export const MyLinksPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Right side: Click Count + Toggle + Action Icons */}
-                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+                {/* Right side: Click Telemetry + Toggle Visibility */}
+                <div className="flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/[0.08]">
                   {/* Click Badge */}
                   <div className="flex items-center gap-1 text-xs font-mono font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-500/20 px-2.5 py-1 rounded-xl">
                     <MousePointerClick className="w-3.5 h-3.5 text-cyan-400" />
@@ -245,38 +177,14 @@ export const MyLinksPage: React.FC = () => {
                   </div>
 
                   {/* Visibility Switch */}
-                  <Toggle
-                    checked={link.isActive}
-                    onChange={() => toggleLinkActive(link.id)}
-                  />
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleOpenEdit(link)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                      title="Edit link"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDuplicate(link)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                      title="Duplicate link"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (window.confirm(`Delete link "${link.title}"?`)) {
-                          deleteLink(link.id);
-                        }
-                      }}
-                      className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
-                      title="Delete link"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">
+                      {link.isActive ? 'Active' : 'Hidden'}
+                    </span>
+                    <Toggle
+                      checked={link.isActive}
+                      onChange={() => toggleLinkActive(link.id)}
+                    />
                   </div>
                 </div>
               </div>
@@ -284,90 +192,6 @@ export const MyLinksPage: React.FC = () => {
           })
         )}
       </div>
-
-      {/* ADD / EDIT LINK MODAL */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingLinkId ? 'Edit Link' : 'Add New Link'}
-        description="Add a destination URL to your public TapIt profile."
-        maxWidth="md"
-      >
-        <form onSubmit={handleSaveLink} className="space-y-4">
-          <Input
-            label="Link Title"
-            placeholder="e.g. 💼 View My Portfolio & Case Studies"
-            value={formTitle}
-            onChange={(e) => setFormTitle(e.target.value)}
-            required
-          />
-
-          <Input
-            label="Destination URL"
-            placeholder="https://..."
-            value={formUrl}
-            onChange={(e) => setFormUrl(e.target.value)}
-            required
-          />
-
-          {/* Icon Picker */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Select Icon Preset:
-            </label>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-              {PRESET_ICONS.map((preset) => {
-                const Icon = preset.icon;
-                const isSelected = formIcon === preset.id;
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => setFormIcon(preset.id)}
-                    className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 transition ${
-                      isSelected
-                        ? 'bg-cyan-950/60 border-cyan-400 text-cyan-300 shadow-sm'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-[9px] truncate max-w-full font-semibold">{preset.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Category */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Category:
-            </label>
-            <select
-              value={formCategory}
-              onChange={(e) => setFormCategory(e.target.value as LinkCategory)}
-              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
-            >
-              <option value="portfolio">Portfolio</option>
-              <option value="work">Work & Repos</option>
-              <option value="social">Social Media</option>
-              <option value="contact">Contact & Meeting</option>
-              <option value="media">Media / Video / Audio</option>
-              <option value="commerce">Store / Commerce</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3">
-            <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit">
-              {editingLinkId ? 'Save Changes' : 'Add Link'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 };

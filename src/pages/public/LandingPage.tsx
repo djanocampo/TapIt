@@ -1,312 +1,303 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTapIt } from '../../store';
-import { Button } from '../../components/ui/Button';
-import { 
-  Radio, 
-  Smartphone, 
-  BarChart3, 
-  QrCode, 
-  Sparkles, 
-  Layers, 
-  CreditCard, 
-  ArrowRight, 
-  CheckCircle2, 
-  Zap, 
-  ShieldCheck, 
-  Users, 
-  TrendingUp, 
-  Share2, 
-  ExternalLink 
+import {
+  Radio,
+  ArrowRight,
+  Check,
+  Zap,
+  ShieldCheck,
+  Layers,
+  Smartphone,
+  BarChart3,
+  Sparkles,
+  Users
 } from 'lucide-react';
-import { MobileFramePreview } from '../../components/profile/MobileFramePreview';
-import { NFCCardPreview } from '../../components/nfc/NFCCardPreview';
+import { Rotating3DCardHero } from '../../components/nfc/Rotating3DCardHero';
+
+import tapItLogo from '../../assets/tapit-logo.png';
 
 export const LandingPage: React.FC = () => {
-  const { profiles, links, cards, openSimulator } = useTapIt();
-  const professionalProfile = profiles.find((p) => p.slug === 'professional') || profiles[0];
+  const { openSimulator } = useTapIt();
 
   return (
-    <div className="min-h-screen bg-[#070a13] text-slate-100 overflow-hidden">
-      {/* Background glow meshes */}
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-cyan-600/15 via-purple-600/15 to-transparent blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-[#040c1a] text-slate-100 overflow-hidden relative selection:bg-cyan-500 selection:text-black">
+      {/* Ambient Atmospheric Glows */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[600px] bg-gradient-to-b from-[#0e3b6d]/30 via-[#0a274e]/20 to-transparent blur-[140px] pointer-events-none" />
+      <div className="absolute top-[25%] right-[-10%] w-[500px] h-[500px] bg-cyan-600/15 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute top-[55%] left-[-10%] w-[500px] h-[500px] bg-sky-600/10 rounded-full blur-[150px] pointer-events-none" />
 
-      {/* HERO SECTION */}
-      <section className="relative pt-12 pb-20 sm:pt-20 sm:pb-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto space-y-6">
-          {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 rounded-full text-xs font-bold text-cyan-300 shadow-glow-cyan animate-pulse">
-            <Radio className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Next-Generation NFC Smart Identity Platform</span>
-          </div>
+      {/* ========================================================
+          1. HOME SECTION (HERO)
+          ======================================================== */}
+      <section id="home" className="relative pt-6 pb-16 sm:pt-14 sm:pb-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
 
-          {/* Main Heading */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white font-display tracking-tight leading-[1.1]">
-            Everything You Share.{' '}
-            <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-purple-400 bg-clip-text text-transparent">
-              One Tap Away.
-            </span>
-          </h1>
-
-          {/* Supporting Text */}
-          <p className="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Create your digital identity, connect it to NFC and QR technology, and understand how people interact with your profile in real-time.
-          </p>
-
-          {/* Primary & Secondary CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Link to="/register">
-              <Button variant="glow" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Create Your TapIt
-              </Button>
-            </Link>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => openSimulator()}
-              leftIcon={<Radio className="w-4 h-4 text-cyan-400 animate-pulse" />}
-            >
-              Explore Live NFC Tap Demo
-            </Button>
-          </div>
-
-          {/* Interactive Visual Chain (NFC CARD -> TAP -> PROFILE -> CONNECT -> ANALYTICS) */}
-          <div className="pt-8">
-            <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-2xl text-xs font-semibold text-slate-300">
-              <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
-                <CreditCard className="w-4 h-4" />
-                <span>NFC CARD</span>
-              </div>
-              <span className="text-slate-500 font-bold">→</span>
-              <div className="flex items-center gap-1.5 text-purple-400 font-bold">
-                <Smartphone className="w-4 h-4" />
-                <span>📱 TAP</span>
-              </div>
-              <span className="text-slate-500 font-bold">→</span>
-              <div className="flex items-center gap-1.5 text-sky-400 font-bold">
-                <Radio className="w-4 h-4" />
-                <span>TAPIT PROFILE</span>
-              </div>
-              <span className="text-slate-500 font-bold">→</span>
-              <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <Share2 className="w-4 h-4" />
-                <span>🔗 CONNECT</span>
-              </div>
-              <span className="text-slate-500 font-bold">→</span>
-              <div className="flex items-center gap-1.5 text-amber-400 font-bold">
-                <BarChart3 className="w-4 h-4" />
-                <span>📊 ANALYTICS</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Hero Interactive Showcase Grid */}
-        <div className="mt-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left: NFC Card Demo Presentation */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl backdrop-blur-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                  <Zap className="w-4 h-4" />
-                  Hardware NFC Tag
-                </span>
-                <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
-                  NTAG216 Chip
-                </span>
-              </div>
-              <NFCCardPreview
-                card={cards[0]}
-                profile={professionalProfile}
-                onTapSimulate={() => openSimulator(cards[0])}
-                interactive={true}
+          {/* Left Column: Logo & CTAs */}
+          <div className="lg:col-span-5 space-y-6 z-20 text-center lg:text-left flex flex-col items-center lg:items-start">
+            {/* TapIt Logo as Hero Title (+30% larger) */}
+            <div className="w-full flex justify-center lg:justify-start">
+              <img
+                src={tapItLogo}
+                alt="TapIt"
+                className="h-[84px] xs:h-[104px] sm:h-[125px] lg:h-[146px] w-auto object-contain drop-shadow-[0_12px_28px_rgba(6,182,212,0.35)] select-none"
               />
-              <p className="text-xs text-slate-400 text-center">
-                Physical cards store a unique dynamic URL token — update your profile anytime without re-writing your card.
-              </p>
+            </div>
+
+            {/* Description Text */}
+            <p className="text-base sm:text-lg text-slate-300 max-w-lg leading-relaxed font-normal">
+              Unleash the speed of instant connection. Networking redefined in every tap — all in one sleek smart card.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-4 w-full">
+              <Link
+                to="/register"
+                className="inline-flex items-center gap-3.5 bg-[#0b172e] hover:bg-[#102449] text-white border border-cyan-400/40 hover:border-cyan-300 px-6 py-3.5 rounded-full text-sm sm:text-base font-bold shadow-xl shadow-cyan-950/80 transition-all duration-300 group hover:scale-[1.02]"
+              >
+                <span>Create Your TapIt</span>
+                <span className="w-7 h-7 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center font-black group-hover:rotate-90 transition-transform duration-300 shadow-md shadow-cyan-400/30 text-sm">
+                  +
+                </span>
+              </Link>
+
+              <button
+                onClick={() => openSimulator()}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/80 px-5 py-3.5 rounded-full transition-all duration-200"
+              >
+                <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+                <span>Try Demo</span>
+              </button>
             </div>
           </div>
 
-          {/* Center/Right: Live Smartphone Mobile-First Profile Frame */}
-          <div className="lg:col-span-7 flex flex-col items-center justify-center">
-            <div className="text-center mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-400 bg-purple-950/40 border border-purple-500/30 px-3 py-1 rounded-full inline-block">
-                Mobile-First Visitor Experience
-              </span>
-            </div>
-            <MobileFramePreview
-              profile={professionalProfile}
-              links={links}
-            />
+          {/* Right Column: 360-Degree Continuous Rotating Card Stage */}
+          <div className="lg:col-span-7 relative w-full flex justify-center">
+            <Rotating3DCardHero />
           </div>
         </div>
       </section>
 
-      {/* 3-STEP SECTION: HOW IT WORKS */}
-      <section className="py-20 bg-slate-950/80 border-y border-slate-800/80 relative">
+      {/* ========================================================
+          2. ABOUT US SECTION
+          ======================================================== */}
+      <section id="about" className="py-24 bg-[#050e1f]/80 border-y border-white/[0.06] relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest bg-cyan-950/50 border border-cyan-500/30 px-3 py-1 rounded-lg">
-              Simple 3-Step Flow
+
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest bg-cyan-950/60 border border-cyan-500/30 px-3.5 py-1.5 rounded-full">
+              About Us
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display">
-              How TapIt Works
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white font-display tracking-tight">
+              Redefining How the World Connects
             </h2>
-            <p className="text-sm text-slate-400">
-              Transform your physical interactions into lasting digital connections.
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+              TapIt was created to replace outdated paper business cards and fragmented bio links with one smart, dynamic, and eco-friendly physical card.
             </p>
           </div>
 
+          {/* 3 Core Pillars */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Step 1 */}
-            <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-xl relative overflow-hidden group hover:border-cyan-500/40 transition">
-              <div className="text-5xl font-black font-display text-slate-800 group-hover:text-cyan-500/20 transition mb-6">
-                01
+            {/* Pillar 1 */}
+            <div className="bg-[#091429]/90 border border-white/[0.08] hover:border-cyan-400/40 rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Zap className="w-6 h-6" />
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center mb-4">
-                <Layers className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-white font-display mb-2">Create</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Create your customized TapIt profile. Add your portfolio, LinkedIn, GitHub, contact details, resumes, and custom branded themes.
+              <h3 className="text-xl font-bold text-white font-display mb-3">
+                Instant Contactless Tap
+              </h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Powered by high-frequency NFC microchips. Simply tap your TapIt card against any smartphone to share your identity instantly—zero apps required.
               </p>
             </div>
 
-            {/* Step 2 */}
-            <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-xl relative overflow-hidden group hover:border-purple-500/40 transition">
-              <div className="text-5xl font-black font-display text-slate-800 group-hover:text-purple-500/20 transition mb-6">
-                02
+            {/* Pillar 2 */}
+            <div className="bg-[#091429]/90 border border-white/[0.08] hover:border-cyan-400/40 rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-6 h-6" />
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/30 flex items-center justify-center mb-4">
-                <Radio className="w-6 h-6 animate-pulse" />
-              </div>
-              <h3 className="text-xl font-bold text-white font-display mb-2">Tap</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Connect your NFC smart card or dynamic QR code to your profile. Tap against any NFC-enabled smartphone without needing an app.
+              <h3 className="text-xl font-bold text-white font-display mb-3">
+                Dynamic Cloud Profiles
+              </h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Change your phone number, social links, portfolio, or resume anytime from your dashboard without ever needing to reprint or rewrite your card.
               </p>
             </div>
 
-            {/* Step 3 */}
-            <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-xl relative overflow-hidden group hover:border-emerald-500/40 transition">
-              <div className="text-5xl font-black font-display text-slate-800 group-hover:text-emerald-500/20 transition mb-6">
-                03
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mb-4">
+            {/* Pillar 3 */}
+            <div className="bg-[#091429]/90 border border-white/[0.08] hover:border-cyan-400/40 rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <BarChart3 className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-white font-display mb-2">Connect & Analyze</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Visitors instantly save your contact (.vcf) or view your links. Monitor taps, CTR, location, and traffic trends in your live dashboard.
+              <h3 className="text-xl font-bold text-white font-display mb-3">
+                Real-Time Telemetry
+              </h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Track how many people tap your card, see which links convert, monitor visitor trends, and protect your privacy with encrypted token security.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CORE FEATURES GRID */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-          <span className="text-xs font-bold text-purple-400 uppercase tracking-widest bg-purple-950/50 border border-purple-500/30 px-3 py-1 rounded-lg">
-            Platform Capabilities
+      {/* ========================================================
+          3. PRICING SECTION
+          ======================================================== */}
+      <section id="pricing" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest bg-cyan-950/60 border border-cyan-500/30 px-3.5 py-1.5 rounded-full">
+            Pricing
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display">
-            Built for Modern Professionals & Teams
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-white font-display tracking-tight">
+            Simple, Transparent Pricing
           </h2>
-          <p className="text-sm text-slate-400">
-            A comprehensive smart identity platform combining hardware, software, and deep telemetry.
+          <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+            Choose the perfect plan to upgrade your networking presence today.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Feature 1 */}
-          <div className="bg-[#0d1322] border border-slate-800/90 rounded-2xl p-6 shadow-xl hover:border-cyan-500/30 transition group">
-            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 w-fit mb-4 group-hover:scale-110 transition">
-              <Radio className="w-5 h-5" />
+        {/* Pricing Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+
+          {/* Plan 1: Free Starter */}
+          <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-8 flex flex-col justify-between backdrop-blur-xl shadow-xl hover:border-white/20 transition-all">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-white font-display">Starter</h3>
+                <p className="text-xs text-slate-400 mt-1">For individuals starting digital networking</p>
+              </div>
+
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl sm:text-5xl font-black text-white font-display">$0</span>
+                <span className="text-sm text-slate-400 font-medium">/ Free Forever</span>
+              </div>
+
+              <ul className="space-y-3.5 text-sm text-slate-300 border-t border-white/[0.08] pt-6">
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>1x Digital Bio-Link Profile</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Unlimited Social & Custom Links</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Dynamic QR Code Studio</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Basic Tap Telemetry</span>
+                </li>
+              </ul>
             </div>
-            <h3 className="text-lg font-bold text-white font-display mb-2">NFC Powered Sharing</h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Share your profile instantly with a single tap. Compatible with iPhone and Android without requiring any app installation.
-            </p>
+
+            <div className="pt-8">
+              <Link to="/register" className="block">
+                <button className="w-full py-3 px-6 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm border border-slate-700/80 hover:border-cyan-400/50 transition-all shadow-md">
+                  Get Started Free
+                </button>
+              </Link>
+            </div>
           </div>
 
-          {/* Feature 2 */}
-          <div className="bg-[#0d1322] border border-slate-800/90 rounded-2xl p-6 shadow-xl hover:border-purple-500/30 transition group">
-            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 w-fit mb-4 group-hover:scale-110 transition">
-              <Sparkles className="w-5 h-5" />
+          {/* Plan 2: Pro Smart Card (Featured) */}
+          <div className="bg-gradient-to-b from-[#0e2247] via-[#091730] to-[#081326] border-2 border-cyan-400/80 rounded-3xl p-7 sm:p-9 flex flex-col justify-between backdrop-blur-2xl shadow-2xl shadow-cyan-950/80 relative scale-100 lg:scale-105 my-2 lg:my-0 z-10">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-400 to-sky-300 text-slate-950 text-xs font-black uppercase px-4 py-1 rounded-full shadow-lg shadow-cyan-400/30 tracking-wider">
+              Most Popular
             </div>
-            <h3 className="text-lg font-bold text-white font-display mb-2">Custom Profiles & Themes</h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Personalize colors, fonts, glassmorphism effects, custom button styles, and interactive animated cards to match your personal brand.
-            </p>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-2xl font-extrabold text-white font-display">Pro Smart Card</h3>
+                <p className="text-xs text-cyan-300 mt-1">1x Physical NFC Card + Full Digital Suite</p>
+              </div>
+
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl sm:text-5xl font-black text-white font-display">$29</span>
+                <span className="text-sm text-slate-300 font-medium">/ One-time fee (No monthly fee)</span>
+              </div>
+
+              <ul className="space-y-3.5 text-sm text-slate-200 border-t border-white/10 pt-6">
+                <li className="flex items-center gap-3 font-semibold text-white">
+                  <Check className="w-4 h-4 text-cyan-300 shrink-0" />
+                  <span>1x Physical TapIt NFC Card (Black or White)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-300 shrink-0" />
+                  <span>Instant 1-Tap Save Contact (.vcf)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-300 shrink-0" />
+                  <span>Custom Themes, Fonts & Appearance Studio</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-300 shrink-0" />
+                  <span>Deep Real-Time Analytics & CTR Telemetry</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-300 shrink-0" />
+                  <span>Verified Identity Badge</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-8">
+              <Link to="/register" className="block">
+                <button className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-cyan-400 via-sky-300 to-cyan-400 text-slate-950 font-black text-sm shadow-lg shadow-cyan-400/40 hover:scale-[1.02] transition-all">
+                  Order Your Card
+                </button>
+              </Link>
+            </div>
           </div>
 
-          {/* Feature 3 */}
-          <div className="bg-[#0d1322] border border-slate-800/90 rounded-2xl p-6 shadow-xl hover:border-emerald-500/30 transition group">
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 w-fit mb-4 group-hover:scale-110 transition">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <h3 className="text-lg font-bold text-white font-display mb-2">Smart Real-Time Analytics</h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Understand views, taps, link clicks, devices, traffic sources, and peak engagement times with interactive charts.
-            </p>
-          </div>
+          {/* Plan 3: Teams & Enterprise */}
+          <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-8 flex flex-col justify-between backdrop-blur-xl shadow-xl hover:border-white/20 transition-all">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-white font-display">Teams & Business</h3>
+                <p className="text-xs text-slate-400 mt-1">For organizations and high-growth teams</p>
+              </div>
 
-          {/* Feature 4 */}
-          <div className="bg-[#0d1322] border border-slate-800/90 rounded-2xl p-6 shadow-xl hover:border-amber-500/30 transition group">
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 w-fit mb-4 group-hover:scale-110 transition">
-              <QrCode className="w-5 h-5" />
-            </div>
-            <h3 className="text-lg font-bold text-white font-display mb-2">Dynamic QR Studio</h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Generate customizable high-resolution QR codes in PNG and SVG with logos, frames, and printable sheets for events and tables.
-            </p>
-          </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl sm:text-5xl font-black text-white font-display">$99</span>
+                <span className="text-sm text-slate-400 font-medium">/ year</span>
+              </div>
 
-          {/* Feature 5 */}
-          <div className="bg-[#0d1322] border border-slate-800/90 rounded-2xl p-6 shadow-xl hover:border-sky-500/30 transition group">
-            <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 w-fit mb-4 group-hover:scale-110 transition">
-              <Users className="w-5 h-5" />
+              <ul className="space-y-3.5 text-sm text-slate-300 border-t border-white/[0.08] pt-6">
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>5x Physical TapIt NFC Smart Cards</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Centralized Admin & Team Directory</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Organization-wide Analytics Telemetry</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Custom Branded Card Batch Generation</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Priority 24/7 Dedicated Support</span>
+                </li>
+              </ul>
             </div>
-            <h3 className="text-lg font-bold text-white font-display mb-2">Multiple Digital Profiles</h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Separate your Professional, Personal, Creator, and Business identities under one unified account and switch seamlessly.
-            </p>
-          </div>
 
-          {/* Feature 6 */}
-          <div className="bg-[#0d1322] border border-slate-800/90 rounded-2xl p-6 shadow-xl hover:border-rose-500/30 transition group">
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 w-fit mb-4 group-hover:scale-110 transition">
-              <CreditCard className="w-5 h-5" />
+            <div className="pt-8">
+              <Link to="/register" className="block">
+                <button className="w-full py-3 px-6 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm border border-slate-700/80 hover:border-cyan-400/50 transition-all shadow-md">
+                  Contact Sales & Teams
+                </button>
+              </Link>
             </div>
-            <h3 className="text-lg font-bold text-white font-display mb-2">Smart Card Management</h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Activate, reassign, or instantly disable lost physical NFC cards to safeguard your contact details and identity in seconds.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA BANNER */}
-      <section className="py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl p-8 sm:p-12 bg-gradient-to-r from-cyan-950 via-slate-900 to-purple-950 border border-cyan-500/30 shadow-2xl overflow-hidden text-center space-y-6">
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display">
-            Ready to Upgrade How You Network?
-          </h2>
-          <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
-            Join thousands of professionals, developers, and creators who share their digital presence with TapIt.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/register">
-              <Button variant="glow" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Get Started for Free
-              </Button>
-            </Link>
-            <Link to="/dashboard">
-              <Button variant="secondary" size="lg">
-                Explore Demo Dashboard
-              </Button>
-            </Link>
           </div>
         </div>
       </section>

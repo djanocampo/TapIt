@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NFCCard, Profile } from '../../types';
-import { Radio, Wifi, ShieldCheck, CheckCircle2, AlertCircle, ArrowUpRight, Cpu } from 'lucide-react';
+import { Radio, Wifi, ShieldCheck, CheckCircle2, AlertCircle, ArrowUpRight, Cpu, Layers } from 'lucide-react';
 import { formatNumber } from '../../lib/utils';
+import tapItLogo from '../../assets/tapit-logo.png';
 
 interface NFCCardPreviewProps {
   card: NFCCard;
@@ -18,130 +19,230 @@ export const NFCCardPreview: React.FC<NFCCardPreviewProps> = ({
   onTapSimulate,
   interactive = true,
 }) => {
-  // Material themes
-  const materialStyles = {
-    'matte-black': 'bg-gradient-to-tr from-[#0b0c10] via-[#16181f] to-[#0f1118] text-slate-100 border-slate-700/60 shadow-2xl',
-    'cyber-cyan': 'bg-gradient-to-tr from-[#041d24] via-[#083344] to-[#0e4e5f] text-cyan-50 border-cyan-500/50 shadow-glow-cyan',
-    'gold-metal': 'bg-gradient-to-tr from-[#1f1606] via-[#382b0f] to-[#594212] text-amber-100 border-amber-500/50 shadow-2xl',
-    'aurora-violet': 'bg-gradient-to-tr from-[#130722] via-[#2a0e4a] to-[#451368] text-purple-100 border-purple-500/50 shadow-glow-purple',
-    'white-ceramic': 'bg-gradient-to-tr from-[#f1f5f9] via-[#e2e8f0] to-[#cbd5e1] text-slate-900 border-white/80 shadow-2xl',
-  };
+  const [isFlipped, setIsFlipped] = useState(false);
 
-  const isLight = card.material === 'white-ceramic';
+  // Normalize material: strictly Matte Black or Pure White (Ceramic)
+  const isWhite = card.material === 'white-ceramic';
 
   return (
-    <div className="relative group">
-      {/* 3D Physical Card Body */}
+    <div className="space-y-4">
+      {/* 3D Physical Card Face (Identical to Landing Page Hero Card) */}
       <div
-        className={`relative w-full aspect-[1.586/1] rounded-2xl p-5 sm:p-6 border overflow-hidden transition-all duration-300 ${
-          materialStyles[card.material] || materialStyles['matte-black']
-        } ${interactive ? 'hover:-translate-y-1 hover:shadow-2xl' : ''}`}
+        className="relative w-full aspect-[1.586/1] perspective-1000 select-none group cursor-pointer"
+        onClick={() => setIsFlipped(!isFlipped)}
+        title="Click to flip card"
       >
-        {/* NFC Ripple Wave overlay */}
-        <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute -right-12 -top-12 w-44 h-44 rounded-full border border-white/10 pointer-events-none" />
-        <div className="absolute -right-16 -top-16 w-52 h-52 rounded-full border border-white/5 pointer-events-none" />
+        <div
+          className={`relative w-full h-full rounded-2xl sm:rounded-3xl border transition-all duration-500 transform-style-3d shadow-2xl ${
+            isFlipped ? 'rotate-y-180' : ''
+          } ${
+            isWhite
+              ? 'bg-gradient-to-tr from-[#ffffff] via-[#f8fafc] to-[#e8edf5] border-white/80 shadow-[0_20px_40px_-15px_rgba(255,255,255,0.15)] text-slate-900'
+              : 'bg-gradient-to-tr from-[#05070c] via-[#0d1017] to-[#161a24] border-slate-800/90 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.9),0_0_20px_rgba(6,182,212,0.15)] text-slate-100'
+          }`}
+        >
+          {/* ======================= FRONT FACE ======================= */}
+          <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-between backface-hidden rounded-2xl sm:rounded-3xl overflow-hidden">
+            {/* Holographic Sheen Layer */}
+            <div className="absolute inset-0 holo-sheen pointer-events-none opacity-35" />
 
-        {/* Top bar: Chip + NFC Icon + Status */}
-        <div className="flex items-start justify-between relative z-10">
-          <div className="flex items-center gap-3">
-            {/* NFC Microchip visual */}
-            <div className={`w-10 h-8 rounded-lg border flex items-center justify-center p-1 relative overflow-hidden ${
-              isLight ? 'bg-amber-100/80 border-amber-400 text-amber-800' : 'bg-amber-400/10 border-amber-400/40 text-amber-300'
-            }`}>
-              <div className="w-full h-full border border-current opacity-40 rounded grid grid-cols-2 gap-0.5 p-0.5">
-                <div className="border-r border-b border-current"></div>
-                <div className="border-b border-current"></div>
-                <div className="border-r border-current"></div>
-                <div></div>
+            {/* Ambient Corner Highlight */}
+            <div
+              className={`absolute -top-12 -right-12 w-32 h-32 rounded-full blur-xl pointer-events-none ${
+                isWhite ? 'bg-cyan-500/10' : 'bg-cyan-500/15'
+              }`}
+            />
+
+            {/* Top Bar: Contactless Wave + Status Pill */}
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`p-1.5 rounded-xl border flex items-center justify-center ${
+                    isWhite
+                      ? 'bg-black/5 border-black/10 text-slate-800'
+                      : 'bg-white/5 border-white/10 text-cyan-400'
+                  }`}
+                >
+                  <Wifi className="w-4 h-4 rotate-90" />
+                </div>
+                <span
+                  className={`text-[10px] font-mono uppercase tracking-widest font-bold ${
+                    isWhite ? 'text-slate-600' : 'text-slate-400'
+                  }`}
+                >
+                  NFC SMART CARD
+                </span>
+              </div>
+
+              <div>
+                {card.status === 'active' && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Active
+                  </span>
+                )}
+                {card.status === 'unclaimed' && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                    Unclaimed
+                  </span>
+                )}
+                {card.status === 'disabled' && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                    Disabled
+                  </span>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
-              <Wifi className={`w-5 h-5 rotate-90 ${isLight ? 'text-slate-700' : 'text-cyan-400'}`} />
-              <span className={`text-[10px] font-mono uppercase tracking-widest font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                NFC
-              </span>
+            {/* CENTER: Prominent Official Transparent TapIt Logo */}
+            <div className="relative z-10 my-auto flex items-center justify-center p-2">
+              <img
+                src={tapItLogo}
+                alt="TapIt Logo"
+                className={`max-h-12 sm:max-h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105 ${
+                  isWhite
+                    ? 'drop-shadow-[0_6px_12px_rgba(0,0,0,0.2)]'
+                    : 'drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]'
+                }`}
+              />
+            </div>
+
+            {/* Bottom Bar: Hardware Token and Card Material Name */}
+            <div className="flex items-end justify-between relative z-10 pt-2 border-t border-white/10">
+              <div>
+                <p
+                  className={`text-[10px] uppercase tracking-wider font-semibold ${
+                    isWhite ? 'text-slate-500' : 'text-slate-400'
+                  }`}
+                >
+                  Hardware Finish
+                </p>
+                <p
+                  className={`text-xs font-bold font-display ${
+                    isWhite ? 'text-slate-900' : 'text-white'
+                  }`}
+                >
+                  {isWhite ? 'Pure White Ceramic' : 'Matte Black Obsidian'}
+                </p>
+              </div>
+
+              <div className="text-right">
+                <p
+                  className={`text-[10px] uppercase tracking-wider font-semibold ${
+                    isWhite ? 'text-slate-500' : 'text-slate-400'
+                  }`}
+                >
+                  Dynamic Token
+                </p>
+                <p
+                  className={`text-xs font-mono font-bold ${
+                    isWhite ? 'text-cyan-700' : 'text-cyan-300'
+                  }`}
+                >
+                  {card.cardToken}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Status Badge */}
-          <div>
-            {card.status === 'active' && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Active
-              </span>
-            )}
-            {card.status === 'unclaimed' && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full">
-                Unclaimed
-              </span>
-            )}
-            {card.status === 'disabled' && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40 px-2 py-0.5 rounded-full">
-                Disabled
-              </span>
-            )}
-          </div>
-        </div>
+          {/* ======================= BACK FACE ======================= */}
+          <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-between backface-hidden rotate-y-180 rounded-2xl sm:rounded-3xl overflow-hidden">
+            {/* Holographic Sheen Layer */}
+            <div className="absolute inset-0 holo-sheen pointer-events-none opacity-35" />
 
-        {/* Middle: Brand Tag & Token */}
-        <div className="my-auto pt-4 relative z-10">
-          <p className={`text-xs font-mono font-bold tracking-wider ${isLight ? 'text-slate-500' : 'text-cyan-400/90'}`}>
-            ID: tapit.app/t/{card.cardToken}
-          </p>
-          <h3 className={`text-base sm:text-lg font-extrabold truncate mt-0.5 font-display ${isLight ? 'text-slate-900' : 'text-white'}`}>
-            {card.name}
-          </h3>
-        </div>
+            <div className="flex items-center justify-between relative z-10">
+              <span
+                className={`text-[10px] font-mono uppercase tracking-widest font-bold ${
+                  isWhite ? 'text-slate-600' : 'text-slate-400'
+                }`}
+              >
+                TapIt Contactless Identity
+              </span>
+              <span
+                className={`text-[10px] font-bold ${
+                  isWhite ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
+                Tap anywhere to connect
+              </span>
+            </div>
 
-        {/* Bottom Bar: Assigned Profile & Total Taps */}
-        <div className="flex items-end justify-between pt-4 relative z-10 border-t border-white/10">
-          <div>
-            <span className={`text-[10px] uppercase tracking-wider block font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              Assigned Profile
-            </span>
-            <p className={`text-xs sm:text-sm font-bold truncate max-w-[160px] ${isLight ? 'text-slate-800' : 'text-white'}`}>
-              {profile ? `💼 ${profile.name}` : 'Unassigned'}
-            </p>
-          </div>
+            {/* Center Logo on Back */}
+            <div className="relative z-10 my-auto flex items-center justify-center p-2 opacity-90">
+              <img
+                src={tapItLogo}
+                alt="TapIt Logo"
+                className={`max-h-10 sm:max-h-14 w-auto object-contain ${
+                  isWhite
+                    ? 'drop-shadow-[0_4px_8px_rgba(0,0,0,0.15)]'
+                    : 'drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)]'
+                }`}
+              />
+            </div>
 
-          <div className="text-right">
-            <span className={`text-[10px] uppercase tracking-wider block font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              Total Taps
-            </span>
-            <p className={`text-sm sm:text-base font-extrabold font-mono ${isLight ? 'text-slate-950' : 'text-cyan-300'}`}>
-              {formatNumber(card.taps)}
-            </p>
+            <div className="text-center relative z-10 text-[11px] font-mono opacity-75">
+              tapit.app/t/{card.cardToken}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Action Strip */}
-      {interactive && (
-        <div className="mt-3 flex items-center justify-between gap-2 px-1">
-          {onTapSimulate && (
-            <button
-              onClick={onTapSimulate}
-              className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 border border-cyan-500/30 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5"
-            >
-              <Radio className="w-3.5 h-3.5 animate-pulse" />
-              <span>Simulate Tap</span>
-            </button>
-          )}
+      {/* Card Info Details (Assigned Profile & Total Taps) */}
+      <div className="p-4 rounded-2xl bg-[#050c18] border border-white/[0.06] space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+              Assigned Persona
+            </span>
+            <span className="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
+              {profile ? (
+                <>
+                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{profile.name} ({profile.displayName})</span>
+                </>
+              ) : (
+                <span className="text-slate-500 font-normal">Unassigned</span>
+              )}
+            </span>
+          </div>
 
-          {onManage && (
-            <button
-              onClick={onManage}
-              className="text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition flex items-center gap-1 ml-auto"
-            >
-              <span>Manage Card</span>
-              <ArrowUpRight className="w-3 h-3" />
-            </button>
-          )}
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+              Total Tap Volume
+            </span>
+            <span className="text-sm font-mono font-bold text-cyan-300 mt-0.5 block">
+              {formatNumber(card.taps)} taps
+            </span>
+          </div>
         </div>
-      )}
+
+        {/* Action Buttons */}
+        {interactive && (
+          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+            {onTapSimulate && (
+              <button
+                type="button"
+                onClick={onTapSimulate}
+                className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 border border-cyan-500/30 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5"
+              >
+                <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                <span>Simulate Tap</span>
+              </button>
+            )}
+
+            {onManage && (
+              <button
+                type="button"
+                onClick={onManage}
+                className="text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition flex items-center gap-1 ml-auto"
+              >
+                <span>Reassign Profile</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

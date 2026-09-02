@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Github, Twitter, Linkedin, Heart, Zap, Shield, Sparkles } from 'lucide-react';
+import { Github, Twitter, Linkedin, Heart, Zap, Shield, Sparkles } from 'lucide-react';
+import tapItLogo from '../../assets/tapit-logo.png';
 
 export const Footer: React.FC = () => {
   return (
@@ -10,12 +11,7 @@ export const Footer: React.FC = () => {
           {/* Brand Col */}
           <div className="md:col-span-2 space-y-4">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-0.5">
-                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                  <Radio className="w-4 h-4 text-cyan-400" />
-                </div>
-              </div>
-              <span className="text-xl font-extrabold text-white font-display">TapIt</span>
+              <img src={tapItLogo} alt="TapIt" className="h-8 w-auto object-contain" />
             </Link>
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               Smart NFC digital identity and dynamic link management platform. Seamlessly connect physical cards, QR codes, and profiles with live analytics telemetry.
@@ -46,7 +42,7 @@ export const Footer: React.FC = () => {
               <li><Link to="/dashboard/profiles" className="hover:text-cyan-400 transition">Profile Manager</Link></li>
               <li><Link to="/dashboard/cards" className="hover:text-cyan-400 transition">NFC Cards</Link></li>
               <li><Link to="/dashboard/analytics" className="hover:text-cyan-400 transition">Deep Analytics</Link></li>
-              <li><Link to="/admin" className="hover:text-purple-400 transition flex items-center gap-1"><Shield className="w-3 h-3" /> Admin Suite</Link></li>
+              <li><Link to="/admin" className="hover:text-cyan-400 transition flex items-center gap-1"><Shield className="w-3 h-3" /> Admin Suite</Link></li>
             </ul>
           </div>
 
@@ -71,8 +67,8 @@ export const Footer: React.FC = () => {
               Built for <strong className="text-slate-200">Djan Ocampo</strong>
             </span>
             <span>•</span>
-            <span className="text-emerald-400 flex items-center gap-1 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block"></span>
+            <span className="text-cyan-400 flex items-center gap-1 font-medium">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping inline-block"></span>
               Systems Operational
             </span>
           </div>
