@@ -680,11 +680,26 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const getInviteByToken = (inviteToken: string) => {
-    return invites.find(inv => inv.inviteToken.toLowerCase() === inviteToken.toLowerCase() || inv.id === inviteToken);
+    if (!inviteToken) return undefined;
+    const clean = inviteToken.trim();
+    const cleanUpper = clean.toUpperCase();
+    const tokenWithoutPrefix = cleanUpper.startsWith('INV-') ? cleanUpper.replace(/^INV-/, '') : cleanUpper;
+    const tokenWithPrefix = cleanUpper.startsWith('INV-') ? cleanUpper : `INV-${cleanUpper}`;
+
+    return invites.find(inv => {
+      const invTokenUpper = (inv.inviteToken || '').toUpperCase();
+      return (
+        invTokenUpper === cleanUpper ||
+        invTokenUpper === tokenWithPrefix ||
+        invTokenUpper === tokenWithoutPrefix ||
+        inv.id === clean ||
+        inv.id === cleanUpper
+      );
+    });
   };
 
   const completeInviteRegistration = (inviteToken: string, data: { name: string; username: string; email: string; password?: string }) => {
-    const invite = invites.find(inv => inv.inviteToken.toLowerCase() === inviteToken.toLowerCase() || inv.id === inviteToken);
+    const invite = getInviteByToken(inviteToken);
     if (!invite) {
       return { success: false, message: 'Invalid or expired invitation link.' };
     }

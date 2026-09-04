@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { PublicProfileRenderer } from '../../components/profile/PublicProfileRenderer';
 import { ShareProfileModal } from '../../components/profile/ShareProfileModal';
@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/Button';
 export const PublicProfilePage: React.FC = () => {
   const { username, profileSlug } = useParams<{ username?: string; profileSlug?: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const source = searchParams.get('src') || 'direct';
 
   const { profiles, links, recordLinkClick, logAnalyticsEvent } = useTapIt();
@@ -17,6 +18,15 @@ export const PublicProfilePage: React.FC = () => {
   // Normalize username query (remove @ if present)
   const rawIdentifier = (profileSlug || username || '').trim();
   const cleanUsername = rawIdentifier.replace(/^@/, '').toLowerCase();
+
+  // Redirect if an invite or tap token was hit on root slug
+  useEffect(() => {
+    if (cleanUsername.startsWith('inv-')) {
+      navigate(`/invite/${rawIdentifier}`, { replace: true });
+    } else if (cleanUsername.startsWith('tap-')) {
+      navigate(`/t/${rawIdentifier}`, { replace: true });
+    }
+  }, [cleanUsername, rawIdentifier, navigate]);
 
   // Match profile by slug, name, or default to active/first profile
   const targetProfile = 
