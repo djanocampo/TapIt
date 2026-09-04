@@ -757,8 +757,10 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Link pre-bound physical card
     setCards(prev => {
+      let found = false;
       const updated = prev.map(c => {
         if (c.cardToken.toLowerCase() === invite.cardToken.toLowerCase()) {
+          found = true;
           return {
             ...c,
             userId: newUserId,
@@ -770,6 +772,24 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
         return c;
       });
+
+      if (!found) {
+        const newCard: NFCCard = {
+          id: `crd_${Date.now()}`,
+          cardToken: invite.cardToken,
+          userId: newUserId,
+          profileId: newProfileId,
+          name: `${data.name.trim()}'s Smart Card`,
+          material: invite.material || 'matte-black',
+          status: 'active',
+          taps: 0,
+          uniqueTappers: 0,
+          createdAt: new Date().toISOString(),
+          activatedAt: new Date().toISOString(),
+        };
+        updated.unshift(newCard);
+      }
+
       void syncCardsToSupabase(updated);
       return updated;
     });
@@ -793,7 +813,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     setInvites(prev => {
-      const updated = prev.map(inv => inv.id === invite.id ? { ...inv, isUsed: true, usedByUserId: newUserId } : inv);
+      const updated = prev.map(inv => (inv.id === invite.id || inv.inviteToken.toLowerCase() === invite.inviteToken.toLowerCase()) ? { ...inv, isUsed: true, usedByUserId: newUserId } : inv);
       void syncInvitesToSupabase(updated);
       return updated;
     });

@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTapIt } from '../../store';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { getClientDeviceInfo } from '../../lib/utils';
 import { Radio, Smartphone, CheckCircle2, AlertTriangle, HelpCircle, HandMetal, ShieldCheck, ArrowRight, LayoutDashboard } from 'lucide-react';
 import { UnclaimedCardPage } from './UnclaimedCardPage';
 import { DisabledCardPage } from './DisabledCardPage';
@@ -9,77 +11,161 @@ import { Button } from '../../components/ui/Button';
 export const NFCTapHandler: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { cards, recordCardTap, profiles } = useTapIt();
+  const { cards, recordCardTap, profiles, logAnalyticsEvent } = useTapIt();
 
   const [status, setStatus] = useState<'resolving' | 'active' | 'unclaimed' | 'disabled' | 'not_found' | 'cooldown'>('resolving');
   const [targetSlug, setTargetSlug] = useState<string>('');
   const [profileName, setProfileName] = useState<string>('');
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
   useEffect(() => {
-    if (!token) {
-      setStatus('not_found');
-      return;
-    }
+    let isMounted = true;
 
-    const cleanToken = token.trim();
-    const result = recordCardTap(cleanToken);
+    async function resolveTag() {
+      if (!token) {
+        if (isMounted) setStatus('not_found');
+        return;
+      }
 
-    // Check if tag was just written in this browser session (cooldown active)
-    let isUnderCooldown = false;
-    let remainingCooldown = 0;
-    if (typeof sessionStorage !== 'undefined') {
-      const cooldownUntilStr = sessionStorage.getItem('tapit_nfc_cooldown_until');
-      if (cooldownUntilStr) {
-        const cooldownUntil = parseInt(cooldownUntilStr, 10);
-        const diff = cooldownUntil - Date.now();
-        if (diff > 0) {
-          isUnderCooldown = true;
-          remainingCooldown = Math.ceil(diff / 1000);
+      const cleanToken = token.trim();
+
+      // Check if tag was just written in this browser session (3-second cooldown active)
+      let isUnderCooldown = false;
+      let remainingCooldown = 0;
+      if (typeof sessionStorage !== 'undefined') {
+        const cooldownUntilStr = sessionStorage.getItem('tapit_nfc_cooldown_until');
+        if (cooldownUntilStr) {
+          const cooldownUntil = parseInt(cooldownUntilStr, 10);
+          const diff = cooldownUntil - Date.now();
+          if (diff > 0) {
+            isUnderCooldown = true;
+            remainingCooldown = Math.ceil(diff / 1000);
+          }
         }
       }
-    }
 
-    if (result.status === 'active') {
-      const assignedProfile = result.profile || profiles.find(p => p.id === result.card?.profileId) || profiles[0];
-      const slug = assignedProfile?.slug || 'djan';
-      setTargetSlug(slug);
-      setProfileName(assignedProfile?.displayName || assignedProfile?.name || 'Profile');
+      // 1. Try resolving via local store
+      const localResult = recordCardTap(cleanToken);
+      if (localResult.status === 'active' && localResult.profile) {
+        if (!isMounted) return;
+        const slug = localResult.profile.slug || 'djan';
+        setTargetSlug(slug);
+        setProfileName(localResult.profile.displayName || localResult.profile.name || 'Profile');
 
-      if (isUnderCooldown && remainingCooldown > 0) {
-        setStatus('cooldown');
-        setCooldownSeconds(remainingCooldown);
-
-        let count = remainingCooldown;
-        const interval = setInterval(() => {
-          count -= 1;
-          setCooldownSeconds(count);
-          if (count <= 0) {
-            clearInterval(interval);
-            navigate(`/@${slug}?src=nfc`, { replace: true });
-          }
-        }, 1000);
-
-        return () => clearInterval(interval);
-      } else {
-        setStatus('active');
-        // Smooth transition to public profile with NFC source tag
-        const timer = setTimeout(() => {
-          navigate(`/@${slug}?src=nfc`, { replace: true });
-        }, 900);
-
-        return () => clearTimeout(timer);
+        if (isUnderCooldown && remainingCooldown > 0) {
+          setStatus('cooldown');
+          setCooldownSeconds(remainingCooldown);
+          let count = remainingCooldown;
+          const interval = setInterval(() => {
+            count -= 1;
+            setCooldownSeconds(count);
+            if (count <= 0) {
+              clearInterval(interval);
+              navigate(`/@${slug}?src=nfc`, { replace: true });
+            }
+          }, 1000);
+          return;
+        } else {
+          setStatus('active');
+          setTimeout(() => {
+            if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+          }, 800);
+          return;
+        }
       }
-    } else if (result.status === 'unclaimed') {
-      setStatus('unclaimed');
-    } else if (result.status === 'disabled' || result.status === 'suspended') {
-      setStatus('disabled');
-    } else {
-      setStatus('not_found');
+
+      // 2. Query Supabase remote database (vital for public visitors and cross-device taps)
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: dbCard, error } = await supabase
+            .from('nfc_cards')
+            .select('*, profiles(*)')
+            .ilike('card_token', cleanToken)
+            .limit(1)
+            .maybeSingle();
+
+          if (!error && dbCard && isMounted) {
+            if (dbCard.status === 'active' && dbCard.profiles) {
+              const prof = Array.isArray(dbCard.profiles) ? dbCard.profiles[0] : dbCard.profiles;
+              const slug = prof?.slug || 'djan';
+              const name = prof?.display_name || prof?.name || 'Profile';
+
+              setTargetSlug(slug);
+              setProfileName(name);
+
+              // Log remote tap event
+              const client = getClientDeviceInfo();
+              void supabase.from('analytics_events').insert({
+                id: `evt_${Date.now()}`,
+                profile_id: prof?.id,
+                card_id: dbCard.id,
+                event_type: 'nfc_tap',
+                traffic_source: 'nfc',
+                device_type: client.deviceType,
+                browser: client.browser,
+                os: client.os,
+                country: 'Philippines',
+                city: 'Manila',
+                timestamp: new Date().toISOString(),
+              });
+
+              // Increment taps
+              void supabase.from('nfc_cards').update({
+                taps: (dbCard.taps || 0) + 1,
+                last_tapped_at: new Date().toISOString(),
+              }).eq('id', dbCard.id);
+
+              if (isUnderCooldown && remainingCooldown > 0) {
+                setStatus('cooldown');
+                setCooldownSeconds(remainingCooldown);
+                let count = remainingCooldown;
+                const interval = setInterval(() => {
+                  count -= 1;
+                  setCooldownSeconds(count);
+                  if (count <= 0) {
+                    clearInterval(interval);
+                    navigate(`/@${slug}?src=nfc`, { replace: true });
+                  }
+                }, 1000);
+                return;
+              } else {
+                setStatus('active');
+                setTimeout(() => {
+                  if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+                }, 800);
+                return;
+              }
+            } else if (dbCard.status === 'disabled' || dbCard.status === 'suspended') {
+              setStatus('disabled');
+              return;
+            } else if (dbCard.status === 'unclaimed') {
+              setStatus('unclaimed');
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('Error resolving NFC card remotely:', err);
+        }
+      }
+
+      if (!isMounted) return;
+
+      // 3. Fallback evaluation
+      if (localResult.status === 'unclaimed') {
+        setStatus('unclaimed');
+      } else if (localResult.status === 'disabled') {
+        setStatus('disabled');
+      } else {
+        setStatus('not_found');
+      }
     }
-  }, [token, navigate, profiles, recordCardTap]);
+
+    resolveTag();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token, navigate, profiles, cards, recordCardTap]);
 
   if (status === 'unclaimed') {
     return <UnclaimedCardPage cardToken={token || ''} />;

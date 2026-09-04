@@ -112,3 +112,36 @@ export function copyToClipboard(text: string): Promise<boolean> {
     return Promise.resolve(successful);
   }
 }
+
+export function getClientDeviceInfo(): {
+  deviceType: 'mobile' | 'tablet' | 'desktop';
+  os: 'iOS' | 'Android' | 'Windows' | 'macOS' | 'Linux';
+  browser: 'Chrome' | 'Safari' | 'Firefox' | 'Edge' | 'Other';
+} {
+  if (typeof window === 'undefined') {
+    return { deviceType: 'desktop', os: 'Windows', browser: 'Chrome' };
+  }
+  const ua = navigator.userAgent;
+  let deviceType: 'mobile' | 'tablet' | 'desktop' = 'desktop';
+  let os: 'iOS' | 'Android' | 'Windows' | 'macOS' | 'Linux' = 'Windows';
+  let browser: 'Chrome' | 'Safari' | 'Firefox' | 'Edge' | 'Other' = 'Chrome';
+
+  if (/tablet|ipad|playbook|silk/i.test(ua)) {
+    deviceType = 'tablet';
+  } else if (/mobile|iphone|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua)) {
+    deviceType = 'mobile';
+  }
+
+  if (/iphone|ipad|ipod/i.test(ua)) os = 'iOS';
+  else if (/android/i.test(ua)) os = 'Android';
+  else if (/macintosh|mac\sos\sx/i.test(ua)) os = 'macOS';
+  else if (/windows/i.test(ua)) os = 'Windows';
+  else if (/linux/i.test(ua)) os = 'Linux';
+
+  if (/edg/i.test(ua)) browser = 'Edge';
+  else if (/chrome|crios/i.test(ua)) browser = 'Chrome';
+  else if (/firefox|fxios/i.test(ua)) browser = 'Firefox';
+  else if (/safari/i.test(ua) && !/chrome/i.test(ua)) browser = 'Safari';
+
+  return { deviceType, os, browser };
+}
