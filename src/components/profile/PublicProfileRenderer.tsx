@@ -28,8 +28,10 @@ import {
   MessageSquare,
   MessageCircle,
   Send,
-  Link2
+  Link2,
+  LogIn
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { downloadVCard } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { THEME_PRESETS } from '../../data/themes';
@@ -314,6 +316,24 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
               <Music className="w-4 h-4" />
             </a>
           )}
+        </div>
+      )}
+
+      {/* User Log in Button */}
+      {!isEmbed && (
+        <div className="mt-5 w-full">
+          <Link
+            to="/login"
+            className={`w-full py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-bold transition duration-200 border ${getButtonShapeClass()} hover:opacity-90 active:scale-[0.99] shadow-sm`}
+            style={{
+              backgroundColor: theme.badgeBg || 'rgba(6, 182, 212, 0.15)',
+              borderColor: theme.cardBorder || 'rgba(255, 255, 255, 0.1)',
+              color: theme.textColor || '#ffffff',
+            }}
+          >
+            <LogIn className="w-3.5 h-3.5" style={{ color: theme.accentColor }} />
+            <span>User Log in</span>
+          </Link>
         </div>
       )}
 

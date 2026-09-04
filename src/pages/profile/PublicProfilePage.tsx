@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useTapIt } from '../../store';
 import { PublicProfileRenderer } from '../../components/profile/PublicProfileRenderer';
 import { ShareProfileModal } from '../../components/profile/ShareProfileModal';
-import { Radio, ArrowLeft, LayoutDashboard, Share2, Sparkles } from 'lucide-react';
+import { Radio } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
@@ -138,39 +138,14 @@ export const PublicProfilePage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-between p-3 sm:p-6 transition-colors"
+      className="min-h-screen flex flex-col items-center justify-center p-3 sm:p-6 transition-colors"
       style={{
         backgroundColor: targetProfile.theme.bgColor,
         backgroundImage: targetProfile.theme.bgGradient,
       }}
     >
-      {/* Top Floating Mini-Nav */}
-      <div className="w-full max-w-md flex items-center justify-between py-2 px-3 mb-2 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-xs">
-        <Link to="/" className="flex items-center gap-1.5 font-bold text-white hover:text-cyan-400 transition">
-          <Radio className="w-3.5 h-3.5 text-cyan-400" />
-          <span>TapIt</span>
-        </Link>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsShareOpen(true)}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-1 text-[11px] font-semibold"
-          >
-            <Share2 className="w-3 h-3" />
-            <span className="hidden sm:inline">Share</span>
-          </button>
-          <Link
-            to="/dashboard"
-            className="p-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 transition flex items-center gap-1 text-[11px] font-semibold border border-cyan-500/30"
-          >
-            <LayoutDashboard className="w-3 h-3" />
-            <span>Dashboard</span>
-          </Link>
-        </div>
-      </div>
-
       {/* Main Public Profile Content */}
-      <div className="w-full flex-1 flex items-center justify-center">
+      <div className="w-full max-w-md flex-1 flex items-center justify-center">
         <PublicProfileRenderer
           profile={targetProfile}
           links={activeLinks}
