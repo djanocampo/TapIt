@@ -362,33 +362,46 @@ export async function deleteSupabaseUser(userId: string): Promise<void> {
 export async function syncProfilesToSupabase(profiles: Profile[]): Promise<void> {
   if (!isSupabaseConfigured() || profiles.length === 0) return;
   try {
-    const rows = profiles.map(mapProfileToDB);
-    await supabase.from('profiles').upsert(rows, { onConflict: 'id' });
+    // Filter out mock profiles whose user_id is not in database to avoid foreign key violations
+    const validProfiles = profiles.filter(p => p.id && !p.id.startsWith('prof_00') && p.userId && !p.userId.startsWith('usr_00'));
+    if (validProfiles.length === 0) return;
+    const rows = validProfiles.map(mapProfileToDB);
+    const { error } = await supabase.from('profiles').upsert(rows, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Batch Push] Profiles sync error:', error.message, error.details);
+    }
   } catch (e) {
-    console.warn('[Supabase Batch Push] Profiles sync error:', e);
+    console.error('[Supabase Batch Push] Profiles sync exception:', e);
   }
 }
 
 export async function syncLinksToSupabase(links: LinkItem[]): Promise<void> {
   if (!isSupabaseConfigured() || links.length === 0) return;
   try {
-    const rows = links.map(mapLinkToDB);
-    await supabase.from('links').upsert(rows, { onConflict: 'id' });
+    const validLinks = links.filter(l => l.id && !l.id.startsWith('lnk_00') && l.profileId && !l.profileId.startsWith('prof_00'));
+    if (validLinks.length === 0) return;
+    const rows = validLinks.map(mapLinkToDB);
+    const { error } = await supabase.from('links').upsert(rows, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Batch Push] Links sync error:', error.message, error.details);
+    }
   } catch (e) {
-    console.warn('[Supabase Batch Push] Links sync error:', e);
+    console.error('[Supabase Batch Push] Links sync exception:', e);
   }
 }
 
 export async function syncCardsToSupabase(cards: NFCCard[]): Promise<void> {
   if (!isSupabaseConfigured() || cards.length === 0) return;
   try {
-    const rows = cards.map(mapCardToDB);
+    const validCards = cards.filter(c => c.id && !c.id.startsWith('crd_00'));
+    if (validCards.length === 0) return;
+    const rows = validCards.map(mapCardToDB);
     const { error } = await supabase.from('nfc_cards').upsert(rows, { onConflict: 'id' });
     if (error) {
-      console.warn('[Supabase Batch Push] Cards sync error:', error.message);
+      console.error('[Supabase Batch Push] Cards sync error:', error.message);
     }
   } catch (e) {
-    console.warn('[Supabase Batch Push] Cards sync error:', e);
+    console.error('[Supabase Batch Push] Cards sync exception:', e);
   }
 }
 
@@ -673,10 +686,15 @@ export async function syncAnalyticsToSupabase(events: AnalyticsEvent[]): Promise
 export async function syncUsersToSupabase(users: User[]): Promise<void> {
   if (!isSupabaseConfigured() || users.length === 0) return;
   try {
-    const rows = users.map(mapUserToDB);
-    await supabase.from('users').upsert(rows, { onConflict: 'id' });
+    const validUsers = users.filter(u => u.id && !u.id.startsWith('usr_00'));
+    if (validUsers.length === 0) return;
+    const rows = validUsers.map(mapUserToDB);
+    const { error } = await supabase.from('users').upsert(rows, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Batch Push] Users sync error:', error.message, error.details);
+    }
   } catch (e) {
-    console.warn('[Supabase Batch Push] Users sync error:', e);
+    console.error('[Supabase Batch Push] Users sync exception:', e);
   }
 }
 

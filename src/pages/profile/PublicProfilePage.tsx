@@ -44,11 +44,11 @@ export const PublicProfilePage: React.FC = () => {
       )
     : null;
 
-  // If not found locally in memory, query Supabase database directly
+  // Query Supabase database directly for authoritative remote data
   useEffect(() => {
     let isMounted = true;
-    if (!localMatch && cleanUsername && isSupabaseConfigured()) {
-      setIsSearchingRemote(true);
+    if (cleanUsername && isSupabaseConfigured()) {
+      if (!localMatch) setIsSearchingRemote(true);
       (async () => {
         try {
           const { data, error } = await supabase
@@ -84,9 +84,9 @@ export const PublicProfilePage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [cleanUsername, localMatch]);
+  }, [cleanUsername]);
 
-  const targetProfile = localMatch || remoteProfile;
+  const targetProfile = remoteProfile || localMatch;
   const activeLinks = targetProfile
     ? (remoteLinks || allLinks.filter((l) => l.profileId === targetProfile.id))
     : [];

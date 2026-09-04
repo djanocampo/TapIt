@@ -205,7 +205,7 @@ export const ProfileEditorPage: React.FC = () => {
     setIsSaved(false);
   };
 
-  const handleSave = (e?: React.FormEvent) => {
+  const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSaving(true);
 
@@ -215,7 +215,7 @@ export const ProfileEditorPage: React.FC = () => {
         .trim()
         .replace(/[^a-z0-9_-]/g, '');
 
-      updateProfile(targetProfile.id, {
+      const result = await updateProfile(targetProfile.id, {
         name: formData.name || formData.displayName || targetProfile.name,
         displayName: formData.displayName,
         slug: cleanSlug,
@@ -233,6 +233,12 @@ export const ProfileEditorPage: React.FC = () => {
         theme: currentTheme,
       });
 
+      if (result && !result.success) {
+        alert(result.message || 'Failed to save profile changes. Please try again.');
+        setIsSaving(false);
+        return;
+      }
+
       setIsSaved(true);
       triggerConfetti();
 
@@ -243,9 +249,9 @@ export const ProfileEditorPage: React.FC = () => {
       setTimeout(() => {
         setIsSaved(false);
       }, 4000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving profile:', err);
-      alert('Failed to save profile changes. Please try again.');
+      alert('Failed to save profile changes: ' + (err?.message || err));
       setIsSaving(false);
     }
   };

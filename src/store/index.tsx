@@ -95,7 +95,7 @@ interface TapItContextType {
   
   // Profile Actions
   createProfile: (data: Partial<Profile>) => Profile;
-  updateProfile: (id: string, updates: Partial<Profile>) => void;
+  updateProfile: (id: string, updates: Partial<Profile>) => Promise<{ success: boolean; profile?: Profile; message?: string }>;
   deleteProfile: (id: string) => void;
   duplicateProfile: (id: string) => Profile;
   toggleProfileArchive: (id: string) => void;
@@ -398,12 +398,21 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return newProfile;
   };
 
-  const updateProfile = (id: string, updates: Partial<Profile>) => {
+  const updateProfile = async (id: string, updates: Partial<Profile>): Promise<{ success: boolean; profile?: Profile; message?: string }> => {
+    let targetProf: Profile | undefined;
+
     setProfiles(prev => {
       const exists = prev.some(p => p.id === id);
       let updated: Profile[];
       if (exists) {
-        updated = prev.map(p => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p));
+        updated = prev.map(p => {
+          if (p.id === id) {
+            const up = { ...p, ...updates, updatedAt: new Date().toISOString() };
+            targetProf = up;
+            return up;
+          }
+          return p;
+        });
       } else {
         const fallback: Profile = {
           id,
@@ -422,12 +431,27 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           socials: updates.socials || {},
           ...updates,
         };
+        targetProf = fallback;
         updated = [fallback, ...prev];
         setActiveProfileIdState(id);
       }
-      void syncProfilesToSupabase(updated);
       return updated;
     });
+
+    try {
+      localStorage.setItem(`${STORAGE_KEY}_activeProfileId`, JSON.stringify(id));
+    } catch {}
+
+    // Direct single-profile authoritative push to Supabase
+    if (targetProf) {
+      const ok = await upsertSingleProfile(targetProf);
+      if (!ok) {
+        return { success: false, message: 'Could not sync profile to remote database.' };
+      }
+      return { success: true, profile: targetProf };
+    }
+
+    return { success: true };
   };
 
   const deleteProfile = (id: string) => {
