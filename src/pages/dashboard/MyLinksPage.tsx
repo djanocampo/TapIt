@@ -7,6 +7,7 @@ import {
   ExternalLink, 
   MousePointerClick, 
   Briefcase,
+  Facebook,
   Linkedin,
   Github,
   FileText,
@@ -19,6 +20,10 @@ import {
   CreditCard,
   Twitter,
   Globe,
+  Phone,
+  MessageCircle,
+  Send,
+  Video,
   Sparkles,
   BarChart3,
   TrendingUp,
@@ -27,6 +32,7 @@ import {
 import { formatNumber } from '../../lib/utils';
 
 const PRESET_ICONS: Record<string, React.ElementType> = {
+  Facebook,
   Briefcase,
   Linkedin,
   Github,
@@ -40,6 +46,12 @@ const PRESET_ICONS: Record<string, React.ElementType> = {
   CreditCard,
   Calendar,
   Globe,
+  Phone,
+  MessageCircle,
+  Send,
+  Video,
+  Link2,
+  ExternalLink,
 };
 
 export const MyLinksPage: React.FC = () => {

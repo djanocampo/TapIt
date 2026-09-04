@@ -8,7 +8,6 @@ import {
   CreditCard, 
   QrCode, 
   BarChart3, 
-  Palette, 
   Settings, 
   Radio, 
   ExternalLink,
@@ -51,7 +50,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCloseMobil
   };
 
   return (
-    <aside className="w-64 bg-[#050a17] border-r border-white/[0.08] flex flex-col justify-between h-screen sticky top-0 z-40">
+    <aside className="w-64 h-full bg-[#050a17] border-r border-white/[0.08] flex flex-col justify-between select-none">
       {/* Brand Header */}
       <div className="p-5 border-b border-white/[0.08]">
         <Link to="/" className="flex items-center gap-2.5">

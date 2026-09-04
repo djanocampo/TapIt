@@ -38,6 +38,8 @@ export default {
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+        jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
         display: ['Outfit', 'Plus Jakarta Sans', 'sans-serif'],
         script: ['Caveat', 'cursive'],
         mono: ['JetBrains Mono', 'monospace'],

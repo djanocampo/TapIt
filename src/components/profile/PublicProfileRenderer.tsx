@@ -12,6 +12,7 @@ import {
   Radio, 
   CheckCircle2, 
   Sparkles,
+  Facebook,
   Linkedin,
   Github,
   Twitter,
@@ -25,7 +26,9 @@ import {
   Calendar,
   CreditCard,
   MessageSquare,
-  Send
+  MessageCircle,
+  Send,
+  Link2
 } from 'lucide-react';
 import { downloadVCard } from '../../lib/utils';
 import { Button } from '../ui/Button';
@@ -40,6 +43,7 @@ interface PublicProfileRendererProps {
 
 // Icon helper map
 const ICON_MAP: Record<string, React.ElementType> = {
+  Facebook,
   Briefcase,
   Linkedin,
   Github,
@@ -55,8 +59,12 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Video,
   Globe,
   Phone,
+  MessageCircle,
   MessageSquare,
   Send,
+  Link2,
+  Link: Link2,
+  ExternalLink,
 };
 
 export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
@@ -96,10 +104,10 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
       case 'mono':
         return 'font-mono';
       case 'inter':
-        return 'font-sans';
+        return 'font-inter';
       case 'plus-jakarta':
       default:
-        return 'font-sans';
+        return 'font-jakarta';
     }
   };
 

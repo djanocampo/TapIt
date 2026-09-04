@@ -40,27 +40,25 @@ export const DashboardLayout: React.FC = () => {
   const pageInfo = getPageInfo();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#040c1a] text-slate-100 selection:bg-cyan-500 selection:text-black">
-      <div className="flex-1 flex h-screen overflow-hidden">
-        {/* Desktop Sidebar (Hidden on Mobile) */}
-        <div className="hidden md:flex h-full">
-          <DashboardSidebar />
-        </div>
+    <div className="min-h-screen bg-[#040c1a] text-slate-100 selection:bg-cyan-500 selection:text-black">
+      {/* Desktop Fixed Persistent Sidebar (Pinned to Viewport - Does not scroll with page) */}
+      <div className="hidden md:block fixed inset-y-0 left-0 w-64 z-40">
+        <DashboardSidebar />
+      </div>
 
-        {/* Main Workspace Area */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#070a13]">
-          <DashboardHeader
-            title={pageInfo.title}
-            subtitle={pageInfo.subtitle}
-            onOpenMobileMenu={() => {}} // Mobile navigation is now seamlessly managed via MobileBottomNav
-            onOpenShareModal={() => setIsShareModalOpen(true)}
-          />
+      {/* Main Workspace Area (Offset by sidebar width on desktop) */}
+      <div className="md:pl-64 flex flex-col min-h-screen min-w-0 bg-[#070a13]">
+        <DashboardHeader
+          title={pageInfo.title}
+          subtitle={pageInfo.subtitle}
+          onOpenMobileMenu={() => {}} // Mobile navigation is managed via MobileBottomNav
+          onOpenShareModal={() => setIsShareModalOpen(true)}
+        />
 
-          {/* Content with bottom padding for mobile navbar */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
-            <Outlet />
-          </main>
-        </div>
+        {/* Content with bottom padding for mobile navbar */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+          <Outlet />
+        </main>
       </div>
 
       {/* Modern Mobile Bottom Navigation Bar (User Dashboard) */}

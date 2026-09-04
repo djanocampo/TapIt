@@ -213,6 +213,11 @@ export const MyProfilesPage: React.FC = () => {
                       Edit Details
                     </Button>
                   </Link>
+                  <Link to="/dashboard/appearance" onClick={() => setActiveProfileId(profile.id)}>
+                    <Button variant="secondary" size="xs" leftIcon={<Palette className="w-3.5 h-3.5 text-pink-400" />}>
+                      Theme & Style
+                    </Button>
+                  </Link>
                 </div>
 
                 <div className="flex items-center gap-1.5">

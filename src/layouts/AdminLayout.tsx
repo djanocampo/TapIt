@@ -36,47 +36,45 @@ export const AdminLayout: React.FC = () => {
   const pageInfo = getPageInfo();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#040c1a] text-slate-100 selection:bg-cyan-500 selection:text-black">
-      <div className="flex-1 flex h-screen overflow-hidden">
-        {/* Desktop Persistent Sidebar (Hidden on Mobile) */}
-        <div className="hidden md:flex h-full">
-          <AdminSidebar />
-        </div>
+    <div className="min-h-screen bg-[#040c1a] text-slate-100 selection:bg-cyan-500 selection:text-black">
+      {/* Desktop Persistent Fixed Sidebar (Pinned to Viewport - Does not scroll with page) */}
+      <div className="hidden md:block fixed inset-y-0 left-0 w-64 z-40">
+        <AdminSidebar />
+      </div>
 
-        {/* Main Workspace Area */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#070a13]">
-          {/* Header */}
-          <header className="bg-[#050a17]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 lg:px-8 py-3.5 sticky top-0 z-30 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 md:hidden">
-                <ShieldAlert className="w-4 h-4" />
-              </div>
-              <div>
-                <h1 className="text-base sm:text-xl font-bold text-white font-display tracking-tight flex items-center gap-2">
-                  {pageInfo.title}
-                </h1>
-                <p className="text-xs text-slate-400 hidden sm:block">{pageInfo.subtitle}</p>
-              </div>
+      {/* Main Workspace Area (Offset by sidebar width on desktop) */}
+      <div className="md:pl-64 flex flex-col min-h-screen min-w-0 bg-[#070a13]">
+        {/* Header */}
+        <header className="bg-[#050a17]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 lg:px-8 py-3.5 sticky top-0 z-30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 md:hidden">
+              <ShieldAlert className="w-4 h-4" />
             </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsCacheModalOpen(true)}
-                title="Inspect / Clear Local Storage Cache"
-                className="flex items-center gap-1.5 bg-[#081326] border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02]"
-              >
-                <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="font-mono text-[11px] font-bold">{approxKb} KB Cache</span>
-              </button>
+            <div>
+              <h1 className="text-base sm:text-xl font-bold text-white font-display tracking-tight flex items-center gap-2">
+                {pageInfo.title}
+              </h1>
+              <p className="text-xs text-slate-400 hidden sm:block">{pageInfo.subtitle}</p>
             </div>
-          </header>
+          </div>
 
-          {/* Scrollable Content with padding-bottom for mobile bottom nav */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
-            <Outlet />
-          </main>
-        </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsCacheModalOpen(true)}
+              title="Inspect / Clear Local Storage Cache"
+              className="flex items-center gap-1.5 bg-[#081326] border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02]"
+            >
+              <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="font-mono text-[11px] font-bold">{approxKb} KB Cache</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Scrollable Content with padding-bottom for mobile bottom nav */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+          <Outlet />
+        </main>
       </div>
 
       {/* Local Storage Cache Modal */}

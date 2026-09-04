@@ -6,6 +6,8 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Toggle } from '../../components/ui/Toggle';
 import { MobileFramePreview } from '../../components/profile/MobileFramePreview';
+import { ThemeSelector } from '../../components/profile/ThemeSelector';
+import { THEME_PRESETS } from '../../data/themes';
 import { 
   User, 
   MapPin, 
@@ -29,6 +31,8 @@ import {
   GripVertical,
   Link2,
   Layers,
+  Palette,
+  Facebook,
   Linkedin,
   Github,
   Twitter,
@@ -36,29 +40,32 @@ import {
   Youtube,
   Music,
   FileText,
-  Coffee,
-  Calendar,
-  CreditCard,
+  MessageCircle,
+  Send,
+  Video,
   Share2
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
-import { LinkItem, LinkCategory } from '../../types';
+import { LinkItem, LinkCategory, ProfileThemeConfig } from '../../types';
 
 const PRESET_ICONS = [
-  { id: 'Linkedin', label: 'LinkedIn', icon: Linkedin },
-  { id: 'Github', label: 'GitHub', icon: Github },
+  { id: 'Facebook', label: 'Facebook', icon: Facebook },
   { id: 'Instagram', label: 'Instagram', icon: Instagram },
   { id: 'Twitter', label: 'X / Twitter', icon: Twitter },
+  { id: 'Linkedin', label: 'LinkedIn', icon: Linkedin },
+  { id: 'Github', label: 'GitHub', icon: Github },
   { id: 'Youtube', label: 'YouTube', icon: Youtube },
   { id: 'Music', label: 'Spotify', icon: Music },
+  { id: 'MessageCircle', label: 'WhatsApp', icon: MessageCircle },
+  { id: 'Send', label: 'Telegram', icon: Send },
+  { id: 'Video', label: 'Video Call', icon: Video },
   { id: 'Briefcase', label: 'Portfolio', icon: Briefcase },
   { id: 'FileText', label: 'Resume', icon: FileText },
   { id: 'Globe', label: 'Website', icon: Globe },
+  { id: 'Link2', label: 'General Link', icon: Link2 },
+  { id: 'ExternalLink', label: 'Custom URL', icon: ExternalLink },
   { id: 'Mail', label: 'Email', icon: Mail },
   { id: 'Phone', label: 'Phone', icon: Phone },
-  { id: 'Coffee', label: 'Support', icon: Coffee },
-  { id: 'Calendar', label: 'Calendly', icon: Calendar },
-  { id: 'CreditCard', label: 'Store', icon: CreditCard },
 ];
 
 export const ProfileEditorPage: React.FC = () => {
@@ -80,6 +87,7 @@ export const ProfileEditorPage: React.FC = () => {
   // Collapsible cards state
   const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({
     identity: false,
+    theme: false,
     contact: false,
     links: false,
   });
@@ -87,6 +95,11 @@ export const ProfileEditorPage: React.FC = () => {
   const toggleCardCollapse = (cardKey: string) => {
     setCollapsedCards(prev => ({ ...prev, [cardKey]: !prev[cardKey] }));
   };
+
+  // Theme & Appearance State
+  const [currentTheme, setCurrentTheme] = useState<ProfileThemeConfig>(
+    targetProfile.theme || THEME_PRESETS['cyberpunk-neon']
+  );
 
   // Form inputs state
   const [formData, setFormData] = useState({
@@ -122,6 +135,7 @@ export const ProfileEditorPage: React.FC = () => {
 
   useEffect(() => {
     if (targetProfile) {
+      setCurrentTheme(targetProfile.theme || THEME_PRESETS['cyberpunk-neon']);
       setFormData({
         displayName: targetProfile.displayName || '',
         slug: targetProfile.slug || '',
@@ -150,6 +164,23 @@ export const ProfileEditorPage: React.FC = () => {
     });
   };
 
+  const handleSelectTheme = (newTheme: ProfileThemeConfig) => {
+    setCurrentTheme(newTheme);
+    setIsSaved(false);
+    updateProfile(targetProfile.id, { theme: newTheme });
+    triggerConfetti();
+  };
+
+  const handleUpdateStyleOptions = (options: { buttonStyle?: any; fontStyle?: any; accentColor?: string; badgeBg?: string }) => {
+    const updated = {
+      ...currentTheme,
+      ...options,
+    };
+    setCurrentTheme(updated);
+    setIsSaved(false);
+    updateProfile(targetProfile.id, { theme: updated });
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile(targetProfile.id, {
@@ -166,6 +197,7 @@ export const ProfileEditorPage: React.FC = () => {
       showPhone: formData.showPhone,
       location: formData.location,
       website: formData.website,
+      theme: currentTheme,
     });
 
     setIsSaved(true);
@@ -367,7 +399,50 @@ export const ProfileEditorPage: React.FC = () => {
           </div>
 
           {/* ========================================================
-              CARD 2: PROFESSIONAL & CONTACT DETAILS (COLLAPSIBLE)
+              CARD 2: THEME, APPEARANCE & BUTTON STYLING (COLLAPSIBLE)
+              ======================================================== */}
+          <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl shadow-xl overflow-hidden backdrop-blur-xl transition duration-200">
+            {/* Card Header & Collapse Toggle */}
+            <div className="p-5 flex items-center justify-between border-b border-white/[0.06] bg-[#050c18]/60">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-pink-500/20 text-pink-300 border border-pink-400/30">
+                  <Palette className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Theme, Appearance & Styling
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Preset: <span className="text-cyan-400 font-bold">{currentTheme.name}</span> • Button: <span className="text-slate-200 font-bold capitalize">{currentTheme.buttonStyle}</span> • Font: <span className="text-slate-200 font-bold capitalize">{currentTheme.fontStyle}</span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => toggleCardCollapse('theme')}
+                className="p-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 hover:text-white border border-white/[0.08] transition flex items-center gap-1 text-xs font-semibold"
+                title={collapsedCards.theme ? 'Expand Card' : 'Collapse Card'}
+              >
+                <span>{collapsedCards.theme ? 'Expand' : 'Collapse'}</span>
+                {collapsedCards.theme ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {/* Card Body */}
+            {!collapsedCards.theme && (
+              <div className="p-6">
+                <ThemeSelector
+                  currentTheme={currentTheme}
+                  onSelectTheme={handleSelectTheme}
+                  onUpdateStyleOptions={handleUpdateStyleOptions}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ========================================================
+              CARD 3: PROFESSIONAL & CONTACT DETAILS (COLLAPSIBLE)
               ======================================================== */}
           <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl shadow-xl overflow-hidden backdrop-blur-xl transition duration-200">
             {/* Card Header & Collapse Toggle */}
@@ -638,7 +713,7 @@ export const ProfileEditorPage: React.FC = () => {
           </div>
 
           <MobileFramePreview
-            profile={targetProfile}
+            profile={{ ...targetProfile, theme: currentTheme }}
             links={links}
           />
         </div>
@@ -676,7 +751,7 @@ export const ProfileEditorPage: React.FC = () => {
             <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
               Select Icon Preset:
             </label>
-            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
               {PRESET_ICONS.map((preset) => {
                 const Icon = preset.icon;
                 const isSelected = linkIcon === preset.id;
