@@ -29,7 +29,6 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { label: 'Home', href: '#home', path: '/' },
     { label: 'About Us', href: '#about', path: '/#about' },
-    { label: 'Pricing', href: '#pricing', path: '/#pricing' },
   ];
 
   const handleNavClick = (href: string) => {
