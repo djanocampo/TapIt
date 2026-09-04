@@ -132,22 +132,27 @@ export const InviteRegistrationPage: React.FC = () => {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const res = completeInviteRegistration(cleanToken, {
-        name,
-        username,
-        email,
-        password,
-      });
+    setTimeout(async () => {
+      try {
+        const res = await completeInviteRegistration(cleanToken, {
+          name,
+          username,
+          email,
+          password,
+        });
 
-      setIsLoading(false);
-      if (res.success) {
-        triggerConfetti();
-        navigate('/dashboard');
-      } else {
-        setErrorMessage(res.message);
+        setIsLoading(false);
+        if (res.success) {
+          triggerConfetti();
+          navigate('/dashboard');
+        } else {
+          setErrorMessage(res.message);
+        }
+      } catch (err: any) {
+        setIsLoading(false);
+        setErrorMessage(err?.message || 'Registration failed. Please try again.');
       }
-    }, 600);
+    }, 400);
   };
 
   // Loading indicator while checking token

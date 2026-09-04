@@ -38,7 +38,10 @@ import {
   deleteSupabaseRecord,
   deleteSupabaseCard,
   deleteSupabaseUser,
-  bindCardToUser
+  bindCardToUser,
+  upsertSingleUser,
+  upsertSingleProfile,
+  upsertSingleQRCode
 } from '../services/dualLayerSync';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -116,7 +119,7 @@ interface TapItContextType {
   // User Provisioning Wizard Actions
   createInvite: (initialName: string, material: CardMaterial, customCardToken?: string) => { invite: UserInvite; inviteUrl: string };
   getInviteByToken: (inviteToken: string) => UserInvite | undefined;
-  completeInviteRegistration: (inviteToken: string, data: { name: string; username: string; email: string; password?: string }) => { success: boolean; user?: User; message: string };
+  completeInviteRegistration: (inviteToken: string, data: { name: string; username: string; email: string; password?: string }) => Promise<{ success: boolean; user?: User; message: string }>;
   registerUser: (data: { name: string; username: string; email: string; password?: string }) => { success: boolean; user?: User; message: string };
 
   // QR Actions
@@ -545,6 +548,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setCards(prev => {
         const updated = [newCard, ...prev];
         void syncCardsToSupabase(updated);
+        void bindCardToUser(cardToken, currentUser.id, profileId, newCard.name, newCard.material);
         return updated;
       });
       return { success: true, card: newCard, message: 'NFC Card successfully registered and bound!' };
@@ -566,6 +570,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCards(prev => {
       const updated = prev.map(c => (c.id === existing.id ? updatedCard : c));
       void syncCardsToSupabase(updated);
+      void bindCardToUser(cardToken, currentUser.id, profileId, updatedCard.name, updatedCard.material);
       return updated;
     });
     return { success: true, card: updatedCard, message: 'Card activated successfully!' };
@@ -608,11 +613,15 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const reassignCard = (cardId: string, profileId: string) => {
+    const target = cards.find(c => c.id === cardId || c.cardToken.toLowerCase() === cardId.toLowerCase());
     setCards(prev => {
       const updated = prev.map(c => (c.id === cardId ? { ...c, profileId } : c));
       void syncCardsToSupabase(updated);
       return updated;
     });
+    if (target) {
+      void supabase.from('nfc_cards').update({ profile_id: profileId }).eq('id', target.id);
+    }
   };
 
   const generateBatchCards = (count: number, material: CardMaterial): NFCCard[] => {
@@ -780,7 +789,10 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  const completeInviteRegistration = (inviteToken: string, data: { name: string; username: string; email: string; password?: string }) => {
+  const completeInviteRegistration = async (
+    inviteToken: string,
+    data: { name: string; username: string; email: string; password?: string }
+  ): Promise<{ success: boolean; user?: User; message: string }> => {
     const invite = getInviteByToken(inviteToken);
     if (!invite) {
       return { success: false, message: 'Invalid or expired invitation link.' };
@@ -838,9 +850,6 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     // ── RESOLVE CARD SYNCHRONOUSLY before any state updates ──────────────────
-    // Read current cards state directly (closure capture at call time).
-    // This avoids side effects inside React state updaters (which can run twice
-    // in Strict Mode) and ensures we have the real material/id values.
     const existingCard = cards.find(
       c => c.cardToken.toLowerCase() === invite.cardToken.toLowerCase()
     );
@@ -872,27 +881,40 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           activatedAt: new Date().toISOString(),
         };
 
-    // ── SUPABASE WRITES — called here in function body, NOT inside state updaters ──
-    // bindCardToUser uses upsert-by-card_token so it's atomic and idempotent.
-    void bindCardToUser(
+    // ── STRICT SEQUENTIAL PERSISTENCE IN SUPABASE ─────────────────────────────
+    // Postgres enforces foreign key constraints immediately:
+    // 1. users row MUST be committed first
+    await upsertSingleUser(newUser);
+
+    // 2. profiles row MUST be committed second (depends on users.id)
+    await upsertSingleProfile(newProfile);
+
+    // 3. qr_codes row committed third (depends on profiles.id)
+    await upsertSingleQRCode(newQR);
+
+    // 4. nfc_cards row bound fourth (depends on both users.id and profiles.id)
+    await bindCardToUser(
       invite.cardToken,
       newUserId,
       newProfileId,
       boundCardName,
       boundCardMaterial
     );
+
+    // 5. Update user_invites marked as used
+    const updatedInvites = invites.map(inv =>
+      inv.id === invite.id || inv.inviteToken.toLowerCase() === invite.inviteToken.toLowerCase()
+        ? { ...inv, isUsed: true, usedByUserId: newUserId }
+        : inv
+    );
+    await syncInvitesToSupabase(updatedInvites);
+
+    // Full batch push in background to guarantee entire cache consistency
     void syncUsersToSupabase([...allUsers, newUser]);
     void syncProfilesToSupabase([...profiles, newProfile]);
     void syncQRCodesToSupabase([...qrCodes, newQR]);
-    void syncInvitesToSupabase(
-      invites.map(inv =>
-        inv.id === invite.id || inv.inviteToken.toLowerCase() === invite.inviteToken.toLowerCase()
-          ? { ...inv, isUsed: true, usedByUserId: newUserId }
-          : inv
-      )
-    );
 
-    // ── LOCAL STATE UPDATES (pure — no side effects) ──────────────────────────
+    // ── LOCAL STATE UPDATES ──────────────────────────────────────────────────
     setCards(prev => {
       const hasCard = prev.some(c => c.cardToken.toLowerCase() === invite.cardToken.toLowerCase());
       if (hasCard) {
@@ -906,13 +928,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAllUsers(prev => [...prev, newUser]);
     setProfiles(prev => [...prev, newProfile]);
     setQrCodes(prev => [...prev, newQR]);
-    setInvites(prev =>
-      prev.map(inv =>
-        inv.id === invite.id || inv.inviteToken.toLowerCase() === invite.inviteToken.toLowerCase()
-          ? { ...inv, isUsed: true, usedByUserId: newUserId }
-          : inv
-      )
-    );
+    setInvites(updatedInvites);
 
     login(newUser, 'user');
     setActiveProfileIdState(newProfileId);

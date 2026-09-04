@@ -383,16 +383,74 @@ export async function syncCardsToSupabase(cards: NFCCard[]): Promise<void> {
   if (!isSupabaseConfigured() || cards.length === 0) return;
   try {
     const rows = cards.map(mapCardToDB);
-    await supabase.from('nfc_cards').upsert(rows, { onConflict: 'id' });
+    const { error } = await supabase.from('nfc_cards').upsert(rows, { onConflict: 'id' });
+    if (error) {
+      console.warn('[Supabase Batch Push] Cards sync error:', error.message);
+    }
   } catch (e) {
     console.warn('[Supabase Batch Push] Cards sync error:', e);
   }
 }
 
 /**
- * Direct targeted upsert for a single card's binding.
- * Uses the UNIQUE constraint on card_token for atomic upsert —
- * works whether the card exists in Supabase or not, with no race conditions.
+ * Explicit single-entity upserts for registration flow.
+ * Guarantees that users and profiles are written and committed in Supabase
+ * BEFORE any child records (like nfc_cards with foreign keys) are inserted/updated.
+ */
+export async function upsertSingleUser(user: User): Promise<boolean> {
+  if (!isSupabaseConfigured()) return true;
+  try {
+    const row = mapUserToDB(user);
+    const { error } = await supabase.from('users').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Direct] upsertSingleUser error:', error.message, error.details);
+      return false;
+    }
+    console.log(`[Supabase Direct] User ${user.id} (${user.username}) successfully synced to Supabase`);
+    return true;
+  } catch (err) {
+    console.error('[Supabase Direct] upsertSingleUser network error:', err);
+    return false;
+  }
+}
+
+export async function upsertSingleProfile(profile: Profile): Promise<boolean> {
+  if (!isSupabaseConfigured()) return true;
+  try {
+    const row = mapProfileToDB(profile);
+    const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Direct] upsertSingleProfile error:', error.message, error.details);
+      return false;
+    }
+    console.log(`[Supabase Direct] Profile ${profile.id} (${profile.slug}) successfully synced to Supabase`);
+    return true;
+  } catch (err) {
+    console.error('[Supabase Direct] upsertSingleProfile network error:', err);
+    return false;
+  }
+}
+
+export async function upsertSingleQRCode(qr: QRCodeItem): Promise<boolean> {
+  if (!isSupabaseConfigured()) return true;
+  try {
+    const row = mapQRToDB(qr);
+    const { error } = await supabase.from('qr_codes').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Direct] upsertSingleQRCode error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[Supabase Direct] upsertSingleQRCode network error:', err);
+    return false;
+  }
+}
+
+/**
+ * Direct targeted card binding with token normalization, multi-stage fallback,
+ * and post-write verification. Ensures that nfc_cards row in Supabase has
+ * user_id, profile_id, and status = 'active'.
  */
 export async function bindCardToUser(
   cardToken: string,
@@ -400,47 +458,195 @@ export async function bindCardToUser(
   profileId: string,
   cardName: string,
   material: string
-): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+): Promise<boolean> {
+  if (!isSupabaseConfigured()) return true;
   try {
-    // First try a targeted UPDATE by card_token (most common path — card was pre-created by createInvite)
-    const { error: updateError, data: updatedRows } = await supabase
-      .from('nfc_cards')
-      .update({
-        user_id: userId,
-        profile_id: profileId,
-        status: 'active',
-        name: cardName,
-        activated_at: new Date().toISOString(),
-      })
-      .ilike('card_token', cardToken)
-      .select('id');
+    const clean = cardToken.trim();
+    const cleanUpper = clean.toUpperCase();
+    const stripped = cleanUpper.replace(/^TAP-/, '');
+    const candidateTokens = Array.from(new Set([
+      clean,
+      cleanUpper,
+      clean.toLowerCase(),
+      stripped,
+      stripped.toLowerCase(),
+      `TAP-${stripped}`,
+      `tap-${stripped.toLowerCase()}`,
+    ]));
 
-    if (!updateError && Array.isArray(updatedRows) && updatedRows.length > 0) {
-      // Row found and updated successfully
-      return;
+    console.log(`[Supabase Direct] Binding card token="${cleanUpper}" to userId="${userId}", profileId="${profileId}"...`);
+
+    // 1. Search for any existing card record in Supabase matching any variant of this token
+    const { data: existingRows, error: searchError } = await supabase
+      .from('nfc_cards')
+      .select('id, card_token, user_id, profile_id')
+      .in('card_token', candidateTokens)
+      .limit(1);
+
+    if (searchError) {
+      console.warn('[Supabase Direct] Search card error:', searchError.message);
     }
 
-    // Card not in DB yet — insert it directly
-    const { error: insertError } = await supabase.from('nfc_cards').insert({
-      id: `crd_${Date.now()}`,
-      card_token: cardToken.toUpperCase(),
-      user_id: userId,
-      profile_id: profileId,
-      name: cardName,
-      material: material || 'matte-black',
-      status: 'active',
-      taps: 0,
-      unique_tappers: 0,
-      created_at: new Date().toISOString(),
-      activated_at: new Date().toISOString(),
-    });
+    if (existingRows && existingRows.length > 0) {
+      const targetCard = existingRows[0];
+      console.log(`[Supabase Direct] Found existing card id="${targetCard.id}" for token="${targetCard.card_token}". Updating binding...`);
 
-    if (insertError) {
-      console.warn('[Supabase Direct] bindCardToUser insert error:', insertError.message);
+      const { error: updateError } = await supabase
+        .from('nfc_cards')
+        .update({
+          user_id: userId,
+          profile_id: profileId,
+          status: 'active',
+          name: cardName,
+          material: material || 'matte-black',
+          activated_at: new Date().toISOString(),
+        })
+        .eq('id', targetCard.id);
+
+      if (updateError) {
+        console.error('[Supabase Direct] Update card by id failed:', updateError.message, updateError.details);
+        // Fallback: update by card_token
+        const { error: tokenUpdateError } = await supabase
+          .from('nfc_cards')
+          .update({
+            user_id: userId,
+            profile_id: profileId,
+            status: 'active',
+            name: cardName,
+            material: material || 'matte-black',
+            activated_at: new Date().toISOString(),
+          })
+          .ilike('card_token', targetCard.card_token);
+
+        if (tokenUpdateError) {
+          console.error('[Supabase Direct] Fallback update by card_token failed:', tokenUpdateError.message);
+          return false;
+        }
+      }
+    } else {
+      // 2. Card does not exist in DB yet — insert fresh active bound card record
+      console.log(`[Supabase Direct] Card not found in DB. Inserting fresh bound card token="${cleanUpper}"...`);
+      const canonicalToken = cleanUpper.startsWith('TAP-') ? cleanUpper : `TAP-${cleanUpper}`;
+      const newCardId = `crd_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+      const { error: insertError } = await supabase
+        .from('nfc_cards')
+        .insert({
+          id: newCardId,
+          card_token: canonicalToken,
+          user_id: userId,
+          profile_id: profileId,
+          name: cardName,
+          material: material || 'matte-black',
+          status: 'active',
+          taps: 0,
+          unique_tappers: 0,
+          created_at: new Date().toISOString(),
+          activated_at: new Date().toISOString(),
+        });
+
+      if (insertError) {
+        console.error('[Supabase Direct] Failed to insert new bound card:', insertError.message, insertError.details);
+        // If unique collision on card_token, fallback update
+        if (insertError.code === '23505' || insertError.message.includes('unique constraint') || insertError.message.includes('card_token')) {
+          console.log('[Supabase Direct] Collision detected on card_token. Attempting update...');
+          const { error: fallbackError } = await supabase
+            .from('nfc_cards')
+            .update({
+              user_id: userId,
+              profile_id: profileId,
+              status: 'active',
+              name: cardName,
+              material: material || 'matte-black',
+              activated_at: new Date().toISOString(),
+            })
+            .ilike('card_token', cleanUpper);
+
+          if (fallbackError) {
+            console.error('[Supabase Direct] Collision fallback update failed:', fallbackError.message);
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
+    }
+
+    // 3. Verification check: confirm the row in DB now has user_id and profile_id
+    const { data: verified, error: verifyError } = await supabase
+      .from('nfc_cards')
+      .select('id, card_token, user_id, profile_id, status')
+      .in('card_token', candidateTokens)
+      .limit(1)
+      .maybeSingle();
+
+    if (!verifyError && verified && verified.user_id === userId) {
+      console.log(`[Supabase Direct] SUCCESS: Card "${verified.card_token}" verified bound to user_id="${verified.user_id}", profile_id="${verified.profile_id}", status="${verified.status}"`);
+      return true;
+    } else {
+      console.warn(`[Supabase Direct] WARNING: Verification check returned user_id="${verified?.user_id || 'null'}", status="${verified?.status || 'unknown'}"`);
+      return false;
     }
   } catch (e) {
-    console.warn('[Supabase Direct] bindCardToUser error:', e);
+    console.error('[Supabase Direct] bindCardToUser unexpected exception:', e);
+    return false;
+  }
+}
+
+/**
+ * Auto-healer: Scans for cards in Supabase that have user_id IS NULL but whose
+ * corresponding user_invite was marked used with a used_by_user_id.
+ * Heals previously registered accounts whose card binding failed.
+ */
+export async function autoHealUnboundCards(): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const { data: usedInvites, error: invError } = await supabase
+      .from('user_invites')
+      .select('card_token, used_by_user_id')
+      .eq('is_used', true)
+      .not('used_by_user_id', 'is', null);
+
+    if (invError || !usedInvites || usedInvites.length === 0) return;
+
+    for (const inv of usedInvites) {
+      if (!inv.card_token || !inv.used_by_user_id) continue;
+
+      // Check if this card is currently unbound in nfc_cards
+      const { data: unboundCards } = await supabase
+        .from('nfc_cards')
+        .select('id, card_token, user_id, profile_id')
+        .ilike('card_token', inv.card_token)
+        .is('user_id', null)
+        .limit(1);
+
+      if (unboundCards && unboundCards.length > 0) {
+        const cardToHeal = unboundCards[0];
+        // Fetch the user's primary profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .eq('user_id', inv.used_by_user_id)
+          .limit(1)
+          .maybeSingle();
+
+        if (profile) {
+          console.log(`[Supabase Auto-Heal] Healing orphaned card "${cardToHeal.card_token}" for user "${inv.used_by_user_id}"...`);
+          await supabase
+            .from('nfc_cards')
+            .update({
+              user_id: inv.used_by_user_id,
+              profile_id: profile.id,
+              status: 'active',
+              activated_at: new Date().toISOString(),
+            })
+            .eq('id', cardToHeal.id);
+        }
+      }
+    }
+  } catch (err) {
+    // Non-blocking background heal
+    console.warn('[Supabase Auto-Heal] Background check encountered error:', err);
   }
 }
 
@@ -555,6 +761,9 @@ export async function fetchRemoteLinks(local: LinkItem[]): Promise<LinkItem[]> {
 export async function fetchRemoteCards(local: NFCCard[]): Promise<NFCCard[]> {
   if (!isSupabaseConfigured()) return local;
   try {
+    // Trigger non-blocking auto-heal of any previously unbound cards from used invites
+    void autoHealUnboundCards();
+
     const { data, error } = await supabase.from('nfc_cards').select('*');
     if (error || !data) return local;
     const remote = data.map(mapDBToCard);
