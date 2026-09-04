@@ -20,7 +20,10 @@ import {
   ChevronDown,
   RefreshCw,
   Edit3,
-  Globe
+  Globe,
+  Timer,
+  HandMetal,
+  Hourglass
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 
@@ -46,7 +49,9 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   const [customCardName, setCustomCardName] = useState<string>('My TapIt Smart Card');
 
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
-  const [status, setStatus] = useState<'idle' | 'scanning' | 'writing' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'arming' | 'scanning' | 'writing' | 'success' | 'error'>('idle');
+  const [countdown, setCountdown] = useState<number>(3);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [writeType, setWriteType] = useState<'dynamic' | 'direct'>('dynamic');
   const [copied, setCopied] = useState(false);
@@ -54,6 +59,8 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   const [scannedTagInfo, setScannedTagInfo] = useState<{ serialNumber?: string; records?: string[] } | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const armingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const defaultOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://192.168.254.138:5173';
   const [customHost, setCustomHost] = useState<string>(defaultOrigin);
@@ -87,33 +94,45 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
     }
   }, []);
 
-  // Cleanup abort controller on modal close or unmount
+  // Clear timers helper
+  const clearAllTimers = () => {
+    if (armingTimerRef.current) {
+      clearInterval(armingTimerRef.current);
+      armingTimerRef.current = null;
+    }
+    if (cooldownTimerRef.current) {
+      clearInterval(cooldownTimerRef.current);
+      cooldownTimerRef.current = null;
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Cleanup abort controller and timers on modal close or unmount
   useEffect(() => {
     if (isOpen) {
       setStatus('idle');
       setErrorMessage('');
       setScannedTagInfo(null);
+      setCountdown(3);
+      setCooldownRemaining(0);
     } else {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
+      clearAllTimers();
     }
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      clearAllTimers();
     };
   }, [isOpen]);
 
   const handleReset = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
+    clearAllTimers();
     setStatus('idle');
     setErrorMessage('');
     setScannedTagInfo(null);
+    setCountdown(3);
+    setCooldownRemaining(0);
   };
 
   const handleGenerateRandomToken = () => {
@@ -145,21 +164,62 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
     }
   };
 
-  // Write Web NFC Function with genuine hardware interaction
-  const handleWriteNFC = async () => {
+  // Start 3-Second Arming Countdown before Writing
+  const initiateWriteWithCountdown = () => {
     if (!('NDEFReader' in window)) {
       setStatus('error');
       setErrorMessage('Web NFC is not supported in this browser. Please open this app in Google Chrome on Android or enable Chrome flags for local IP.');
       return;
     }
 
+    clearAllTimers();
+    setStatus('arming');
+    setErrorMessage('');
+    setCountdown(3);
+
+    let count = 3;
+    armingTimerRef.current = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setCountdown(count);
+      } else {
+        if (armingTimerRef.current) clearInterval(armingTimerRef.current);
+        executeWriteNFC();
+      }
+    }, 1000);
+  };
+
+  // Start 3-Second Arming Countdown before Reading/Scanning
+  const initiateReadWithCountdown = () => {
+    if (!('NDEFReader' in window)) {
+      setStatus('error');
+      setErrorMessage('Web NFC is not supported in this browser.');
+      return;
+    }
+
+    clearAllTimers();
+    setStatus('arming');
+    setErrorMessage('');
+    setCountdown(3);
+
+    let count = 3;
+    armingTimerRef.current = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setCountdown(count);
+      } else {
+        if (armingTimerRef.current) clearInterval(armingTimerRef.current);
+        executeReadNFC();
+      }
+    }, 1000);
+  };
+
+  // Actual Hardware Write Action
+  const executeWriteNFC = async () => {
     try {
       setStatus('writing');
       setErrorMessage('');
 
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
       abortControllerRef.current = new AbortController();
 
       // Automatically register and bind the card in local store to the chosen profile
@@ -182,8 +242,25 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         { signal: abortControllerRef.current.signal }
       );
 
+      // Set 3.5s cooldown guard in sessionStorage to prevent immediate auto-read loop
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('tapit_nfc_cooldown_until', (Date.now() + 3500).toString());
+      }
+
       setStatus('success');
       triggerSuccessFeedback();
+
+      // Start 3-second pull-away cooldown
+      setCooldownRemaining(3);
+      let cd = 3;
+      cooldownTimerRef.current = setInterval(() => {
+        cd -= 1;
+        setCooldownRemaining(cd);
+        if (cd <= 0 && cooldownTimerRef.current) {
+          clearInterval(cooldownTimerRef.current);
+        }
+      }, 1000);
+
     } catch (err: any) {
       if (err.name === 'AbortError') {
         setStatus('idle');
@@ -201,22 +278,13 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
     }
   };
 
-  // Read Web NFC Function
-  const handleReadNFC = async () => {
-    if (!('NDEFReader' in window)) {
-      setStatus('error');
-      setErrorMessage('Web NFC is not supported in this browser.');
-      return;
-    }
-
+  // Actual Hardware Read Action
+  const executeReadNFC = async () => {
     try {
       setStatus('scanning');
       setErrorMessage('');
       setScannedTagInfo(null);
 
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
       abortControllerRef.current = new AbortController();
 
       const NDEFReader = (window as any).NDEFReader;
@@ -242,6 +310,17 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         setScannedTagInfo({ serialNumber, records });
         setStatus('success');
         triggerSuccessFeedback();
+
+        // 3-second cooldown on read
+        setCooldownRemaining(3);
+        let cd = 3;
+        cooldownTimerRef.current = setInterval(() => {
+          cd -= 1;
+          setCooldownRemaining(cd);
+          if (cd <= 0 && cooldownTimerRef.current) {
+            clearInterval(cooldownTimerRef.current);
+          }
+        }, 1000);
       };
 
       ndef.onreadingerror = () => {
@@ -259,18 +338,12 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
     }
   };
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(targetUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="In-App Web NFC Tag Writer & Reader"
-      description="Program your physical NFC smart card or keyfob directly from the browser using Web NFC."
+      description="Program your physical NFC smart card or keyfob directly from the browser with 3-second auto-read protection."
       maxWidth="lg"
     >
       <div className="space-y-6">
@@ -278,7 +351,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         <div className="flex bg-[#070e1c] p-1 rounded-2xl border border-white/[0.08]">
           <button
             type="button"
-            onClick={() => { setActiveTab('write'); setStatus('idle'); }}
+            onClick={() => { setActiveTab('write'); handleReset(); }}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
               activeTab === 'write'
                 ? 'bg-gradient-to-r from-cyan-400 to-sky-400 text-slate-950 shadow-md font-black'
@@ -290,7 +363,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => { setActiveTab('read'); setStatus('idle'); }}
+            onClick={() => { setActiveTab('read'); handleReset(); }}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
               activeTab === 'read'
                 ? 'bg-gradient-to-r from-cyan-400 to-sky-400 text-slate-950 shadow-md font-black'
@@ -307,10 +380,10 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
           <div className="p-4 rounded-2xl border bg-cyan-950/40 border-cyan-500/30 text-cyan-200 flex items-start gap-3 text-xs leading-relaxed">
             <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <strong className="text-white block font-bold">Direct Web NFC Writer</strong>
+              <strong className="text-white block font-bold">3-Second Sensor Buffer Protection</strong>
               <span>
                 {isSupported 
-                  ? 'Your browser has direct NFC hardware access. Follow the steps below to flash your card.'
+                  ? 'Includes a 3-second arming delay and a 3-second post-write cooldown to prevent Android from instantly auto-reading while you register.'
                   : 'To write your physical card chip directly in Google Chrome on Android, ensure your origin is enabled in Chrome flags.'}
               </span>
             </div>
@@ -496,7 +569,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
               </div>
             </div>
 
-            {/* Step 3: Live Hardware Touch Zone & Clear Guidance */}
+            {/* Step 3: Live Hardware Touch Zone & 3-Second Arming/Cooldown */}
             <div className="space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-black">3</span>
@@ -505,30 +578,39 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
 
               <div className="relative rounded-3xl bg-[#060e1e] border border-white/[0.08] p-6 text-center overflow-hidden flex flex-col items-center justify-center space-y-4">
                 {/* Radar Waves for writing */}
-                {status === 'writing' && (
+                {(status === 'writing' || status === 'arming') && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="w-44 h-44 rounded-full border-2 border-cyan-400/40 animate-ping opacity-75"></div>
                     <div className="w-60 h-60 rounded-full border border-cyan-400/20 animate-ping opacity-50 delay-300"></div>
                   </div>
                 )}
 
-                {/* Status Graphic */}
+                {/* Status Graphic with 3-second animated countdown badge */}
                 <div className="relative z-10">
                   {status === 'idle' && (
                     <div className="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-400/40 text-cyan-400 flex items-center justify-center shadow-glow-cyan mx-auto">
                       <Smartphone className="w-8 h-8" />
                     </div>
                   )}
+
+                  {status === 'arming' && (
+                    <div className="w-16 h-16 rounded-3xl bg-amber-500/20 border-2 border-amber-400 text-amber-300 flex items-center justify-center shadow-lg shadow-amber-400/40 mx-auto animate-pulse">
+                      <span className="text-2xl font-black font-mono">{countdown}</span>
+                    </div>
+                  )}
+
                   {status === 'writing' && (
                     <div className="w-16 h-16 rounded-3xl bg-cyan-500/20 border-2 border-cyan-400 text-cyan-300 flex items-center justify-center shadow-lg shadow-cyan-400/50 animate-bounce mx-auto">
                       <Radio className="w-8 h-8 animate-pulse text-cyan-300" />
                     </div>
                   )}
+
                   {status === 'success' && (
                     <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border-2 border-emerald-400 text-emerald-300 flex items-center justify-center shadow-lg shadow-emerald-400/40 mx-auto">
                       <CheckCircle2 className="w-9 h-9" />
                     </div>
                   )}
+
                   {status === 'error' && (
                     <div className="w-16 h-16 rounded-3xl bg-rose-500/20 border-2 border-rose-400 text-rose-300 flex items-center justify-center shadow-lg shadow-rose-400/40 mx-auto">
                       <AlertCircle className="w-9 h-9" />
@@ -544,7 +626,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                         Ready to Program NFC Chip
                       </h4>
                       <p className="text-xs text-slate-300 leading-relaxed">
-                        1. Tap <strong>"Start NFC Writing"</strong> below to activate your phone&apos;s NFC antenna.
+                        1. Tap <strong>"Start NFC Writing"</strong> below to begin the 3-second preparation buffer.
                         <br />
                         2. Chrome will request permission: tap <strong>Allow</strong>.
                         <br />
@@ -555,6 +637,22 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                       </p>
                     </>
                   )}
+
+                  {status === 'arming' && (
+                    <>
+                      <div className="inline-block px-3 py-1 rounded-full bg-amber-950 border border-amber-400 text-amber-300 text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1.5 mx-auto">
+                        <Hourglass className="w-3.5 h-3.5" />
+                        <span>Arming Sensor in {countdown}s... Get Card Ready</span>
+                      </div>
+                      <h4 className="text-lg font-black text-amber-300">
+                        Preparing NFC Antenna...
+                      </h4>
+                      <p className="text-xs text-slate-200 font-semibold bg-black/40 p-2.5 rounded-xl border border-amber-500/30">
+                        👉 Hold on! The 3-second buffer prevents accidental auto-reads. Place card to phone when sensor activates.
+                      </p>
+                    </>
+                  )}
+
                   {status === 'writing' && (
                     <>
                       <div className="inline-block px-3 py-1 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 text-xs font-black uppercase tracking-wider animate-pulse">
@@ -571,11 +669,24 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                       </p>
                     </>
                   )}
+
                   {status === 'success' && (
                     <div className="space-y-3">
                       <div className="inline-block px-3 py-1 rounded-full bg-emerald-950 border border-emerald-400 text-emerald-300 text-xs font-black uppercase tracking-wider">
                         ✓ Writing Complete
                       </div>
+
+                      {cooldownRemaining > 0 ? (
+                        <div className="p-3 rounded-2xl bg-amber-950/50 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-center gap-2 font-bold animate-pulse">
+                          <HandMetal className="w-4 h-4 text-amber-400" />
+                          <span>✋ Please pull card away ({cooldownRemaining}s auto-read protection)</span>
+                        </div>
+                      ) : (
+                        <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                          ✓ Card Safe & Ready for Use!
+                        </div>
+                      )}
+
                       <h4 className="text-lg font-black text-emerald-400">
                         Card Successfully Programmed!
                       </h4>
@@ -590,21 +701,11 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                         </div>
                       </div>
                       <p className="text-xs text-slate-300">
-                        🎉 Success! You may now remove your card from the device. When tapped, it will immediately resolve and forward to your profile!
+                        🎉 Success! You may now remove your card. When tapped in everyday use, it will forward instantly to your profile.
                       </p>
-                      <div className="pt-1 flex items-center justify-center gap-2">
-                        <a
-                          href={targetUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-300 hover:text-white bg-cyan-950/60 border border-cyan-500/40 px-3.5 py-1.5 rounded-xl transition shadow-sm"
-                        >
-                          <span>Test Open Link in Browser</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      </div>
                     </div>
                   )}
+
                   {status === 'error' && (
                     <div className="p-4 rounded-2xl bg-rose-950/50 border border-rose-500/40 space-y-3 text-left">
                       <div className="flex items-center gap-2 text-rose-300 font-bold text-xs">
@@ -624,16 +725,22 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                   )}
                 </div>
 
-                {/* Action Buttons - Always Visible */}
+                {/* Action Buttons */}
                 <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 pt-2">
                   <Button
-                    variant={status === 'writing' ? 'danger' : 'glow'}
+                    variant={status === 'writing' || status === 'arming' ? 'danger' : 'glow'}
                     size="lg"
-                    onClick={status === 'writing' ? handleReset : handleWriteNFC}
+                    onClick={status === 'writing' || status === 'arming' ? handleReset : initiateWriteWithCountdown}
                     isLoading={false}
-                    leftIcon={status === 'writing' ? <RotateCw className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                    leftIcon={status === 'writing' || status === 'arming' ? <RotateCw className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
                   >
-                    {status === 'writing' ? 'Cancel / Stop Listening' : status === 'success' ? 'Write Tag Again' : 'Start NFC Writing'}
+                    {status === 'arming' 
+                      ? `Cancel Arming (${countdown}s)` 
+                      : status === 'writing' 
+                      ? 'Cancel / Stop Listening' 
+                      : status === 'success' 
+                      ? 'Write Tag Again' 
+                      : 'Start NFC Writing (3s Buffer)'}
                   </Button>
 
                   {status !== 'idle' && (
@@ -657,13 +764,17 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
           <div className="space-y-5">
             <div className="relative rounded-3xl bg-[#060e1e] border border-white/[0.08] p-6 text-center flex flex-col items-center justify-center space-y-4">
               <div className="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-400/40 text-cyan-400 flex items-center justify-center shadow-glow-cyan">
-                <Radio className={`w-8 h-8 ${status === 'scanning' ? 'animate-pulse' : ''}`} />
+                {status === 'arming' ? (
+                  <span className="text-2xl font-black font-mono text-amber-300">{countdown}</span>
+                ) : (
+                  <Radio className={`w-8 h-8 ${status === 'scanning' ? 'animate-pulse' : ''}`} />
+                )}
               </div>
 
               <div className="space-y-1">
                 <h4 className="text-base font-bold text-white">Scan & Inspect Generic NFC Card</h4>
                 <p className="text-xs text-slate-400 max-w-sm">
-                  Touch any physical NFC smart card, keyfob, or sticker to your phone to inspect its UID and records.
+                  Includes 3-second preparation buffer so the phone doesn&apos;t auto-read before you are ready.
                 </p>
               </div>
 
@@ -671,11 +782,15 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                 <Button
                   variant="glow"
                   size="md"
-                  onClick={handleReadNFC}
+                  onClick={status === 'arming' || status === 'scanning' ? handleReset : initiateReadWithCountdown}
                   isLoading={status === 'scanning'}
                   leftIcon={<Radio className="w-4 h-4" />}
                 >
-                  {status === 'scanning' ? 'Holding Sensor Active... Touch Card' : 'Start Scanning'}
+                  {status === 'arming' 
+                    ? `Arming in ${countdown}s (Cancel)` 
+                    : status === 'scanning' 
+                    ? 'Holding Sensor Active... Touch Card' 
+                    : 'Start Scanning (3s Buffer)'}
                 </Button>
                 {status !== 'idle' && (
                   <Button variant="ghost" size="sm" onClick={handleReset}>

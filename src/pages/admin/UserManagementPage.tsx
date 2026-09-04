@@ -28,7 +28,10 @@ import {
   Loader2,
   Info,
   Layers,
-  HelpCircle
+  HelpCircle,
+  Hourglass,
+  HandMetal,
+  RotateCw
 } from 'lucide-react';
 import { formatRelativeTime, triggerConfetti } from '../../lib/utils';
 
@@ -47,15 +50,42 @@ export const UserManagementPage: React.FC = () => {
   const [wizardMaterial, setWizardMaterial] = useState<CardMaterial>('matte-black');
   const [wizardCardToken, setWizardCardToken] = useState('');
   
-  // NFC Flasher State Machine: 'idle' | 'listening' | 'writing' | 'success' | 'error'
-  const [nfcState, setNfcState] = useState<'idle' | 'listening' | 'writing' | 'success' | 'error'>('idle');
+  // NFC Flasher State Machine: 'idle' | 'arming' | 'listening' | 'writing' | 'success' | 'error'
+  const [nfcState, setNfcState] = useState<'idle' | 'arming' | 'listening' | 'writing' | 'success' | 'error'>('idle');
   const [nfcStatusMessage, setNfcStatusMessage] = useState('');
+  const [countdown, setCountdown] = useState<number>(3);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
+
   const ndefControllerRef = useRef<AbortController | null>(null);
+  const armingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Wizard Step 2 results
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState('');
   const [generatedCardToken, setGeneratedCardToken] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Clear timers helper
+  const clearNfcTimers = () => {
+    if (armingTimerRef.current) {
+      clearInterval(armingTimerRef.current);
+      armingTimerRef.current = null;
+    }
+    if (cooldownTimerRef.current) {
+      clearInterval(cooldownTimerRef.current);
+      cooldownTimerRef.current = null;
+    }
+    if (ndefControllerRef.current) {
+      ndefControllerRef.current.abort();
+      ndefControllerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearNfcTimers();
+    };
+  }, []);
 
   // Audio tone helper
   const playSuccessTone = () => {
@@ -79,57 +109,107 @@ export const UserManagementPage: React.FC = () => {
 
   // Open Wizard & auto-generate a fresh token
   const handleOpenWizard = () => {
+    clearNfcTimers();
     const defaultToken = `TAP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     setWizardName('');
     setWizardMaterial('matte-black');
     setWizardCardToken(defaultToken);
     setNfcState('idle');
     setNfcStatusMessage('');
+    setCountdown(3);
+    setCooldownRemaining(0);
     setWizardStep(1);
     setIsWizardOpen(true);
   };
 
-  // Start NFC Listening / Writing with real Web NFC
-  const handleStartNFCWrite = async () => {
+  const handleCancelOrResetNfc = () => {
+    clearNfcTimers();
+    setNfcState('idle');
+    setNfcStatusMessage('');
+    setCountdown(3);
+    setCooldownRemaining(0);
+  };
+
+  // Start 3-Second Arming Countdown before NFC Writing
+  const handleStartNFCWrite = () => {
+    if (!('NDEFReader' in window)) {
+      setNfcState('error');
+      setNfcStatusMessage('Web NFC writing requires Google Chrome on Android. For local testing, enable Chrome flags for this IP.');
+      return;
+    }
+
+    clearNfcTimers();
+    setNfcState('arming');
+    setNfcStatusMessage('');
+    setCountdown(3);
+
+    let count = 3;
+    armingTimerRef.current = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setCountdown(count);
+      } else {
+        if (armingTimerRef.current) clearInterval(armingTimerRef.current);
+        executeHardwareNFCWrite();
+      }
+    }, 1000);
+  };
+
+  // Actual NFC Hardware Write Call
+  const executeHardwareNFCWrite = async () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
     const targetUrl = `${origin}/t/${wizardCardToken}`;
 
-    // Check Web NFC availability
-    if ('NDEFReader' in window) {
-      try {
-        setNfcState('listening');
-        setNfcStatusMessage('Tap and hold the physical NFC card near your device...');
+    try {
+      setNfcState('listening');
+      setNfcStatusMessage('Sensor active! Hold physical NFC card firmly against the back of your phone...');
 
-        const NDEFReader = (window as any).NDEFReader;
-        const ndef = new NDEFReader();
-        
-        // Listen for tag
-        ndefControllerRef.current = new AbortController();
-        
-        await ndef.write(
-          { records: [{ recordType: 'url', data: targetUrl }] },
-          { signal: ndefControllerRef.current.signal }
-        );
+      const NDEFReader = (window as any).NDEFReader;
+      const ndef = new NDEFReader();
+      
+      ndefControllerRef.current = new AbortController();
+      
+      await ndef.write(
+        { records: [{ recordType: 'url', data: targetUrl }] },
+        { signal: ndefControllerRef.current.signal }
+      );
 
-        setNfcState('success');
-        setNfcStatusMessage('Success! NFC card programmed.');
-        playSuccessTone();
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        triggerConfetti();
-      } catch (err: any) {
-        console.error('NFC Write Error:', err);
-        setNfcState('error');
-        if (err.name === 'NotAllowedError') {
-          setNfcStatusMessage('NFC permission was denied in your browser settings.');
-        } else if (err.name === 'NotReadableError') {
-          setNfcStatusMessage('NFC device is unavailable. Please make sure NFC is enabled in phone settings.');
-        } else {
-          setNfcStatusMessage(err.message || 'Writing was interrupted. Please hold card firmly to device.');
-        }
+      // Set 3.5s cooldown guard in sessionStorage to prevent immediate auto-read loops
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('tapit_nfc_cooldown_until', (Date.now() + 3500).toString());
       }
-    } else {
+
+      setNfcState('success');
+      setNfcStatusMessage('Success! NFC card programmed.');
+      playSuccessTone();
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      triggerConfetti();
+
+      // Start 3-second pull-away cooldown
+      setCooldownRemaining(3);
+      let cd = 3;
+      cooldownTimerRef.current = setInterval(() => {
+        cd -= 1;
+        setCooldownRemaining(cd);
+        if (cd <= 0 && cooldownTimerRef.current) {
+          clearInterval(cooldownTimerRef.current);
+        }
+      }, 1000);
+
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        setNfcState('idle');
+        return;
+      }
+      console.error('NFC Write Error:', err);
       setNfcState('error');
-      setNfcStatusMessage('Web NFC writing requires Google Chrome on Android. For other devices, copy the activation URL or use the free NFC Tools app to write.');
+      if (err.name === 'NotAllowedError') {
+        setNfcStatusMessage('NFC permission was denied in your browser settings.');
+      } else if (err.name === 'NotReadableError') {
+        setNfcStatusMessage('NFC device is unavailable. Please make sure NFC is enabled in phone settings.');
+      } else {
+        setNfcStatusMessage(err.message || 'Writing was interrupted. Please hold card firmly to device.');
+      }
     }
   };
 
@@ -405,7 +485,7 @@ export const UserManagementPage: React.FC = () => {
                   {nfcState === 'idle' && (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                       <p className="text-xs text-slate-300">
-                        Ready to write token <strong className="text-cyan-400 font-mono">{wizardCardToken}</strong> onto a physical card.
+                        Ready to write token <strong className="text-cyan-400 font-mono">{wizardCardToken}</strong> onto a physical card with 3s auto-read protection.
                       </p>
                       <button
                         type="button"
@@ -413,25 +493,62 @@ export const UserManagementPage: React.FC = () => {
                         className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 hover:to-sky-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition shadow-glow-cyan shrink-0"
                       >
                         <Radio className="w-3.5 h-3.5 animate-pulse" />
-                        <span>Flash to NFC Chip</span>
+                        <span>Flash Card (3s Buffer)</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ARMING STATE (3-second buffer) */}
+                  {nfcState === 'arming' && (
+                    <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-400/50 flex items-center justify-between gap-3 animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 font-black font-mono text-lg flex items-center justify-center shrink-0">
+                          {countdown}
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-bold text-amber-300">
+                            Arming NFC Antenna in {countdown}s...
+                          </p>
+                          <p className="text-[11px] text-slate-300">
+                            Get card ready. 3s buffer active to prevent instant auto-read loops.
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleCancelOrResetNfc}
+                        className="text-[11px] font-bold text-slate-400 hover:text-white px-2.5 py-1 bg-slate-900 rounded-lg border border-slate-700 shrink-0"
+                      >
+                        Cancel
                       </button>
                     </div>
                   )}
 
                   {/* LISTENING STATE */}
                   {nfcState === 'listening' && (
-                    <div className="p-4 rounded-xl bg-cyan-950/40 border border-cyan-400/50 flex items-center gap-3 animate-pulse">
-                      <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0">
-                        <Smartphone className="w-5 h-5 animate-bounce" />
+                    <div className="p-4 rounded-xl bg-cyan-950/40 border border-cyan-400/50 flex items-center justify-between gap-3 animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0">
+                          <Smartphone className="w-5 h-5 animate-bounce" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-bold text-cyan-300">
+                            📡 Sensor Active • Hold Card Steady!
+                          </p>
+                          <p className="text-[11px] text-slate-300">
+                            Hold your physical NFC tag against the phone's NFC antenna area.
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-cyan-300">
-                          Tap and hold the card near the device...
-                        </p>
-                        <p className="text-[11px] text-slate-300">
-                          Hold your physical NFC tag against the phone's NFC antenna area.
-                        </p>
-                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleCancelOrResetNfc}
+                        className="text-[11px] font-bold text-slate-400 hover:text-white px-2.5 py-1 bg-slate-900 rounded-lg border border-slate-700 shrink-0"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   )}
 
@@ -454,28 +571,41 @@ export const UserManagementPage: React.FC = () => {
 
                   {/* SUCCESS STATE */}
                   {nfcState === 'success' && (
-                    <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-400/50 flex items-center justify-between gap-3 shadow-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-400/50 space-y-3 shadow-lg">
+                      {cooldownRemaining > 0 ? (
+                        <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-center gap-2 font-bold animate-pulse">
+                          <HandMetal className="w-4 h-4 text-amber-400" />
+                          <span>✋ Please pull card away ({cooldownRemaining}s auto-read protection)</span>
                         </div>
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-bold text-emerald-300">
-                            Success! You may now remove the card.
-                          </p>
-                          <p className="text-[11px] text-slate-300 font-mono">
-                            NFC chip programmed with: tapit.app/t/{wizardCardToken}
-                          </p>
+                      ) : (
+                        <div className="p-2 rounded-lg bg-emerald-950/50 text-emerald-300 text-[11px] font-bold text-center">
+                          ✓ Tag is safe to remove
                         </div>
-                      </div>
+                      )}
 
-                      <button
-                        type="button"
-                        onClick={handleStartNFCWrite}
-                        className="text-[10px] text-cyan-400 hover:underline font-bold uppercase shrink-0"
-                      >
-                        Re-flash Card
-                      </button>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          </div>
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-bold text-emerald-300">
+                              Success! Physical NFC Card Programmed.
+                            </p>
+                            <p className="text-[11px] text-slate-300 font-mono">
+                              NFC chip target: tapit.app/t/{wizardCardToken}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleStartNFCWrite}
+                          className="text-[10px] text-cyan-400 hover:underline font-bold uppercase shrink-0"
+                        >
+                          Re-flash Card
+                        </button>
+                      </div>
                     </div>
                   )}
 
