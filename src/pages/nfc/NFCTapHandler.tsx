@@ -48,69 +48,9 @@ export const NFCTapHandler: React.FC = () => {
         }
       }
 
-      // ── STEP 1: INSTANT LOCAL STORE CHECK (<1ms) ──
-      const localCard = allCards.find(c => {
-        const t = c.cardToken.toLowerCase();
-        return t === normalized || t === strippedLower || t === prefixedLower;
-      });
-
-      if (localCard) {
-        if (localCard.status === 'active') {
-          const prof = allProfiles.find(p => p.id === localCard.profileId);
-          if (!prof) {
-            // Card is active in inventory but has no valid profile (or profile was deleted)
-            if (isMounted) setStatus('unclaimed');
-            return;
-          }
-          const slug = prof.slug || 'profile';
-          const name = prof.displayName || prof.name || 'Profile';
-
-          if (!isMounted) return;
-          setTargetSlug(slug);
-          setProfileName(name);
-
-          // Record tap and log analytics in background
-          recordCardTap(localCard.cardToken);
-
-          if (isUnderCooldown && remainingCooldown > 0) {
-            setStatus('cooldown');
-            setCooldownSeconds(remainingCooldown);
-            let count = remainingCooldown;
-            const interval = setInterval(() => {
-              count -= 1;
-              if (isMounted) setCooldownSeconds(count);
-              if (count <= 0) {
-                clearInterval(interval);
-                if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
-              }
-            }, 1000);
-            return;
-          } else {
-            // INSTANT REDIRECT (<1ms)
-            navigate(`/@${slug}?src=nfc`, { replace: true });
-            return;
-          }
-        } else if (localCard.status === 'unclaimed') {
-          if (isMounted) setStatus('unclaimed');
-          return;
-        } else if (localCard.status === 'disabled' || localCard.status === 'suspended') {
-          if (isMounted) setStatus('disabled');
-          return;
-        }
-      }
-
-      // ── STEP 2: CHECK IF TOKEN IS DIRECT PROFILE SLUG (<1ms) ──
-      const directLocalProfile = allProfiles.find(p => 
-        p.slug.toLowerCase() === normalized || 
-        p.slug.toLowerCase() === strippedLower
-      );
-      if (directLocalProfile) {
-        if (!isMounted) return;
-        navigate(`/@${directLocalProfile.slug}?src=nfc`, { replace: true });
-        return;
-      }
-
-      // ── STEP 3: FAST INDEXED REMOTE DATABASE RESOLUTION (Supabase) ──
+      // ── STEP 1: AUTHORITATIVE REMOTE DATABASE RESOLUTION (Supabase) ──
+      // When Supabase is configured, always resolve hardware cards directly from the database
+      // so local browser cache / stale state never falsely intercept or block valid tags.
       if (isSupabaseConfigured()) {
         try {
           const candidateTokens = Array.from(new Set([
@@ -205,8 +145,66 @@ export const NFCTapHandler: React.FC = () => {
             return;
           }
         } catch (err) {
-          console.warn('Error resolving NFC card remotely:', err);
+          console.warn('Error resolving NFC card remotely, trying local fallback:', err);
         }
+      }
+
+      // ── STEP 2: OFFLINE LOCAL STORE FALLBACK (Only if Supabase not configured or unreachable) ──
+      const localCard = allCards.find(c => {
+        const t = c.cardToken.toLowerCase();
+        return t === normalized || t === strippedLower || t === prefixedLower;
+      });
+
+      if (localCard) {
+        if (localCard.status === 'active') {
+          const prof = allProfiles.find(p => p.id === localCard.profileId);
+          if (!prof) {
+            if (isMounted) setStatus('unclaimed');
+            return;
+          }
+          const slug = prof.slug || 'profile';
+          const name = prof.displayName || prof.name || 'Profile';
+
+          if (!isMounted) return;
+          setTargetSlug(slug);
+          setProfileName(name);
+          recordCardTap(localCard.cardToken);
+
+          if (isUnderCooldown && remainingCooldown > 0) {
+            setStatus('cooldown');
+            setCooldownSeconds(remainingCooldown);
+            let count = remainingCooldown;
+            const interval = setInterval(() => {
+              count -= 1;
+              if (isMounted) setCooldownSeconds(count);
+              if (count <= 0) {
+                clearInterval(interval);
+                if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+              }
+            }, 1000);
+            return;
+          } else {
+            navigate(`/@${slug}?src=nfc`, { replace: true });
+            return;
+          }
+        } else if (localCard.status === 'unclaimed') {
+          if (isMounted) setStatus('unclaimed');
+          return;
+        } else if (localCard.status === 'disabled' || localCard.status === 'suspended') {
+          if (isMounted) setStatus('disabled');
+          return;
+        }
+      }
+
+      // ── STEP 3: CHECK IF TOKEN IS DIRECT LOCAL PROFILE SLUG ──
+      const directLocalProfile = allProfiles.find(p => 
+        p.slug.toLowerCase() === normalized || 
+        p.slug.toLowerCase() === strippedLower
+      );
+      if (directLocalProfile) {
+        if (!isMounted) return;
+        navigate(`/@${directLocalProfile.slug}?src=nfc`, { replace: true });
+        return;
       }
 
       if (!isMounted) return;

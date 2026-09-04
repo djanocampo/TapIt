@@ -152,12 +152,49 @@ interface TapItContextType {
 
 const STORAGE_KEY = 'tapit_app_live_v11';
 
+// Auto-clear stale data caches on startup when Supabase is active,
+// ensuring every refresh/visit pulls the authoritative, current data directly from DB.
+if (typeof window !== 'undefined' && isSupabaseConfigured()) {
+  try {
+    const entityKeys = ['profiles', 'links', 'cards', 'qrCodes', 'analyticsEvents', 'notifications', 'allUsers', 'invites'];
+    entityKeys.forEach(k => {
+      localStorage.removeItem(`${STORAGE_KEY}_${k}`);
+    });
+    // Remove any older tapit versions that may linger in localStorage
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        key.startsWith('tapit_') &&
+        !key.endsWith('_currentUser') &&
+        !key.endsWith('_role') &&
+        !key.endsWith('_isAuthenticated') &&
+        !key.endsWith('_activeProfileId')
+      ) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch (e) {
+    console.warn('Cache auto-clean error:', e);
+  }
+}
+
 const TapItContext = createContext<TapItContextType | undefined>(undefined);
 
 export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Layer 1: Load initial state from LocalStorage or clean initial state
   const loadStoredData = <T,>(key: string, fallback: T): T => {
     try {
+      // When Supabase is active, do not load stale entity caches from localStorage
+      if (
+        isSupabaseConfigured() &&
+        key !== 'currentUser' &&
+        key !== 'role' &&
+        key !== 'isAuthenticated' &&
+        key !== 'activeProfileId'
+      ) {
+        return fallback;
+      }
       const item = localStorage.getItem(`${STORAGE_KEY}_${key}`);
       return item ? JSON.parse(item) : fallback;
     } catch {
@@ -185,24 +222,27 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [simulatorCard, setSimulatorCard] = useState<NFCCard | null>(null);
 
-  // Sync to Layer 1 (LocalStorage)
+  // Sync to Layer 1 (LocalStorage) - only sync session and preferences.
+  // When Supabase is active, avoid persisting entity tables to localStorage so the browser never holds stale DB caches.
   useEffect(() => {
     try {
       localStorage.setItem(`${STORAGE_KEY}_role`, JSON.stringify(currentRole));
-      localStorage.setItem(`${STORAGE_KEY}_profiles`, JSON.stringify(profiles));
       localStorage.setItem(`${STORAGE_KEY}_activeProfileId`, JSON.stringify(activeProfileId));
-      localStorage.setItem(`${STORAGE_KEY}_links`, JSON.stringify(links));
-      localStorage.setItem(`${STORAGE_KEY}_cards`, JSON.stringify(cards));
-      localStorage.setItem(`${STORAGE_KEY}_qrCodes`, JSON.stringify(qrCodes));
-      localStorage.setItem(`${STORAGE_KEY}_analyticsEvents`, JSON.stringify(analyticsEvents));
-      localStorage.setItem(`${STORAGE_KEY}_notifications`, JSON.stringify(notifications));
-      localStorage.setItem(`${STORAGE_KEY}_systemSettings`, JSON.stringify(systemSettings));
-      localStorage.setItem(`${STORAGE_KEY}_allUsers`, JSON.stringify(allUsers));
-      localStorage.setItem(`${STORAGE_KEY}_invites`, JSON.stringify(invites));
+      if (!isSupabaseConfigured()) {
+        localStorage.setItem(`${STORAGE_KEY}_profiles`, JSON.stringify(profiles));
+        localStorage.setItem(`${STORAGE_KEY}_links`, JSON.stringify(links));
+        localStorage.setItem(`${STORAGE_KEY}_cards`, JSON.stringify(cards));
+        localStorage.setItem(`${STORAGE_KEY}_qrCodes`, JSON.stringify(qrCodes));
+        localStorage.setItem(`${STORAGE_KEY}_analyticsEvents`, JSON.stringify(analyticsEvents));
+        localStorage.setItem(`${STORAGE_KEY}_notifications`, JSON.stringify(notifications));
+        localStorage.setItem(`${STORAGE_KEY}_systemSettings`, JSON.stringify(systemSettings));
+        localStorage.setItem(`${STORAGE_KEY}_allUsers`, JSON.stringify(allUsers));
+        localStorage.setItem(`${STORAGE_KEY}_invites`, JSON.stringify(invites));
+      }
     } catch (e) {
       console.warn('Storage sync error:', e);
     }
-  }, [currentRole, profiles, activeProfileId, links, cards, qrCodes, analyticsEvents, notifications, systemSettings, allUsers, invites]);
+  }, [currentRole, activeProfileId, profiles, links, cards, qrCodes, analyticsEvents, notifications, systemSettings, allUsers, invites]);
 
   // Auth & Session
   const login = (user: User, role: UserRole) => {

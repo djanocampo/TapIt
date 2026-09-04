@@ -14,7 +14,7 @@ import {
 } from '../../services/dualLayerSync';
 import { isSupabaseConfigured } from '../../lib/supabase';
 
-const SYNC_COOLDOWN_MS = 30000; // 30s cooldown between auto-refreshes on window focus
+const SYNC_COOLDOWN_MS = 2000; // 2s cooldown to prevent flood while remaining responsive
 
 export const BackendSyncInit: React.FC = () => {
   const store = useTapIt();
@@ -48,7 +48,7 @@ export const BackendSyncInit: React.FC = () => {
           hydrateFromRemote 
         } = storeRef.current;
 
-        // ── PULL (Remote Authoritative Fetch) ──
+        // ── PULL (Remote Authoritative Fetch Directly From Supabase) ──
         const [
           remoteUsers,
           remoteProfiles,
@@ -71,7 +71,7 @@ export const BackendSyncInit: React.FC = () => {
           fetchRemoteSettings(systemSettings),
         ]);
 
-        // Hydrate store state with merged records
+        // Hydrate store state with clean remote records
         hydrateFromRemote({
           users: remoteUsers,
           profiles: remoteProfiles,
@@ -90,17 +90,15 @@ export const BackendSyncInit: React.FC = () => {
       }
     };
 
-    // Defer initial sync slightly to allow instant first frame paint (<10ms)
-    const initialTimer = setTimeout(() => {
-      void runPullSync();
-    }, 400);
+    // Run pull sync immediately upon page visit / refresh
+    void runPullSync();
 
-    // ── THROTTLED RECONNECTION & TAB FOCUS LISTENERS ──
+    // ── RECONNECTION & TAB FOCUS LISTENERS ──
     const handleReconnection = () => {
       if (document.visibilityState === 'hidden') return;
       const now = Date.now();
       if (now - lastSyncTimeRef.current < SYNC_COOLDOWN_MS) {
-        return; // Skip if synced recently
+        return;
       }
       void runPullSync();
     };
@@ -110,18 +108,15 @@ export const BackendSyncInit: React.FC = () => {
     document.addEventListener('visibilitychange', handleReconnection);
 
     // ── SUPABASE REALTIME LIVE WEBSOCKET SUBSCRIPTION ──
-    // Also respect the cooldown to prevent registration upsert events from immediately
-    // re-hydrating the store and reverting a card that was just activated.
     const unsubscribe = subscribeToRealtimeChanges(() => {
       const now = Date.now();
       if (now - lastSyncTimeRef.current < SYNC_COOLDOWN_MS) {
-        return; // Skip realtime hydration if we synced recently
+        return;
       }
       void runPullSync();
     });
 
     return () => {
-      clearTimeout(initialTimer);
       window.removeEventListener('online', handleReconnection);
       window.removeEventListener('focus', handleReconnection);
       document.removeEventListener('visibilitychange', handleReconnection);

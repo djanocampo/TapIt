@@ -727,7 +727,6 @@ export async function fetchRemoteUsers(local: User[]): Promise<User[]> {
   try {
     const { data, error } = await supabase.from('users').select('*');
     if (error || !data) return local;
-    if (data.length === 0 && local.length > 0) return local;
     return data.map(mapDBToUser);
   } catch {
     return local;
@@ -739,7 +738,6 @@ export async function fetchRemoteProfiles(local: Profile[]): Promise<Profile[]> 
   try {
     const { data, error } = await supabase.from('profiles').select('*');
     if (error || !data) return local;
-    if (data.length === 0 && local.length > 0) return local;
     return data.map(mapDBToProfile);
   } catch {
     return local;
@@ -751,7 +749,6 @@ export async function fetchRemoteLinks(local: LinkItem[]): Promise<LinkItem[]> {
   try {
     const { data, error } = await supabase.from('links').select('*').order('position', { ascending: true });
     if (error || !data) return local;
-    if (data.length === 0 && local.length > 0) return local;
     return data.map(mapDBToLink);
   } catch {
     return local;
@@ -766,34 +763,7 @@ export async function fetchRemoteCards(local: NFCCard[]): Promise<NFCCard[]> {
 
     const { data, error } = await supabase.from('nfc_cards').select('*');
     if (error || !data) return local;
-    const remote = data.map(mapDBToCard);
-
-    // Merge: If local has a card marked 'active' with a userId but remote still shows it as
-    // 'unclaimed', prefer the local version — it means a registration just completed and the
-    // Supabase write hasn't committed yet. This prevents hydration from reverting bound cards.
-    const localByToken = new Map(local.map(c => [c.cardToken.toLowerCase(), c]));
-    const merged = remote.map(remoteCard => {
-      const localCard = localByToken.get(remoteCard.cardToken.toLowerCase());
-      if (
-        localCard &&
-        localCard.status === 'active' &&
-        localCard.userId &&
-        (remoteCard.status === 'unclaimed' || !remoteCard.userId)
-      ) {
-        return localCard; // Keep local's more up-to-date binding
-      }
-      return remoteCard;
-    });
-
-    // Also include any local-only cards not yet in remote (pending first sync)
-    const remoteTokens = new Set(remote.map(c => c.cardToken.toLowerCase()));
-    for (const localCard of local) {
-      if (!remoteTokens.has(localCard.cardToken.toLowerCase())) {
-        merged.push(localCard);
-      }
-    }
-
-    return merged;
+    return data.map(mapDBToCard);
   } catch {
     return local;
   }
