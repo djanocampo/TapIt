@@ -130,6 +130,10 @@ export const UserManagementPage: React.FC = () => {
 
   const handleCancelOrResetNfc = () => {
     clearNfcTimers();
+    // Clear the pre-emptive cooldown guard so taps aren't blocked after a cancel
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('tapit_nfc_cooldown_until');
+    }
     setNfcState('idle');
     setNfcStatusMessage('');
     setCountdown(3);
@@ -148,6 +152,12 @@ export const UserManagementPage: React.FC = () => {
     setNfcState('arming');
     setNfcStatusMessage('');
     setCountdown(3);
+
+    // Set a 10-second pre-emptive cooldown guard immediately so NFCTapHandler
+    // cannot process a phantom auto-read during the entire arm + write + cooldown window.
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('tapit_nfc_cooldown_until', (Date.now() + 10000).toString());
+    }
 
     let count = 3;
     armingTimerRef.current = setInterval(() => {
@@ -237,7 +247,10 @@ export const UserManagementPage: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const filteredUsers = allUsers.filter((user) => {
+  // Exclude admin accounts — admin oversees the system and should never appear as a regular user
+  const nonAdminUsers = allUsers.filter((user) => user.role !== 'admin');
+
+  const filteredUsers = nonAdminUsers.filter((user) => {
     const matchesSearch = 
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -256,7 +269,7 @@ export const UserManagementPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-lg sm:text-xl font-bold text-white font-display">Account Directory</h2>
             <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-              {allUsers.length} Active Accounts
+              {nonAdminUsers.length} Active Accounts
             </span>
           </div>
           <p className="text-xs text-slate-400">
@@ -294,7 +307,6 @@ export const UserManagementPage: React.FC = () => {
             className="bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:outline-none"
           >
             <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
             <option value="user">User</option>
           </select>
 

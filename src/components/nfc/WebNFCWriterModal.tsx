@@ -128,6 +128,10 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
 
   const handleReset = () => {
     clearAllTimers();
+    // Clear the pre-emptive cooldown guard so taps aren't blocked after a cancel
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('tapit_nfc_cooldown_until');
+    }
     setStatus('idle');
     setErrorMessage('');
     setScannedTagInfo(null);
@@ -176,6 +180,12 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
     setStatus('arming');
     setErrorMessage('');
     setCountdown(3);
+
+    // Set a 10-second pre-emptive cooldown guard immediately so NFCTapHandler
+    // cannot process a phantom auto-read during the entire arm + write + cooldown window.
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('tapit_nfc_cooldown_until', (Date.now() + 10000).toString());
+    }
 
     let count = 3;
     armingTimerRef.current = setInterval(() => {
