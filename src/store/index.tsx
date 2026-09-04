@@ -37,6 +37,7 @@ import {
   syncSettingsToSupabase,
   deleteSupabaseRecord
 } from '../services/dualLayerSync';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export interface RemoteHydrationPayload {
   users?: User[];
@@ -93,6 +94,7 @@ interface TapItContextType {
   // Card Actions
   claimCard: (cardToken: string, profileId: string, name?: string) => { success: boolean; card?: NFCCard; message: string };
   updateCard: (id: string, updates: Partial<NFCCard>) => void;
+  deleteCard: (id: string) => void;
   toggleCardStatus: (id: string) => void;
   reassignCard: (cardId: string, profileId: string) => void;
   generateBatchCards: (count: number, material: CardMaterial) => NFCCard[];
@@ -518,6 +520,17 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       void syncCardsToSupabase(updated);
       return updated;
     });
+  };
+
+  const deleteCard = (id: string) => {
+    setCards(prev => {
+      const updated = prev.filter(c => c.id !== id);
+      void syncCardsToSupabase(updated);
+      return updated;
+    });
+    if (isSupabaseConfigured()) {
+      void supabase.from('nfc_cards').delete().eq('id', id);
+    }
   };
 
   const toggleCardStatus = (id: string) => {
@@ -1140,6 +1153,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         claimCard,
         updateCard,
+        deleteCard,
         toggleCardStatus,
         reassignCard,
         generateBatchCards,

@@ -26,7 +26,7 @@ import {
 import { formatNumber, triggerConfetti } from '../../lib/utils';
 
 export const MyCardsPage: React.FC = () => {
-  const { cards, profiles, currentRole, claimCard, updateCard, toggleCardStatus, reassignCard } = useTapIt();
+  const { cards, profiles, currentRole, claimCard, updateCard, deleteCard, toggleCardStatus, reassignCard } = useTapIt();
 
   // Manage Modal State
   const [selectedCard, setSelectedCard] = useState<NFCCard | null>(null);
@@ -359,18 +359,35 @@ export const MyCardsPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
-              <Button
-                variant={selectedCard.status === 'active' ? 'danger' : 'outline'}
-                size="sm"
-                type="button"
-                onClick={() => {
-                  toggleCardStatus(selectedCard.id);
-                  setIsManageModalOpen(false);
-                }}
-              >
-                {selectedCard.status === 'active' ? 'Disable This Card' : 'Reactivate Card'}
-              </Button>
+            <div className="pt-3 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={selectedCard.status === 'active' ? 'danger' : 'outline'}
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    toggleCardStatus(selectedCard.id);
+                    setIsManageModalOpen(false);
+                  }}
+                >
+                  {selectedCard.status === 'active' ? 'Disable Card' : 'Reactivate'}
+                </Button>
+
+                <Button
+                  variant="danger"
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to remove ${selectedCard.name} (${selectedCard.cardToken})?`)) {
+                      deleteCard(selectedCard.id);
+                      setIsManageModalOpen(false);
+                    }
+                  }}
+                  leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                >
+                  Delete
+                </Button>
+              </div>
 
               <div className="flex items-center gap-2">
                 <Button variant="secondary" size="sm" type="button" onClick={() => setIsManageModalOpen(false)}>

@@ -17,12 +17,13 @@ import {
   CheckCircle2, 
   Trash2,
   Zap,
-  User as UserIcon
+  User as UserIcon,
+  AlertCircle
 } from 'lucide-react';
 import { formatNumber, triggerConfetti } from '../../lib/utils';
 
 export const CardInventoryPage: React.FC = () => {
-  const { cards, profiles, allUsers, generateBatchCards, toggleCardStatus, updateCard } = useTapIt();
+  const { cards, profiles, allUsers, generateBatchCards, toggleCardStatus, updateCard, deleteCard } = useTapIt();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -34,6 +35,10 @@ export const CardInventoryPage: React.FC = () => {
   // Web NFC Admin Modal State
   const [isNfcWriterOpen, setIsNfcWriterOpen] = useState(false);
   const [writerCard, setWriterCard] = useState<NFCCard | null>(null);
+
+  // Delete Confirmation Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<NFCCard | null>(null);
 
   const filteredCards = cards.filter((c) => {
     const assignedUser = allUsers.find(u => u.id === c.userId);
@@ -59,6 +64,19 @@ export const CardInventoryPage: React.FC = () => {
   const handleOpenWriter = (card?: NFCCard) => {
     setWriterCard(card || cards[0] || null);
     setIsNfcWriterOpen(true);
+  };
+
+  const handleOpenDelete = (card: NFCCard) => {
+    setCardToDelete(card);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (cardToDelete) {
+      deleteCard(cardToDelete.id);
+      setIsDeleteModalOpen(false);
+      setCardToDelete(null);
+    }
   };
 
   return (
@@ -244,6 +262,15 @@ export const CardInventoryPage: React.FC = () => {
                         >
                           {card.status === 'active' ? 'Disable' : 'Reactivate'}
                         </Button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDelete(card)}
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/20 hover:border-rose-500/40 transition"
+                          title="Delete NFC Card from Inventory"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -261,6 +288,64 @@ export const CardInventoryPage: React.FC = () => {
         card={writerCard}
         profile={profiles.find((p) => p.id === (writerCard?.profileId || profiles[0]?.id))}
       />
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete NFC Smart Card"
+        description="Are you sure you want to permanently remove this NFC card from the hardware inventory?"
+        maxWidth="sm"
+      >
+        {cardToDelete && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-500/30 space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5 text-rose-400" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">
+                    {cardToDelete.name}
+                  </h4>
+                  <p className="text-[11px] font-mono text-cyan-300">
+                    Token: {cardToDelete.cardToken}
+                  </p>
+                </div>
+              </div>
+
+              {cardToDelete.userId && (
+                <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 text-xs space-y-1">
+                  <span className="text-[10px] text-amber-300 uppercase font-bold block">
+                    ⚠️ Bound Member Card:
+                  </span>
+                  <p className="text-slate-300 text-[11px]">
+                    This card is bound to an active user profile. Deleting it will unlink the card and prevent it from redirecting when tapped.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsDeleteModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleConfirmDelete}
+                leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+              >
+                Delete Permanently
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* BATCH GENERATOR MODAL */}
       <Modal

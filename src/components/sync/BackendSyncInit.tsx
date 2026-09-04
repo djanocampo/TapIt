@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTapIt } from '../../store';
 import { 
   fetchRemoteUsers,
@@ -10,41 +10,45 @@ import {
   fetchRemoteInvites,
   fetchRemoteNotifications,
   fetchRemoteSettings,
-  syncUsersToSupabase,
-  syncProfilesToSupabase,
-  syncLinksToSupabase,
-  syncCardsToSupabase,
-  syncQRCodesToSupabase,
-  syncAnalyticsToSupabase,
-  syncInvitesToSupabase,
-  syncNotificationsToSupabase,
-  syncSettingsToSupabase,
   subscribeToRealtimeChanges
 } from '../../services/dualLayerSync';
 import { isSupabaseConfigured } from '../../lib/supabase';
 
+const SYNC_COOLDOWN_MS = 30000; // 30s cooldown between auto-refreshes on window focus
+
 export const BackendSyncInit: React.FC = () => {
-  const { 
-    allUsers, 
-    profiles, 
-    links, 
-    cards, 
-    qrCodes, 
-    analyticsEvents, 
-    invites, 
-    notifications, 
-    systemSettings,
-    hydrateFromRemote
-  } = useTapIt();
+  const store = useTapIt();
+  const storeRef = useRef(store);
+  storeRef.current = store;
+
+  const isSyncingRef = useRef(false);
+  const lastSyncTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
       return;
     }
 
-    const syncAllStores = async () => {
+    const runPullSync = async () => {
+      if (isSyncingRef.current) return;
+      isSyncingRef.current = true;
+      lastSyncTimeRef.current = Date.now();
+
       try {
-        // ── PHASE 1: PULL (Remote → Local Merge) ──
+        const { 
+          allUsers, 
+          profiles, 
+          links, 
+          cards, 
+          qrCodes, 
+          analyticsEvents, 
+          invites, 
+          notifications, 
+          systemSettings,
+          hydrateFromRemote 
+        } = storeRef.current;
+
+        // ── PULL (Remote → Local Merge) ──
         const [
           remoteUsers,
           remoteProfiles,
@@ -79,30 +83,26 @@ export const BackendSyncInit: React.FC = () => {
           notifications: remoteNotifs,
           settings: remoteSettings,
         });
-
-        // ── PHASE 2: PUSH (Local Offline Delta → Remote Persistence) ──
-        await Promise.all([
-          syncUsersToSupabase(remoteUsers),
-          syncProfilesToSupabase(remoteProfiles),
-          syncLinksToSupabase(remoteLinks),
-          syncCardsToSupabase(remoteCards),
-          syncQRCodesToSupabase(remoteQRCodes),
-          syncAnalyticsToSupabase(remoteAnalytics),
-          syncInvitesToSupabase(remoteInvites),
-          syncNotificationsToSupabase(remoteNotifs),
-          syncSettingsToSupabase(remoteSettings),
-        ]);
       } catch (err) {
-        console.warn('[Dual-Layer Sync] Background sync cycle deferred:', err);
+        console.warn('[Dual-Layer Sync] Background pull deferred:', err);
+      } finally {
+        isSyncingRef.current = false;
       }
     };
 
-    // Initial mount sync
-    void syncAllStores();
+    // Defer initial sync slightly to allow instant first frame paint (<10ms)
+    const initialTimer = setTimeout(() => {
+      void runPullSync();
+    }, 400);
 
-    // ── RECONNECTION & TAB FOCUS LISTENERS ──
+    // ── THROTTLED RECONNECTION & TAB FOCUS LISTENERS ──
     const handleReconnection = () => {
-      void syncAllStores();
+      if (document.visibilityState === 'hidden') return;
+      const now = Date.now();
+      if (now - lastSyncTimeRef.current < SYNC_COOLDOWN_MS) {
+        return; // Skip if synced recently
+      }
+      void runPullSync();
     };
 
     window.addEventListener('online', handleReconnection);
@@ -111,10 +111,11 @@ export const BackendSyncInit: React.FC = () => {
 
     // ── SUPABASE REALTIME LIVE WEBSOCKET SUBSCRIPTION ──
     const unsubscribe = subscribeToRealtimeChanges(() => {
-      void syncAllStores();
+      void runPullSync();
     });
 
     return () => {
+      clearTimeout(initialTimer);
       window.removeEventListener('online', handleReconnection);
       window.removeEventListener('focus', handleReconnection);
       document.removeEventListener('visibilitychange', handleReconnection);
@@ -124,3 +125,4 @@ export const BackendSyncInit: React.FC = () => {
 
   return null; // Headless component - Renders zero DOM
 };
+
