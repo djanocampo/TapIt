@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { getClientDeviceInfo } from '../../lib/utils';
-import { Radio, Smartphone, CheckCircle2, AlertTriangle, HelpCircle, HandMetal, ShieldCheck, ArrowRight, LayoutDashboard } from 'lucide-react';
+import { Radio, HandMetal, ArrowRight, LayoutDashboard } from 'lucide-react';
 import { UnclaimedCardPage } from './UnclaimedCardPage';
 import { DisabledCardPage } from './DisabledCardPage';
 import { Button } from '../../components/ui/Button';
@@ -11,7 +11,7 @@ import { Button } from '../../components/ui/Button';
 export const NFCTapHandler: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { cards, recordCardTap, profiles, logAnalyticsEvent } = useTapIt();
+  const { cards, recordCardTap, profiles } = useTapIt();
 
   const [status, setStatus] = useState<'resolving' | 'active' | 'unclaimed' | 'disabled' | 'not_found' | 'cooldown'>('resolving');
   const [targetSlug, setTargetSlug] = useState<string>('');
@@ -28,6 +28,10 @@ export const NFCTapHandler: React.FC = () => {
       }
 
       const cleanToken = token.trim();
+      const stripped = cleanToken.replace(/^TAP-?/i, '');
+      const normalized = cleanToken.toLowerCase();
+      const strippedLower = stripped.toLowerCase();
+      const prefixedLower = `tap-${strippedLower}`;
 
       // Check if tag was just written in this browser session (3-second cooldown active)
       let isUnderCooldown = false;
@@ -44,56 +48,94 @@ export const NFCTapHandler: React.FC = () => {
         }
       }
 
-      // 1. Try resolving via local store
-      const localResult = recordCardTap(cleanToken);
-      if (localResult.status === 'active' && localResult.profile) {
-        if (!isMounted) return;
-        const slug = localResult.profile.slug || 'djan';
-        setTargetSlug(slug);
-        setProfileName(localResult.profile.displayName || localResult.profile.name || 'Profile');
+      // ── STEP 1: INSTANT LOCAL STORE CHECK (<1ms) ──
+      const localCard = cards.find(c => {
+        const t = c.cardToken.toLowerCase();
+        return t === normalized || t === strippedLower || t === prefixedLower;
+      });
 
-        if (isUnderCooldown && remainingCooldown > 0) {
-          setStatus('cooldown');
-          setCooldownSeconds(remainingCooldown);
-          let count = remainingCooldown;
-          const interval = setInterval(() => {
-            count -= 1;
-            setCooldownSeconds(count);
-            if (count <= 0) {
-              clearInterval(interval);
-              navigate(`/@${slug}?src=nfc`, { replace: true });
-            }
-          }, 1000);
+      if (localCard) {
+        if (localCard.status === 'active') {
+          const prof = profiles.find(p => p.id === localCard.profileId) || profiles[0];
+          const slug = prof?.slug || 'profile';
+          const name = prof?.displayName || prof?.name || 'Profile';
+
+          if (!isMounted) return;
+          setTargetSlug(slug);
+          setProfileName(name);
+
+          // Record tap and log analytics in background
+          recordCardTap(localCard.cardToken);
+
+          if (isUnderCooldown && remainingCooldown > 0) {
+            setStatus('cooldown');
+            setCooldownSeconds(remainingCooldown);
+            let count = remainingCooldown;
+            const interval = setInterval(() => {
+              count -= 1;
+              if (isMounted) setCooldownSeconds(count);
+              if (count <= 0) {
+                clearInterval(interval);
+                if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+              }
+            }, 1000);
+            return;
+          } else {
+            // INSTANT REDIRECT (<1ms)
+            navigate(`/@${slug}?src=nfc`, { replace: true });
+            return;
+          }
+        } else if (localCard.status === 'unclaimed') {
+          if (isMounted) setStatus('unclaimed');
           return;
-        } else {
-          setStatus('active');
-          setTimeout(() => {
-            if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
-          }, 800);
+        } else if (localCard.status === 'disabled' || localCard.status === 'suspended') {
+          if (isMounted) setStatus('disabled');
           return;
         }
       }
 
-      // 2. Query Supabase remote database (vital for public visitors and cross-device taps)
+      // ── STEP 2: CHECK IF TOKEN IS DIRECT PROFILE SLUG (<1ms) ──
+      const directLocalProfile = profiles.find(p => 
+        p.slug.toLowerCase() === normalized || 
+        p.slug.toLowerCase() === strippedLower
+      );
+      if (directLocalProfile) {
+        if (!isMounted) return;
+        navigate(`/@${directLocalProfile.slug}?src=nfc`, { replace: true });
+        return;
+      }
+
+      // ── STEP 3: FAST INDEXED REMOTE DATABASE RESOLUTION (Supabase) ──
       if (isSupabaseConfigured()) {
         try {
+          const candidateTokens = Array.from(new Set([
+            cleanToken,
+            cleanToken.toUpperCase(),
+            cleanToken.toLowerCase(),
+            stripped,
+            stripped.toUpperCase(),
+            stripped.toLowerCase(),
+            `TAP-${stripped.toUpperCase()}`,
+            `tap-${stripped.toLowerCase()}`
+          ]));
+
           const { data: dbCard, error } = await supabase
             .from('nfc_cards')
             .select('*, profiles(*)')
-            .ilike('card_token', cleanToken)
+            .in('card_token', candidateTokens)
             .limit(1)
             .maybeSingle();
 
           if (!error && dbCard && isMounted) {
             if (dbCard.status === 'active' && dbCard.profiles) {
               const prof = Array.isArray(dbCard.profiles) ? dbCard.profiles[0] : dbCard.profiles;
-              const slug = prof?.slug || 'djan';
+              const slug = prof?.slug || 'profile';
               const name = prof?.display_name || prof?.name || 'Profile';
 
               setTargetSlug(slug);
               setProfileName(name);
 
-              // Log remote tap event
+              // Non-blocking fire-and-forget background analytics and counter updates
               const client = getClientDeviceInfo();
               void supabase.from('analytics_events').insert({
                 id: `evt_${Date.now()}`,
@@ -109,7 +151,6 @@ export const NFCTapHandler: React.FC = () => {
                 timestamp: new Date().toISOString(),
               });
 
-              // Increment taps
               void supabase.from('nfc_cards').update({
                 taps: (dbCard.taps || 0) + 1,
                 last_tapped_at: new Date().toISOString(),
@@ -121,18 +162,16 @@ export const NFCTapHandler: React.FC = () => {
                 let count = remainingCooldown;
                 const interval = setInterval(() => {
                   count -= 1;
-                  setCooldownSeconds(count);
+                  if (isMounted) setCooldownSeconds(count);
                   if (count <= 0) {
                     clearInterval(interval);
-                    navigate(`/@${slug}?src=nfc`, { replace: true });
+                    if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
                   }
                 }, 1000);
                 return;
               } else {
-                setStatus('active');
-                setTimeout(() => {
-                  if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
-                }, 800);
+                // INSTANT REDIRECT AS SOON AS DB RETURNS
+                navigate(`/@${slug}?src=nfc`, { replace: true });
                 return;
               }
             } else if (dbCard.status === 'disabled' || dbCard.status === 'suspended') {
@@ -143,6 +182,19 @@ export const NFCTapHandler: React.FC = () => {
               return;
             }
           }
+
+          // Check if slug exists directly in remote profiles table
+          const { data: remoteProf } = await supabase
+            .from('profiles')
+            .select('slug, name, display_name')
+            .or(`slug.eq.${cleanToken},slug.eq.${stripped}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (remoteProf && isMounted) {
+            navigate(`/@${remoteProf.slug}?src=nfc`, { replace: true });
+            return;
+          }
         } catch (err) {
           console.warn('Error resolving NFC card remotely:', err);
         }
@@ -150,14 +202,8 @@ export const NFCTapHandler: React.FC = () => {
 
       if (!isMounted) return;
 
-      // 3. Fallback evaluation
-      if (localResult.status === 'unclaimed') {
-        setStatus('unclaimed');
-      } else if (localResult.status === 'disabled') {
-        setStatus('disabled');
-      } else {
-        setStatus('not_found');
-      }
+      // ── STEP 4: FALLBACK TO UNCLAIMED ──
+      setStatus('unclaimed');
     }
 
     resolveTag();
@@ -199,16 +245,14 @@ export const NFCTapHandler: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-3 bg-black/50 border border-white/10 rounded-2xl text-xs space-y-1">
-            <div className="flex justify-between text-slate-400">
-              <span>Card Token:</span>
-              <span className="font-mono text-cyan-300 font-bold">/t/{token}</span>
+          {profileName && (
+            <div className="p-3 bg-black/50 border border-white/10 rounded-2xl text-xs">
+              <div className="flex justify-between items-center text-slate-400">
+                <span>Target Identity:</span>
+                <span className="text-cyan-300 font-bold">{profileName} (@{targetSlug})</span>
+              </div>
             </div>
-            <div className="flex justify-between text-slate-400">
-              <span>Target Persona:</span>
-              <span className="text-white font-bold">{profileName} (@{targetSlug})</span>
-            </div>
-          </div>
+          )}
 
           <div className="space-y-2.5 pt-2">
             <Button
@@ -218,7 +262,7 @@ export const NFCTapHandler: React.FC = () => {
               className="w-full justify-center"
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
-              Open Profile Now (@{targetSlug})
+              Open Profile Now
             </Button>
 
             <Link to="/dashboard" className="block w-full">
@@ -232,32 +276,34 @@ export const NFCTapHandler: React.FC = () => {
     );
   }
 
+  // ── CLEAN HIGH-SPEED LOADING STATE (NO RAW TOKEN DISPLAYED) ──
   return (
     <div className="min-h-screen bg-[#070a13] flex flex-col items-center justify-center p-4 text-center">
-      {/* NFC Ripple Wave */}
       <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-3xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center shadow-glow-cyan">
-          <Radio className="w-10 h-10 animate-pulse" />
+        <div className="w-20 h-20 rounded-3xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.25)]">
+          <Radio className="w-9 h-9 animate-pulse" />
         </div>
-        <div className="absolute inset-0 rounded-3xl border-2 border-cyan-400/50 animate-ping pointer-events-none"></div>
+        <div className="absolute inset-0 rounded-3xl border-2 border-cyan-400/40 animate-ping pointer-events-none" />
       </div>
 
       <div className="space-y-2 max-w-sm">
-        <span className="text-xs font-mono text-cyan-400 font-semibold uppercase tracking-wider">
-          NFC Token Detected
+        <span className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-wider px-3 py-1 bg-cyan-950/50 border border-cyan-500/30 rounded-full inline-block">
+          Smart NFC Card Detected
         </span>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-white font-display">
+        <h2 className="text-xl sm:text-2xl font-black text-white font-display">
           Connecting to TapIt Profile...
         </h2>
-        {profileName && (
+        {profileName ? (
           <p className="text-sm font-bold text-cyan-300">
             {profileName} (@{targetSlug})
           </p>
+        ) : (
+          <p className="text-xs text-slate-400">
+            Fast digital identity resolution in progress
+          </p>
         )}
-        <p className="text-xs text-slate-400">
-          Token: <strong className="font-mono text-slate-200">/t/{token}</strong>
-        </p>
       </div>
     </div>
   );
 };
+
