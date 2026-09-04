@@ -43,7 +43,7 @@ export const BackendSyncInit: React.FC = () => {
           qrCodes, 
           allAnalyticsEvents, 
           invites, 
-          notifications, 
+          allNotifications, 
           systemSettings,
           hydrateFromRemote 
         } = storeRef.current;
@@ -67,7 +67,7 @@ export const BackendSyncInit: React.FC = () => {
           fetchRemoteQRCodes(qrCodes),
           fetchRemoteAnalytics(allAnalyticsEvents),
           fetchRemoteInvites(invites),
-          fetchRemoteNotifications(notifications),
+          fetchRemoteNotifications(allNotifications),
           fetchRemoteSettings(systemSettings),
         ]);
 

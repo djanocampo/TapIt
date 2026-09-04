@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Mail, Lock, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import tapItLogo from '../../assets/tapit-logo.png';
 import { INITIAL_ADMIN } from '../../data/mockData';
 
@@ -97,7 +97,7 @@ export const LoginPage: React.FC = () => {
           <Input
             label="Email or Username"
             type="text"
-            placeholder="admin@tapit.app or your username"
+            placeholder="you@example.com or your username"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             leftIcon={<Mail className="w-4 h-4" />}
@@ -141,14 +141,6 @@ export const LoginPage: React.FC = () => {
             Sign In
           </Button>
         </form>
-
-        {/* Admin hint badge */}
-        <div className="p-3 rounded-2xl bg-cyan-950/30 border border-cyan-500/20 text-[11px] text-cyan-300 flex items-center gap-2.5">
-          <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
-          <span>
-            Admin Portal Access: Use <strong className="text-white font-mono">admin@tapit.app</strong> with password <strong className="text-white font-mono">admin123</strong>
-          </span>
-        </div>
 
         {/* Footer link */}
         <div className="text-center text-xs text-slate-400 space-y-1 border-t border-white/[0.08] pt-4">

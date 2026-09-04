@@ -326,9 +326,15 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     scopedProfileIds.has(e.profileId) || (e.cardId && scopedCardIds.has(e.cardId))
   );
 
-  const scopedNotifications = notifications.filter(n => 
-    !n.recipientUserId || n.recipientUserId === currentUser.id
-  );
+  const scopedNotifications = notifications.filter(n => {
+    if (n.recipientUserId) {
+      return n.recipientUserId === currentUser.id;
+    }
+    if (n.profileId) {
+      return scopedProfileIds.has(n.profileId);
+    }
+    return false;
+  });
 
   const setActiveProfileId = (id: string) => {
     setActiveProfileIdState(id);
@@ -384,8 +390,8 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Deterministically find the existing profile in state or build fallback
     const matchedProf = profiles.find(p => p.id === id) ||
       profiles.find(p => p.id === cleanId) ||
-      profiles.find(p => p.userId === currentUser.id) ||
-      profiles.find(p => updates.slug && p.slug.toLowerCase() === updates.slug.toLowerCase());
+      profiles.find(p => updates.slug && p.slug.toLowerCase() === updates.slug.toLowerCase() && p.userId === currentUser.id) ||
+      (profiles.filter(p => p.userId === currentUser.id).length === 1 ? profiles.find(p => p.userId === currentUser.id) : undefined);
 
     const targetProf: Profile = matchedProf
       ? {
@@ -1074,9 +1080,33 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return updated;
     });
 
+    // Determine the profile owner for this event to properly scope recipientUserId
+    let recipientUserId = currentUser.id;
+    if (eventData.profileId) {
+      const targetProfile = profiles.find(p => p.id === eventData.profileId);
+      if (targetProfile && targetProfile.userId) {
+        recipientUserId = targetProfile.userId;
+      }
+    } else if (eventData.cardId) {
+      const targetCard = cards.find(c => c.id === eventData.cardId);
+      if (targetCard && targetCard.userId) {
+        recipientUserId = targetCard.userId;
+      }
+    }
+
+    const title = eventData.eventType === 'nfc_tap'
+      ? '⚡ New NFC Card Tap!'
+      : eventData.eventType === 'qr_scan'
+        ? '📷 QR Code Scanned'
+        : eventData.eventType === 'profile_view'
+          ? '👀 Profile View'
+          : '🔗 Link Clicked';
+
     const newNotification: NotificationItem = {
-      id: `notif_${Date.now()}`,
-      title: eventData.eventType === 'nfc_tap' ? '⚡ New NFC Card Tap!' : eventData.eventType === 'qr_scan' ? '📷 QR Code Scanned' : '🔗 Link Clicked',
+      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      recipientUserId,
+      profileId: eventData.profileId,
+      title,
       message: `Someone connected with your profile from ${eventData.city || 'Manila'}, ${eventData.country || 'PH'}.`,
       type: eventData.eventType === 'nfc_tap' ? 'tap' : 'info',
       timestamp: new Date().toISOString(),
@@ -1099,8 +1129,19 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const clearAllNotifications = () => {
-    setNotifications([]);
-    void clearSupabaseNotifications();
+    const currentProfileIds = Array.from(scopedProfileIds);
+    setNotifications(prev =>
+      prev.filter(n => {
+        if (n.recipientUserId) {
+          return n.recipientUserId !== currentUser.id;
+        }
+        if (n.profileId) {
+          return !scopedProfileIds.has(n.profileId);
+        }
+        return false;
+      })
+    );
+    void clearSupabaseNotifications(currentUser.id, currentProfileIds);
   };
 
   // Admin Actions
@@ -1128,7 +1169,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )
     );
     setInvites(prev => prev.filter(inv => inv.usedByUserId !== userId));
-    setNotifications(prev => prev.filter(n => n.recipientUserId !== userId));
+    setNotifications(prev => prev.filter(n => n.recipientUserId !== userId && (!n.profileId || !userProfileIds.includes(n.profileId))));
 
     void deleteSupabaseUser(userId);
 

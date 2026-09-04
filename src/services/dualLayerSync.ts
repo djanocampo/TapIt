@@ -451,17 +451,28 @@ export async function upsertSingleProfile(profile: Profile): Promise<boolean> {
   try {
     const row = mapProfileToDB(profile);
 
-    // Self-healing check: verify if a profile already exists in Supabase for this user or slug
-    const { data: existing } = await supabase
+    // 1. Check if profile exists by ID in Supabase
+    const { data: byId } = await supabase
       .from('profiles')
       .select('id, user_id, slug')
-      .or(`slug.eq.${row.slug},user_id.eq.${row.user_id}`)
-      .limit(1)
+      .eq('id', row.id)
       .maybeSingle();
 
-    if (existing) {
-      row.id = existing.id;
-      profile.id = existing.id;
+    if (byId) {
+      row.id = byId.id;
+      profile.id = byId.id;
+    } else {
+      // 2. If not found by ID, check if a profile with the same slug exists for this user (e.g. legacy/unaligned ID)
+      const { data: bySlug } = await supabase
+        .from('profiles')
+        .select('id, user_id, slug')
+        .eq('slug', row.slug)
+        .maybeSingle();
+
+      if (bySlug && bySlug.user_id === row.user_id) {
+        row.id = bySlug.id;
+        profile.id = bySlug.id;
+      }
     }
 
     const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' });
@@ -751,10 +762,17 @@ export async function syncNotificationsToSupabase(notifs: NotificationItem[]): P
   }
 }
 
-export async function clearSupabaseNotifications(): Promise<void> {
+export async function clearSupabaseNotifications(userId?: string, profileIds?: string[]): Promise<void> {
   if (!isSupabaseConfigured()) return;
   try {
-    await supabase.from('notifications').delete().neq('id', '');
+    if (userId) {
+      await supabase.from('notifications').delete().eq('recipient_user_id', userId);
+      if (profileIds && profileIds.length > 0) {
+        await supabase.from('notifications').delete().in('profile_id', profileIds);
+      }
+    } else {
+      await supabase.from('notifications').delete().neq('id', '');
+    }
   } catch (e) {
     console.warn('[Supabase Delete] Notifications clear error:', e);
   }
