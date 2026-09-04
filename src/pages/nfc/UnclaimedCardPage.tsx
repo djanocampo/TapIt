@@ -135,7 +135,7 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
               label="Card Nickname"
               value={customCardName}
               onChange={(e) => setCustomCardName(e.target.value)}
-              placeholder="e.g. Professional Matte Black Card"
+              placeholder="Card Nickname"
             />
 
             <div className="flex items-center justify-between gap-3 pt-2">

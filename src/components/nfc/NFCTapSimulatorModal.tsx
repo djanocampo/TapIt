@@ -100,7 +100,7 @@ export const NFCTapSimulatorModal: React.FC = () => {
           <div className="pt-2">
             <input
               type="text"
-              placeholder="Or type custom card token (e.g. 8xK29mQ)..."
+              placeholder="Custom Card Token"
               value={customToken}
               onChange={(e) => {
                 setCustomToken(e.target.value);

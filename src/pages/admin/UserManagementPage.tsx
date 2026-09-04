@@ -461,7 +461,7 @@ export const UserManagementPage: React.FC = () => {
             <div className="space-y-4">
               <Input
                 label="Member Name / Nickname"
-                placeholder="e.g. Alex Rivera or VIP Corporate Client"
+                placeholder="Member Name / Nickname"
                 value={wizardName}
                 onChange={(e) => setWizardName(e.target.value)}
                 leftIcon={<UserIcon className="w-4 h-4" />}
@@ -522,7 +522,7 @@ export const UserManagementPage: React.FC = () => {
                     setWizardCardToken(e.target.value.toUpperCase());
                     setNfcState('idle');
                   }}
-                  placeholder="e.g. TAP-98K2X"
+                  placeholder="Physical NFC Smart Card Token"
                   helperText={`Target dynamic token URL: tapit.app/t/${wizardCardToken}`}
                   required
                 />

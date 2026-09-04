@@ -73,7 +73,7 @@ export const QRSharePage: React.FC = () => {
                 label="Target URL"
                 value={customUrl}
                 onChange={(e) => setCustomUrl(e.target.value)}
-                placeholder="https://tapit.app/@username"
+                placeholder="Target URL"
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

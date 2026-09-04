@@ -10,8 +10,9 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type = 'text', label, error, helperText, leftIcon, rightIcon, id, ...props }, ref) => {
+  ({ className, type = 'text', label, error, helperText, leftIcon, rightIcon, id, placeholder, ...props }, ref) => {
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const resolvedPlaceholder = placeholder !== undefined ? placeholder : label;
 
     return (
       <div className="w-full space-y-1.5">
@@ -30,6 +31,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={type}
             ref={ref}
+            placeholder={resolvedPlaceholder}
             className={cn(
               'w-full rounded-xl bg-slate-900/90 border border-slate-800 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition duration-150',
               'focus:border-cyan-500/80 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500/20',

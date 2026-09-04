@@ -278,7 +278,7 @@ export const MyProfilesPage: React.FC = () => {
         <form onSubmit={handleCreateProfile} className="space-y-4">
           <Input
             label="Profile Name"
-            placeholder="e.g. Consulting, Creator, Photography"
+            placeholder="Profile Name"
             value={newProfileName}
             onChange={(e) => setNewProfileName(e.target.value)}
             required
@@ -286,7 +286,7 @@ export const MyProfilesPage: React.FC = () => {
 
           <Input
             label="Headline / Tagline"
-            placeholder="e.g. Independent Brand Designer & Strategist"
+            placeholder="Headline / Tagline"
             value={newProfileHeadline}
             onChange={(e) => setNewProfileHeadline(e.target.value)}
           />

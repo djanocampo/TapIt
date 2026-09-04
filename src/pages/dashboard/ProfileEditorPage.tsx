@@ -438,20 +438,21 @@ export const ProfileEditorPage: React.FC = () => {
                     label="Persona Name"
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
-                    placeholder="e.g. Work, Personal, Creator"
+                    placeholder="Persona Name"
                     required
                   />
                   <Input
                     label="Display Name"
                     value={formData.displayName}
                     onChange={(e) => handleChange('displayName', e.target.value)}
-                    placeholder="e.g. Alex Rivera"
+                    placeholder="Display Name"
                     required
                   />
                   <Input
                     label="Custom URL Slug"
                     value={formData.slug}
                     onChange={(e) => handleChange('slug', e.target.value)}
+                    placeholder="Custom URL Slug"
                     helperText={`tapit.app/@${formData.slug}`}
                     required
                   />
@@ -484,7 +485,7 @@ export const ProfileEditorPage: React.FC = () => {
                   label="Headline / Tagline"
                   value={formData.headline}
                   onChange={(e) => handleChange('headline', e.target.value)}
-                  placeholder="e.g. Information Systems Student | QA Tester | Systems Analyst"
+                  placeholder="Headline / Tagline"
                 />
 
                 <div className="space-y-1.5">
@@ -496,7 +497,7 @@ export const ProfileEditorPage: React.FC = () => {
                     value={formData.bio}
                     onChange={(e) => handleChange('bio', e.target.value)}
                     className="w-full rounded-2xl bg-[#050c18] border border-white/[0.08] px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
-                    placeholder="Share your background, open opportunities, and specializations..."
+                    placeholder="About / Bio"
                   />
                 </div>
               </div>
@@ -581,14 +582,14 @@ export const ProfileEditorPage: React.FC = () => {
                     value={formData.jobTitle}
                     onChange={(e) => handleChange('jobTitle', e.target.value)}
                     leftIcon={<Briefcase className="w-4 h-4" />}
-                    placeholder="e.g. Systems Analyst"
+                    placeholder="Job Title"
                   />
                   <Input
                     label="Company / Org"
                     value={formData.company}
                     onChange={(e) => handleChange('company', e.target.value)}
                     leftIcon={<Building className="w-4 h-4" />}
-                    placeholder="e.g. Nexus Tech Systems"
+                    placeholder="Company / Org"
                   />
                 </div>
 
@@ -600,7 +601,7 @@ export const ProfileEditorPage: React.FC = () => {
                     value={formData.email}
                     onChange={(e) => handleChange('email', e.target.value)}
                     leftIcon={<Mail className="w-4 h-4" />}
-                    placeholder="name@example.com"
+                    placeholder="Email Address"
                   />
                   <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer select-none pt-1">
                     <input
@@ -621,7 +622,7 @@ export const ProfileEditorPage: React.FC = () => {
                     value={formData.phone}
                     onChange={(e) => handleChange('phone', e.target.value)}
                     leftIcon={<Phone className="w-4 h-4" />}
-                    placeholder="+63 917 889 2041"
+                    placeholder="Phone Number"
                   />
                   <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer select-none pt-1">
                     <input
@@ -640,14 +641,14 @@ export const ProfileEditorPage: React.FC = () => {
                     value={formData.location}
                     onChange={(e) => handleChange('location', e.target.value)}
                     leftIcon={<MapPin className="w-4 h-4" />}
-                    placeholder="e.g. Metro Manila, Philippines"
+                    placeholder="Location"
                   />
                   <Input
                     label="Personal Website"
                     value={formData.website}
                     onChange={(e) => handleChange('website', e.target.value)}
                     leftIcon={<Globe className="w-4 h-4" />}
-                    placeholder="https://..."
+                    placeholder="Personal Website"
                   />
                 </div>
               </div>
@@ -864,7 +865,7 @@ export const ProfileEditorPage: React.FC = () => {
         <form onSubmit={handleSaveLinkItem} className="space-y-4">
           <Input
             label="Link Title"
-            placeholder="e.g. 💼 View GitHub Repos or 📸 Instagram"
+            placeholder="Link Title"
             value={linkTitle}
             onChange={(e) => setLinkTitle(e.target.value)}
             required
@@ -872,7 +873,7 @@ export const ProfileEditorPage: React.FC = () => {
 
           <Input
             label="Destination URL"
-            placeholder="https://..."
+            placeholder="Destination URL"
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             required

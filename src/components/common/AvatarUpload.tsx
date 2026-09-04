@@ -259,7 +259,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
                 type="url"
                 value={manualUrl}
                 onChange={(e) => setManualUrl(e.target.value)}
-                placeholder="https://example.com/avatar.jpg"
+                placeholder="Avatar Image URL"
                 className="flex-1 rounded-xl bg-[#081224] border border-white/[0.1] px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
               />
               <Button

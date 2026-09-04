@@ -97,7 +97,7 @@ export const LoginPage: React.FC = () => {
           <Input
             label="Email or Username"
             type="text"
-            placeholder="you@example.com or your username"
+            placeholder="Email or Username"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             leftIcon={<Mail className="w-4 h-4" />}
@@ -108,7 +108,7 @@ export const LoginPage: React.FC = () => {
             <Input
               label="Password"
               type="password"
-              placeholder="••••••••••••"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               leftIcon={<Lock className="w-4 h-4" />}

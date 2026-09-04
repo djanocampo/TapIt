@@ -38,7 +38,7 @@ export const ForgotPasswordPage: React.FC = () => {
             <Input
               label="Email Address"
               type="email"
-              placeholder="you@example.com"
+              placeholder="Email Address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               leftIcon={<Mail className="w-4 h-4" />}

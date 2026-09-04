@@ -504,7 +504,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                         type="text"
                         value={customToken}
                         onChange={(e) => setCustomToken(e.target.value.trim().toUpperCase())}
-                        placeholder="e.g. 8xK29mQ"
+                        placeholder="Hardware Card Token"
                         className="w-full bg-[#050b18] border border-cyan-500/30 text-xs font-mono font-bold text-white rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-400"
                       />
                       <button

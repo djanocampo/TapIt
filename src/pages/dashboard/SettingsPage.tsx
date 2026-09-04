@@ -258,14 +258,14 @@ export const SettingsPage: React.FC = () => {
           <Input
             label="Current Password"
             type="password"
-            placeholder="••••••••••••"
+            placeholder="Current Password"
             value={currentPass}
             onChange={(e) => setCurrentPass(e.target.value)}
           />
           <Input
             label="New Password"
             type="password"
-            placeholder="New secure password"
+            placeholder="New Password"
             value={newPass}
             onChange={(e) => setNewPass(e.target.value)}
           />

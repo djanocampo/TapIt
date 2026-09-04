@@ -239,7 +239,7 @@ export const MyCardsPage: React.FC = () => {
         <form onSubmit={handleClaimCard} className="space-y-4">
           <Input
             label="NFC Card Token"
-            placeholder="e.g. 8xK29mQ or TAP-XYZ"
+            placeholder="NFC Card Token"
             value={claimToken}
             onChange={(e) => setClaimToken(e.target.value)}
             helperText="Located on the back of your card or in the URL after /t/"
@@ -248,7 +248,7 @@ export const MyCardsPage: React.FC = () => {
 
           <Input
             label="Card Nickname (Optional)"
-            placeholder="e.g. Executive Matte Black Card"
+            placeholder="Card Nickname (Optional)"
             value={claimName}
             onChange={(e) => setClaimName(e.target.value)}
           />

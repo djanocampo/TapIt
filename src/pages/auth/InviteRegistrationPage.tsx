@@ -277,7 +277,7 @@ export const InviteRegistrationPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label="Full Name"
-            placeholder="e.g. John Doe"
+            placeholder="Full Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             leftIcon={<User className="w-4 h-4" />}
@@ -286,7 +286,7 @@ export const InviteRegistrationPage: React.FC = () => {
 
           <Input
             label="Desired Username (Public Profile URL)"
-            placeholder="e.g. johndoe"
+            placeholder="Desired Username (Public Profile URL)"
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
             helperText={`Your profile will be live at: tapit.app/@${username || 'username'}`}
@@ -296,7 +296,7 @@ export const InviteRegistrationPage: React.FC = () => {
           <Input
             label="Email Address"
             type="email"
-            placeholder="e.g. john@example.com"
+            placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             leftIcon={<Mail className="w-4 h-4" />}
@@ -307,7 +307,7 @@ export const InviteRegistrationPage: React.FC = () => {
             <Input
               label="Password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               leftIcon={<Lock className="w-4 h-4" />}
@@ -317,7 +317,7 @@ export const InviteRegistrationPage: React.FC = () => {
             <Input
               label="Confirm Password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               leftIcon={<Lock className="w-4 h-4" />}
