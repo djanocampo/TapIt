@@ -1,8 +1,8 @@
 -- ==============================================================================
--- TAPIT SMART IDENTITY PLATFORM - DATABASE SCHEMA SPECIFICATION
+-- TAPIT SMART IDENTITY PLATFORM - MASTER DATABASE SCHEMA SPECIFICATION
 -- Target Engine: PostgreSQL 14+ / Supabase
 -- Architecture: 3NF Normalized Relational Architecture with B-Tree Indexing
--- Reference Standards: DATABASE_INDEXING.md & Dual-Layer Sync Pattern.md
+-- Standards Compliance: DATABASE_INDEXING.md & Dual-Layer Sync Pattern.md
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
@@ -257,7 +257,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_user_active ON public.profiles(user_id, 
 CREATE INDEX IF NOT EXISTS idx_nfc_cards_user_status ON public.nfc_cards(user_id, status);
 
 -- ==============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS) POLICIES (Idempotent: Safe for repeat executions)
 -- ==============================================================================
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -269,7 +269,18 @@ ALTER TABLE public.user_invites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 
--- Development / Application Full Access Policies (Permissive for client-side dual-layer sync)
+-- Drop existing policies if already present to prevent collision errors
+DROP POLICY IF EXISTS "Allow public read-write for users" ON public.users;
+DROP POLICY IF EXISTS "Allow public read-write for profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow public read-write for links" ON public.links;
+DROP POLICY IF EXISTS "Allow public read-write for nfc_cards" ON public.nfc_cards;
+DROP POLICY IF EXISTS "Allow public read-write for qr_codes" ON public.qr_codes;
+DROP POLICY IF EXISTS "Allow public read-write for analytics_events" ON public.analytics_events;
+DROP POLICY IF EXISTS "Allow public read-write for user_invites" ON public.user_invites;
+DROP POLICY IF EXISTS "Allow public read-write for notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Allow public read-write for system_settings" ON public.system_settings;
+
+-- Application Full Access Policies (Permissive for client-side dual-layer sync)
 CREATE POLICY "Allow public read-write for users" ON public.users FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public read-write for profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public read-write for links" ON public.links FOR ALL USING (true) WITH CHECK (true);
@@ -281,18 +292,56 @@ CREATE POLICY "Allow public read-write for notifications" ON public.notification
 CREATE POLICY "Allow public read-write for system_settings" ON public.system_settings FOR ALL USING (true) WITH CHECK (true);
 
 -- ==============================================================================
--- SUPABASE REALTIME REPLICATION PUBLICATION
+-- SUPABASE REALTIME REPLICATION PUBLICATION (Idempotent Safe Block)
 -- Enables live multi-device syncing via websocket postgres_changes listeners
 -- ==============================================================================
-ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.links;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.nfc_cards;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.qr_codes;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.analytics_events;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.user_invites;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.system_settings;
+DO $$
+BEGIN
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.links;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.nfc_cards;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.qr_codes;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.analytics_events;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.user_invites;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.system_settings;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+END $$;
 
 -- ==============================================================================
 -- INITIAL SEED: SYSTEM ADMIN IDENTITY & GLOBAL CONFIG

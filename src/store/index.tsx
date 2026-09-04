@@ -33,6 +33,7 @@ import {
   syncUsersToSupabase,
   syncInvitesToSupabase,
   syncNotificationsToSupabase,
+  clearSupabaseNotifications,
   syncSettingsToSupabase,
   deleteSupabaseRecord
 } from '../services/dualLayerSync';
@@ -850,6 +851,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const clearAllNotifications = () => {
     setNotifications([]);
+    void clearSupabaseNotifications();
   };
 
   // Admin Actions

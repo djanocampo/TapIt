@@ -392,6 +392,15 @@ export async function syncNotificationsToSupabase(notifs: NotificationItem[]): P
   }
 }
 
+export async function clearSupabaseNotifications(): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('notifications').delete().neq('id', '');
+  } catch (e) {
+    console.warn('[Supabase Delete] Notifications clear error:', e);
+  }
+}
+
 export async function syncSettingsToSupabase(settings: SystemSettings): Promise<void> {
   if (!isSupabaseConfigured()) return;
   try {
