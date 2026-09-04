@@ -96,6 +96,10 @@ export const App: React.FC = () => {
             <Route path="/:profileSlug" element={<PublicProfilePage />} />
             <Route path="/:username/:profileSlug" element={<PublicProfilePage />} />
 
+            {/* Direct convenience aliases for profiles edit */}
+            <Route path="/profiles/edit" element={<Navigate to="/dashboard/profiles/edit" replace />} />
+            <Route path="/profiles/edit/:id" element={<Navigate to="/dashboard/profiles/edit/:id" replace />} />
+
             {/* User Dashboard Routes (Protected: User Only) */}
             <Route
               path="/dashboard"
@@ -107,6 +111,7 @@ export const App: React.FC = () => {
             >
               <Route index element={<DashboardOverview />} />
               <Route path="profiles" element={<MyProfilesPage />} />
+              <Route path="profiles/edit" element={<ProfileEditorPage />} />
               <Route path="profiles/edit/:id" element={<ProfileEditorPage />} />
               <Route path="links" element={<MyLinksPage />} />
               <Route path="cards" element={<MyCardsPage />} />

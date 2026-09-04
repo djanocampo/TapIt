@@ -155,11 +155,17 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
               background: `linear-gradient(135deg, ${theme.accentColor}, #8b5cf6)`,
             }}
           >
-            <img
-              src={profile.avatar}
-              alt={profile.displayName}
-              className="w-full h-full rounded-full object-cover border-2 border-slate-900"
-            />
+            {profile.avatar ? (
+              <img
+                src={profile.avatar}
+                alt={profile.displayName || 'Profile'}
+                className="w-full h-full rounded-full object-cover border-2 border-slate-900"
+              />
+            ) : (
+              <div className="w-full h-full rounded-full bg-slate-900 border-2 border-slate-900 flex items-center justify-center text-white font-bold text-2xl">
+                {(profile.displayName || profile.name || 'U').charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
           <div
             className="absolute bottom-1 right-1 p-1 rounded-full text-slate-950 shadow-md"
@@ -171,10 +177,12 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
 
         {/* Name & Headline */}
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">{profile.displayName}</h2>
-          <p className="text-xs sm:text-sm font-medium mt-1 max-w-xs leading-snug" style={{ color: theme.subtextColor }}>
-            {profile.headline}
-          </p>
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">{profile.displayName || 'Unnamed Persona'}</h2>
+          {profile.headline && (
+            <p className="text-xs sm:text-sm font-medium mt-1 max-w-xs leading-snug" style={{ color: theme.subtextColor }}>
+              {profile.headline}
+            </p>
+          )}
         </div>
 
         {/* Direct Contact Badges (Controlled by checkboxes) */}
@@ -195,13 +203,13 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
           </div>
         )}
 
-        {/* Meta badges: Company / Location */}
-        {(profile.company || profile.location) && (
+        {/* Meta badges: Job Title / Company / Location / Website */}
+        {(profile.jobTitle || profile.company || profile.location || profile.website) && (
           <div className="flex items-center justify-center gap-3 text-xs flex-wrap" style={{ color: theme.subtextColor }}>
-            {profile.company && (
+            {(profile.jobTitle || profile.company) && (
               <span className="flex items-center gap-1">
-                <Building className="w-3 h-3" />
-                {profile.company}
+                <Briefcase className="w-3 h-3" />
+                {[profile.jobTitle, profile.company].filter(Boolean).join(' • ')}
               </span>
             )}
             {profile.location && (
@@ -209,6 +217,17 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
                 <MapPin className="w-3 h-3" />
                 {profile.location}
               </span>
+            )}
+            {profile.website && (
+              <a
+                href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 hover:underline"
+              >
+                <Globe className="w-3 h-3 text-cyan-400" />
+                <span>{profile.website.replace(/^https?:\/\//, '')}</span>
+              </a>
             )}
           </div>
         )}

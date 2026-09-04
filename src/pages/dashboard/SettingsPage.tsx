@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Toggle } from '../../components/ui/Toggle';
 import { LocalStorageCacheModal } from '../../components/common/LocalStorageCacheModal';
+import { AvatarUpload } from '../../components/common/AvatarUpload';
 import { 
   Settings, 
   User, 
@@ -25,11 +26,23 @@ import { triggerConfetti } from '../../lib/utils';
 
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, resetAllData, clearLocalStorageCache, reloadFromStorage, getStorageMetrics, logout, profiles, links, cards } = useTapIt();
+  const { 
+    currentUser, 
+    updateCurrentUser,
+    resetAllData, 
+    clearLocalStorageCache, 
+    reloadFromStorage, 
+    getStorageMetrics, 
+    logout, 
+    profiles, 
+    links, 
+    cards 
+  } = useTapIt();
 
   const [name, setName] = useState(currentUser?.name || '');
   const [email, setEmail] = useState(currentUser?.email || '');
   const [username, setUsername] = useState(currentUser?.username || '');
+  const [avatar, setAvatar] = useState(currentUser?.avatar || '');
 
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
@@ -40,11 +53,32 @@ export const SettingsPage: React.FC = () => {
   const [notifyClicks, setNotifyClicks] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
 
+  useEffect(() => {
+    if (currentUser) {
+      setName(currentUser.name || '');
+      setEmail(currentUser.email || '');
+      setUsername(currentUser.username || '');
+      setAvatar(currentUser.avatar || '');
+    }
+  }, [currentUser]);
+
   const metrics = getStorageMetrics();
   const approxKb = (metrics.approxBytes / 1024).toFixed(1);
 
+  const handleAvatarChange = (newAvatarUrl: string) => {
+    setAvatar(newAvatarUrl);
+    updateCurrentUser({ avatar: newAvatarUrl });
+    triggerConfetti();
+  };
+
   const handleSaveAccount = (e: React.FormEvent) => {
     e.preventDefault();
+    updateCurrentUser({
+      name,
+      username: username.toLowerCase().replace(/[^a-z0-9_-]/g, ''),
+      email,
+      avatar,
+    });
     setIsSaved(true);
     triggerConfetti();
     setTimeout(() => setIsSaved(false), 3000);
@@ -170,6 +204,17 @@ export const SettingsPage: React.FC = () => {
           <User className="w-4 h-4 text-cyan-400" />
           Personal Credentials
         </h3>
+
+        {/* Account Avatar with Crop & Readjust */}
+        <AvatarUpload
+          currentAvatar={avatar}
+          name={name || currentUser?.name || 'Account'}
+          userId={currentUser?.id || 'usr_current'}
+          label="Account Avatar Photo"
+          description="Your primary account avatar shown across your dashboard, card previews, and platform navigation."
+          onAvatarChange={handleAvatarChange}
+          size="lg"
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input

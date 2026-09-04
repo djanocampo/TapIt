@@ -87,6 +87,7 @@ interface TapItContextType {
   // Auth & Session
   login: (user: User, role: UserRole) => void;
   logout: () => void;
+  updateCurrentUser: (updates: Partial<User>) => void;
 
   // Role & Profile Navigation
   setRole: (role: UserRole) => void;
@@ -270,6 +271,22 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   };
 
+  const updateCurrentUser = (updates: Partial<User>) => {
+    setCurrentUser(prev => {
+      const updated = { ...prev, ...updates };
+      try {
+        localStorage.setItem(`${STORAGE_KEY}_currentUser`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    setAllUsers(prev => {
+      const updated = prev.map(u => (u.id === currentUser.id ? { ...u, ...updates } : u));
+      void syncUsersToSupabase(updated);
+      return updated;
+    });
+  };
+
   const setRole = (role: UserRole) => {
     setCurrentRole(role);
     if (role === 'admin') {
@@ -383,7 +400,31 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateProfile = (id: string, updates: Partial<Profile>) => {
     setProfiles(prev => {
-      const updated = prev.map(p => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p));
+      const exists = prev.some(p => p.id === id);
+      let updated: Profile[];
+      if (exists) {
+        updated = prev.map(p => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p));
+      } else {
+        const fallback: Profile = {
+          id,
+          userId: currentUser.id,
+          name: updates.name || updates.displayName || `${currentUser.name}'s Profile`,
+          slug: (updates.slug || currentUser.username || `user-${Date.now().toString().slice(-4)}`).toLowerCase(),
+          displayName: updates.displayName || currentUser.name,
+          headline: updates.headline || 'Digital Explorer & Creator',
+          bio: updates.bio || '',
+          avatar: updates.avatar || currentUser.avatar || '',
+          theme: updates.theme || THEME_PRESETS['cyberpunk-neon'],
+          isActive: true,
+          isArchived: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          socials: updates.socials || {},
+          ...updates,
+        };
+        updated = [fallback, ...prev];
+        setActiveProfileIdState(id);
+      }
       void syncProfilesToSupabase(updated);
       return updated;
     });
@@ -1302,6 +1343,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         login,
         logout,
+        updateCurrentUser,
         setRole,
         setActiveProfileId,
 

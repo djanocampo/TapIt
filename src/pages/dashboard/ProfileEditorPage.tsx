@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { Input } from '../../components/ui/Input';
@@ -8,6 +8,7 @@ import { Toggle } from '../../components/ui/Toggle';
 import { MobileFramePreview } from '../../components/profile/MobileFramePreview';
 import { ThemeSelector } from '../../components/profile/ThemeSelector';
 import { THEME_PRESETS } from '../../data/themes';
+import { AvatarUpload } from '../../components/common/AvatarUpload';
 import { 
   User, 
   MapPin, 
@@ -20,6 +21,7 @@ import {
   ArrowLeft, 
   ExternalLink, 
   Sparkles,
+  Loader2,
   ChevronDown,
   ChevronUp,
   Plus,
@@ -46,7 +48,7 @@ import {
   Share2
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
-import { LinkItem, LinkCategory, ProfileThemeConfig } from '../../types';
+import { LinkItem, LinkCategory, ProfileThemeConfig, Profile } from '../../types';
 
 const PRESET_ICONS = [
   { id: 'Facebook', label: 'Facebook', icon: Facebook },
@@ -71,6 +73,7 @@ const PRESET_ICONS = [
 export const ProfileEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { 
+    currentUser,
     profiles, 
     updateProfile, 
     links, 
@@ -103,6 +106,7 @@ export const ProfileEditorPage: React.FC = () => {
 
   // Form inputs state
   const [formData, setFormData] = useState({
+    name: targetProfile.name || '',
     displayName: targetProfile.displayName || '',
     slug: targetProfile.slug || '',
     headline: targetProfile.headline || '',
@@ -119,6 +123,7 @@ export const ProfileEditorPage: React.FC = () => {
   });
 
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Link Add/Edit Modal State
@@ -137,6 +142,7 @@ export const ProfileEditorPage: React.FC = () => {
     if (targetProfile) {
       setCurrentTheme(targetProfile.theme || THEME_PRESETS['cyberpunk-neon']);
       setFormData({
+        name: targetProfile.name || '',
         displayName: targetProfile.displayName || '',
         slug: targetProfile.slug || '',
         headline: targetProfile.headline || '',
@@ -154,38 +160,18 @@ export const ProfileEditorPage: React.FC = () => {
     }
   }, [targetProfile.id]);
 
-  const handleChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setIsSaved(false);
+  // Instant real-time preview profile object: combines targetProfile, current live formData, and currentTheme
+  const previewProfile: Profile = useMemo(() => {
+    const cleanSlug = (formData.slug || formData.displayName || targetProfile.slug || 'profile')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9_-]/g, '');
 
-    // Immediate state synchronization for live phone preview
-    updateProfile(targetProfile.id, {
-      [field]: value,
-    });
-  };
-
-  const handleSelectTheme = (newTheme: ProfileThemeConfig) => {
-    setCurrentTheme(newTheme);
-    setIsSaved(false);
-    updateProfile(targetProfile.id, { theme: newTheme });
-    triggerConfetti();
-  };
-
-  const handleUpdateStyleOptions = (options: { buttonStyle?: any; fontStyle?: any; accentColor?: string; badgeBg?: string }) => {
-    const updated = {
-      ...currentTheme,
-      ...options,
-    };
-    setCurrentTheme(updated);
-    setIsSaved(false);
-    updateProfile(targetProfile.id, { theme: updated });
-  };
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateProfile(targetProfile.id, {
+    return {
+      ...targetProfile,
+      name: formData.name || targetProfile.name,
       displayName: formData.displayName,
-      slug: formData.slug.toLowerCase().replace(/[^a-z0-9_-]/g, ''),
+      slug: cleanSlug,
       headline: formData.headline,
       bio: formData.bio,
       avatar: formData.avatar,
@@ -198,11 +184,70 @@ export const ProfileEditorPage: React.FC = () => {
       location: formData.location,
       website: formData.website,
       theme: currentTheme,
-    });
+    };
+  }, [targetProfile, formData, currentTheme]);
 
-    setIsSaved(true);
-    triggerConfetti();
-    setTimeout(() => setIsSaved(false), 3000);
+  const handleChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setIsSaved(false);
+  };
+
+  const handleSelectTheme = (newTheme: ProfileThemeConfig) => {
+    setCurrentTheme(newTheme);
+    setIsSaved(false);
+  };
+
+  const handleUpdateStyleOptions = (options: { buttonStyle?: any; fontStyle?: any; accentColor?: string; badgeBg?: string }) => {
+    setCurrentTheme((prev) => ({
+      ...prev,
+      ...options,
+    }));
+    setIsSaved(false);
+  };
+
+  const handleSave = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const cleanSlug = (formData.slug || formData.displayName || targetProfile.slug || 'profile')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9_-]/g, '');
+
+      updateProfile(targetProfile.id, {
+        name: formData.name || formData.displayName || targetProfile.name,
+        displayName: formData.displayName,
+        slug: cleanSlug,
+        headline: formData.headline,
+        bio: formData.bio,
+        avatar: formData.avatar,
+        company: formData.company,
+        jobTitle: formData.jobTitle,
+        email: formData.email,
+        showEmail: formData.showEmail,
+        phone: formData.phone,
+        showPhone: formData.showPhone,
+        location: formData.location,
+        website: formData.website,
+        theme: currentTheme,
+      });
+
+      setIsSaved(true);
+      triggerConfetti();
+
+      setTimeout(() => {
+        setIsSaving(false);
+      }, 300);
+
+      setTimeout(() => {
+        setIsSaved(false);
+      }, 4000);
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      alert('Failed to save profile changes. Please try again.');
+      setIsSaving(false);
+    }
   };
 
   // Link Operations inside the Links Card
@@ -303,18 +348,28 @@ export const ProfileEditorPage: React.FC = () => {
             <span>{copiedLink ? 'Copied Link!' : 'Copy Link'}</span>
           </button>
 
+          {/* Unsaved indicator badge */}
+          {!isSaved && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Unsaved Changes
+            </span>
+          )}
+
           <Link to={`/@${targetProfile.slug}`} target="_blank">
             <Button variant="secondary" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5" />}>
               Open Public Profile
             </Button>
           </Link>
+
           <Button
             variant="glow"
             size="sm"
             onClick={handleSave}
-            leftIcon={isSaved ? <Check className="w-4 h-4 text-slate-950" /> : undefined}
+            disabled={isSaving}
+            leftIcon={isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : isSaved ? <Check className="w-4 h-4 text-slate-950" /> : <Sparkles className="w-4 h-4 text-slate-950" />}
           >
-            {isSaved ? 'Changes Saved!' : 'Save Profile'}
+            {isSaving ? 'Saving...' : isSaved ? 'Changes Saved!' : 'Save Profile'}
           </Button>
         </div>
       </div>
@@ -352,11 +407,19 @@ export const ProfileEditorPage: React.FC = () => {
             {/* Card Body */}
             {!collapsedCards.identity && (
               <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Input
+                    label="Persona Name"
+                    value={formData.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    placeholder="e.g. Work, Personal, Creator"
+                    required
+                  />
                   <Input
                     label="Display Name"
                     value={formData.displayName}
                     onChange={(e) => handleChange('displayName', e.target.value)}
+                    placeholder="e.g. Alex Rivera"
                     required
                   />
                   <Input
@@ -368,11 +431,27 @@ export const ProfileEditorPage: React.FC = () => {
                   />
                 </div>
 
-                <Input
-                  label="Avatar Image URL"
-                  value={formData.avatar}
-                  onChange={(e) => handleChange('avatar', e.target.value)}
-                  placeholder="https://..."
+                <AvatarUpload
+                  currentAvatar={formData.avatar}
+                  name={formData.displayName || targetProfile.name}
+                  userId={targetProfile.userId || currentUser?.id || 'usr_current'}
+                  label="Profile Avatar Photo"
+                  description="Customize this persona's avatar with circular crop, zoom & pan readjustments."
+                  onAvatarChange={(newUrl) => handleChange('avatar', newUrl)}
+                  extraActions={
+                    currentUser?.avatar && currentUser.avatar !== formData.avatar ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleChange('avatar', currentUser.avatar)}
+                        leftIcon={<Sparkles className="w-3.5 h-3.5 text-purple-400" />}
+                        title="Use photo from your main account"
+                      >
+                        Use Account Photo
+                      </Button>
+                    ) : undefined
+                  }
                 />
 
                 <Input
@@ -697,6 +776,33 @@ export const ProfileEditorPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Bottom Save Action Bar */}
+          <div className="p-5 rounded-3xl bg-[#081224]/90 border border-cyan-500/30 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
+            <div className="space-y-0.5 text-center sm:text-left">
+              <p className="text-sm font-bold text-white flex items-center justify-center sm:justify-start gap-2">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                {isSaved ? 'All Profile Changes Saved!' : 'Ready to Publish Changes?'}
+              </p>
+              <p className="text-xs text-slate-400">
+                {isSaved ? 'Your live public profile and NFC endpoints are updated.' : 'Check the live phone preview on the right, then hit Save Profile to publish.'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="glow"
+                size="md"
+                className="w-full sm:w-auto min-w-[170px]"
+                onClick={handleSave}
+                disabled={isSaving}
+                leftIcon={isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : isSaved ? <Check className="w-4 h-4 text-slate-950" /> : <Sparkles className="w-4 h-4 text-slate-950" />}
+              >
+                {isSaving ? 'Saving Profile...' : isSaved ? 'Profile Saved!' : 'Save Profile'}
+              </Button>
+            </div>
+          </div>
         </form>
 
         {/* Real-Time Live Phone Preview (Right Column) */}
@@ -713,7 +819,7 @@ export const ProfileEditorPage: React.FC = () => {
           </div>
 
           <MobileFramePreview
-            profile={{ ...targetProfile, theme: currentTheme }}
+            profile={previewProfile}
             links={links}
           />
         </div>
