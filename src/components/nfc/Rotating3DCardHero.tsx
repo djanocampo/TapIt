@@ -45,7 +45,6 @@ const VARIANTS: CardVariant[] = [
 ];
 
 export const Rotating3DCardHero: React.FC = () => {
-  const { openSimulator } = useTapIt();
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -166,8 +165,8 @@ export const Rotating3DCardHero: React.FC = () => {
         <div
           className={`relative w-[270px] xs:w-[310px] sm:w-[380px] md:w-[420px] aspect-[1.586/1] transform-style-3d cursor-pointer ${isPaused ? '' : 'animate-spin-360-slow'
             }`}
-          onClick={() => openSimulator()}
-          title="Click to simulate live tap!"
+          onClick={() => setIsPaused(!isPaused)}
+          title="Click to pause or resume 3D rotation"
         >
           {/* ===================== FRONT FACE ===================== */}
           <div

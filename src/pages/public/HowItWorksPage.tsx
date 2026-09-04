@@ -14,10 +14,8 @@ import {
   Layers,
   Download
 } from 'lucide-react';
-import { useTapIt } from '../../store';
 
 export const HowItWorksPage: React.FC = () => {
-  const { openSimulator } = useTapIt();
 
   const steps = [
     {
@@ -147,14 +145,15 @@ export const HowItWorksPage: React.FC = () => {
 
         {/* Bottom CTA */}
         <div className="text-center space-y-4 pt-8">
-          <Button
-            variant="glow"
-            size="lg"
-            onClick={() => openSimulator()}
-            leftIcon={<Radio className="w-4 h-4" />}
-          >
-            Try Out The NFC Tap Simulator Now
-          </Button>
+          <Link to="/register">
+            <Button
+              variant="glow"
+              size="lg"
+              leftIcon={<Smartphone className="w-4 h-4" />}
+            >
+              Get Your TapIt Smart Card Now
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

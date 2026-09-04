@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NFCCard, Profile } from '../../types';
+import { useTapIt } from '../../store';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { 
@@ -15,7 +15,12 @@ import {
   ShieldCheck,
   ExternalLink,
   Info,
-  Sparkles
+  Sparkles,
+  Layers,
+  ChevronDown,
+  RefreshCw,
+  Edit3,
+  Globe
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 
@@ -32,6 +37,14 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   card,
   profile,
 }) => {
+  const { cards, profiles, claimCard } = useTapIt();
+  
+  // Selection & Custom Token States
+  const [selectedCardId, setSelectedCardId] = useState<string>(card?.id || (cards[0]?.id || 'custom'));
+  const [customToken, setCustomToken] = useState<string>(() => card?.cardToken || `TAP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`);
+  const [targetProfileId, setTargetProfileId] = useState<string>(() => profile?.id || profiles[0]?.id || '');
+  const [customCardName, setCustomCardName] = useState<string>('My TapIt Smart Card');
+
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const [status, setStatus] = useState<'idle' | 'scanning' | 'writing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -40,12 +53,32 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   const [activeTab, setActiveTab] = useState<'write' | 'read'>('write');
   const [scannedTagInfo, setScannedTagInfo] = useState<{ serialNumber?: string; records?: string[] } | null>(null);
 
-  // Determine current origin or production fallback
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
-  
-  // Calculate Target URLs
-  const dynamicUrl = card ? `${origin}/t/${card.cardToken}` : `${origin}/t/CARD_TOKEN`;
-  const directUrl = profile ? `${origin}/@${profile.slug}` : `${origin}/@djan`;
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const defaultOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://192.168.254.138:5173';
+  const [customHost, setCustomHost] = useState<string>(defaultOrigin);
+
+  // Synchronize selectedCardId when card prop changes
+  useEffect(() => {
+    if (card) {
+      setSelectedCardId(card.id);
+      setCustomToken(card.cardToken);
+      if (card.profileId) setTargetProfileId(card.profileId);
+    } else if (cards.length > 0 && (!selectedCardId || selectedCardId === 'custom')) {
+      setSelectedCardId(cards[0].id);
+      setCustomToken(cards[0].cardToken);
+      if (cards[0].profileId) setTargetProfileId(cards[0].profileId);
+    }
+  }, [card, cards]);
+
+  const activeCard = cards.find(c => c.id === selectedCardId) || null;
+  const currentToken = activeCard ? activeCard.cardToken : (customToken.trim() || 'TAP-CARD');
+  const activeProfile = profiles.find(p => p.id === (targetProfileId || activeCard?.profileId)) || profiles[0];
+
+  // Calculate Target URLs based on active host
+  const cleanHost = (customHost || defaultOrigin).replace(/\/+$/, '');
+  const dynamicUrl = `${cleanHost}/t/${currentToken}`;
+  const directUrl = activeProfile ? `${cleanHost}/@${activeProfile.slug}` : `${cleanHost}/@djan`;
   const targetUrl = writeType === 'dynamic' ? dynamicUrl : directUrl;
 
   useEffect(() => {
@@ -54,14 +87,39 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
     }
   }, []);
 
-  // Reset state when modal opens
+  // Cleanup abort controller on modal close or unmount
   useEffect(() => {
     if (isOpen) {
       setStatus('idle');
       setErrorMessage('');
       setScannedTagInfo(null);
+    } else {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
     }
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [isOpen]);
+
+  const handleReset = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setStatus('idle');
+    setErrorMessage('');
+    setScannedTagInfo(null);
+  };
+
+  const handleGenerateRandomToken = () => {
+    const newToken = `TAP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    setCustomToken(newToken);
+  };
 
   // Audio & Haptic Feedback helper
   const triggerSuccessFeedback = () => {
@@ -83,15 +141,15 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
       osc.start();
       osc.stop(audioCtx.currentTime + 0.25);
     } catch {
-      // AudioContext unavailable or blocked by autoplay policy
+      // AudioContext unavailable
     }
   };
 
-  // Write Web NFC Function
+  // Write Web NFC Function with genuine hardware interaction
   const handleWriteNFC = async () => {
     if (!('NDEFReader' in window)) {
       setStatus('error');
-      setErrorMessage('Web NFC is not supported in this browser. Please use Chrome on Android or follow the manual NFC Tools guide below.');
+      setErrorMessage('Web NFC is not supported in this browser. Please open this app in Google Chrome on Android or enable Chrome flags for local IP.');
       return;
     }
 
@@ -99,22 +157,38 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
       setStatus('writing');
       setErrorMessage('');
 
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
+      // Automatically register and bind the card in local store to the chosen profile
+      if (currentToken && activeProfile) {
+        claimCard(currentToken, activeProfile.id, customCardName || `${activeProfile.name}'s Card`);
+      }
+
       const NDEFReader = (window as any).NDEFReader;
       const ndef = new NDEFReader();
 
-      // Write NDEF URI record
-      await ndef.write({
-        records: [
-          {
-            recordType: 'url',
-            data: targetUrl,
-          },
-        ],
-      });
+      await ndef.write(
+        {
+          records: [
+            {
+              recordType: 'url',
+              data: targetUrl,
+            },
+          ],
+        },
+        { signal: abortControllerRef.current.signal }
+      );
 
       setStatus('success');
       triggerSuccessFeedback();
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+        setStatus('idle');
+        return;
+      }
       console.error('NFC Write Error:', err);
       setStatus('error');
       if (err.name === 'NotAllowedError') {
@@ -122,7 +196,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
       } else if (err.name === 'NotReadableError') {
         setErrorMessage('NFC device is disabled or unavailable. Please enable NFC in your phone settings.');
       } else {
-        setErrorMessage(err.message || 'Failed to write to NFC card. Please ensure the card is placed firmly near your phone NFC antenna.');
+        setErrorMessage(err.message || 'Failed to write to NFC card. Please ensure the card is placed firmly against your phone NFC antenna.');
       }
     }
   };
@@ -140,9 +214,14 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
       setErrorMessage('');
       setScannedTagInfo(null);
 
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
       const NDEFReader = (window as any).NDEFReader;
       const ndef = new NDEFReader();
-      await ndef.scan();
+      await ndef.scan({ signal: abortControllerRef.current.signal });
 
       ndef.onreading = (event: any) => {
         const serialNumber = event.serialNumber || 'Unknown UID';
@@ -170,6 +249,10 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         setErrorMessage('Cannot read data from the NFC card. The tag might be corrupted or incompatible.');
       };
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+        setStatus('idle');
+        return;
+      }
       console.error('NFC Read Error:', err);
       setStatus('error');
       setErrorMessage(err.message || 'Failed to scan NFC tag.');
@@ -186,8 +269,8 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="In-App Web NFC Writer & Reader"
-      description="Program your generic NFC smart card directly from the browser using Web NFC."
+      title="In-App Web NFC Tag Writer & Reader"
+      description="Program your physical NFC smart card or keyfob directly from the browser using Web NFC."
       maxWidth="lg"
     >
       <div className="space-y-6">
@@ -219,39 +302,143 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
           </button>
         </div>
 
-        {/* Browser Web NFC Compatibility Banner */}
-        <div className={`p-4 rounded-2xl border flex items-start gap-3 text-xs leading-relaxed ${
-          isSupported 
-            ? 'bg-cyan-950/40 border-cyan-500/30 text-cyan-200' 
-            : 'bg-amber-950/30 border-amber-500/30 text-amber-200'
-        }`}>
-          {isSupported ? (
-            <>
-              <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white block font-bold">Web NFC Supported on this Device!</strong>
-                <span>You are browsing on a Web NFC compatible browser (Chrome on Android). You can touch your card to the back of your phone to write it instantly.</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white block font-bold">Web NFC Direct Writing Notice</strong>
-                <span>Direct browser NFC writing requires <strong>Google Chrome on Android</strong>. On iOS or desktop, you can copy the target URL below or use the free <strong>NFC Tools</strong> app to flash the chip in 5 seconds!</span>
-              </div>
-            </>
-          )}
+        {/* Browser Web NFC Compatibility Notice */}
+        <div className="space-y-3">
+          <div className="p-4 rounded-2xl border bg-cyan-950/40 border-cyan-500/30 text-cyan-200 flex items-start gap-3 text-xs leading-relaxed">
+            <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <strong className="text-white block font-bold">Direct Web NFC Writer</strong>
+              <span>
+                {isSupported 
+                  ? 'Your browser has direct NFC hardware access. Follow the steps below to flash your card.'
+                  : 'To write your physical card chip directly in Google Chrome on Android, ensure your origin is enabled in Chrome flags.'}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* ================= WRITE TAB ================= */}
         {activeTab === 'write' && (
-          <div className="space-y-5">
-            {/* Target URL Selector */}
+           <div className="space-y-5">
+            {/* Host Server Indicator */}
+            <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.06] flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-cyan-400 shrink-0" />
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Tag Destination Host</span>
+                  <span className="text-cyan-300 font-mono font-bold text-xs">{cleanHost}</span>
+                </div>
+              </div>
+              {cleanHost.includes('localhost') && (
+                <button
+                  type="button"
+                  onClick={() => setCustomHost('http://192.168.254.138:5173')}
+                  className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg hover:bg-amber-500/30 transition"
+                >
+                  ⚡ Switch to Wi-Fi IP (For Mobile Scanning)
+                </button>
+              )}
+            </div>
+
+            {/* Step 1: Card & Target Profile Configuration */}
+            <div className="space-y-3 bg-[#081224] p-4 rounded-2xl border border-white/[0.08]">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-black">1</span>
+                  Card Token & Profile Identity
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  Token: <strong className="text-cyan-300">/t/{currentToken}</strong>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Select Card Source */}
+                {cards.length > 0 && (
+                  <div className="sm:col-span-2 space-y-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-400">Choose Card</label>
+                    <div className="relative">
+                      <select
+                        value={selectedCardId}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedCardId(val);
+                          if (val !== 'custom') {
+                            const found = cards.find(c => c.id === val);
+                            if (found) {
+                              setCustomToken(found.cardToken);
+                              if (found.profileId) setTargetProfileId(found.profileId);
+                            }
+                          }
+                        }}
+                        className="w-full bg-[#050b18] border border-cyan-500/30 text-xs font-bold text-white rounded-xl px-3.5 py-2.5 appearance-none focus:outline-none focus:border-cyan-400"
+                      >
+                        {cards.map((c) => {
+                          const p = profiles.find((prof) => prof.id === c.profileId);
+                          return (
+                            <option key={c.id} value={c.id}>
+                              {c.name} ({c.cardToken}) → {p ? p.name : 'Unassigned Profile'}
+                            </option>
+                          );
+                        })}
+                        <option value="custom">+ Program New Card / Custom Token</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-cyan-400 absolute right-3 top-3 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Token Input if custom */}
+                {(cards.length === 0 || selectedCardId === 'custom') && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-400">Hardware Card Token</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={customToken}
+                        onChange={(e) => setCustomToken(e.target.value.trim().toUpperCase())}
+                        placeholder="e.g. 8xK29mQ"
+                        className="w-full bg-[#050b18] border border-cyan-500/30 text-xs font-mono font-bold text-white rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGenerateRandomToken}
+                        title="Generate random token"
+                        className="p-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-cyan-500/50 text-cyan-300 transition shrink-0"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Target Profile Selector */}
+                <div className={`${cards.length > 0 && selectedCardId !== 'custom' ? 'sm:col-span-2' : ''} space-y-1`}>
+                  <label className="text-[10px] uppercase font-bold text-slate-400">Destination Profile Persona</label>
+                  <div className="relative">
+                    <select
+                      value={targetProfileId}
+                      onChange={(e) => setTargetProfileId(e.target.value)}
+                      className="w-full bg-[#050b18] border border-cyan-500/30 text-xs font-bold text-white rounded-xl px-3.5 py-2.5 appearance-none focus:outline-none focus:border-cyan-400"
+                    >
+                      {profiles.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({p.displayName} — @{p.slug})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-cyan-400 absolute right-3 top-3 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Target URL Selector */}
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Choose Link Format to Program into Chip:
-              </label>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-black">2</span>
+                Choose Link Mode
+              </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Option A: Dynamic Token */}
                 <button
@@ -266,14 +453,14 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                      Dynamic Token Link
+                      Dynamic Token (Recommended)
                     </span>
                     {writeType === 'dynamic' && (
                       <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                     )}
                   </div>
                   <p className="text-[11px] text-slate-400 leading-normal">
-                    Recommended. Lets you reassign profiles or disable a lost card anytime from the cloud.
+                    Reassign profile destinations anytime from cloud without rewriting physical chip.
                   </p>
                   <p className="text-[10px] font-mono text-cyan-300 mt-2 truncate bg-black/40 px-2 py-1 rounded">
                     {dynamicUrl}
@@ -300,7 +487,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                     )}
                   </div>
                   <p className="text-[11px] text-slate-400 leading-normal">
-                    Writes your direct public profile URL (@{profile?.slug || 'djan'}) directly to the chip.
+                    Writes your permanent profile link directly to the card.
                   </p>
                   <p className="text-[10px] font-mono text-cyan-300 mt-2 truncate bg-black/40 px-2 py-1 rounded">
                     {directUrl}
@@ -309,127 +496,157 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
               </div>
             </div>
 
-            {/* Live Interactive Scanner Radar / Touch Zone */}
-            <div className="relative rounded-3xl bg-[#060e1e] border border-white/[0.08] p-6 text-center overflow-hidden flex flex-col items-center justify-center space-y-4">
-              {/* Radar Glow Animation */}
-              {status === 'writing' && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-48 rounded-full border border-cyan-400/40 animate-ping opacity-60"></div>
-                  <div className="w-64 h-64 rounded-full border border-cyan-400/20 animate-ping opacity-40 delay-200"></div>
+            {/* Step 3: Live Hardware Touch Zone & Clear Guidance */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-black">3</span>
+                NFC Flashing Terminal
+              </span>
+
+              <div className="relative rounded-3xl bg-[#060e1e] border border-white/[0.08] p-6 text-center overflow-hidden flex flex-col items-center justify-center space-y-4">
+                {/* Radar Waves for writing */}
+                {status === 'writing' && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-44 h-44 rounded-full border-2 border-cyan-400/40 animate-ping opacity-75"></div>
+                    <div className="w-60 h-60 rounded-full border border-cyan-400/20 animate-ping opacity-50 delay-300"></div>
+                  </div>
+                )}
+
+                {/* Status Graphic */}
+                <div className="relative z-10">
+                  {status === 'idle' && (
+                    <div className="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-400/40 text-cyan-400 flex items-center justify-center shadow-glow-cyan mx-auto">
+                      <Smartphone className="w-8 h-8" />
+                    </div>
+                  )}
+                  {status === 'writing' && (
+                    <div className="w-16 h-16 rounded-3xl bg-cyan-500/20 border-2 border-cyan-400 text-cyan-300 flex items-center justify-center shadow-lg shadow-cyan-400/50 animate-bounce mx-auto">
+                      <Radio className="w-8 h-8 animate-pulse text-cyan-300" />
+                    </div>
+                  )}
+                  {status === 'success' && (
+                    <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border-2 border-emerald-400 text-emerald-300 flex items-center justify-center shadow-lg shadow-emerald-400/40 mx-auto">
+                      <CheckCircle2 className="w-9 h-9" />
+                    </div>
+                  )}
+                  {status === 'error' && (
+                    <div className="w-16 h-16 rounded-3xl bg-rose-500/20 border-2 border-rose-400 text-rose-300 flex items-center justify-center shadow-lg shadow-rose-400/40 mx-auto">
+                      <AlertCircle className="w-9 h-9" />
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Status Graphic */}
-              <div className="relative z-10">
-                {status === 'idle' && (
-                  <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-400/40 text-cyan-400 flex items-center justify-center shadow-glow-cyan mx-auto">
-                    <Smartphone className="w-8 h-8" />
-                  </div>
-                )}
-                {status === 'writing' && (
-                  <div className="w-16 h-16 rounded-full bg-cyan-500/20 border-2 border-cyan-400 text-cyan-300 flex items-center justify-center shadow-lg shadow-cyan-400/50 animate-bounce mx-auto">
-                    <Radio className="w-8 h-8 animate-pulse text-cyan-300" />
-                  </div>
-                )}
-                {status === 'success' && (
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-300 flex items-center justify-center shadow-lg shadow-emerald-400/40 mx-auto">
-                    <CheckCircle2 className="w-9 h-9" />
-                  </div>
-                )}
-                {status === 'error' && (
-                  <div className="w-16 h-16 rounded-full bg-rose-500/20 border-2 border-rose-400 text-rose-300 flex items-center justify-center shadow-lg shadow-rose-400/40 mx-auto">
-                    <AlertCircle className="w-9 h-9" />
-                  </div>
-                )}
-              </div>
+                {/* Status Text Messages */}
+                <div className="relative z-10 space-y-2 max-w-md mx-auto">
+                  {status === 'idle' && (
+                    <>
+                      <h4 className="text-base font-extrabold text-white">
+                        Ready to Program NFC Chip
+                      </h4>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        1. Tap <strong>"Start NFC Writing"</strong> below to activate your phone&apos;s NFC antenna.
+                        <br />
+                        2. Chrome will request permission: tap <strong>Allow</strong>.
+                        <br />
+                        3. Hold your physical NFC card steady against the back of your phone.
+                      </p>
+                      <p className="text-[11px] font-mono text-cyan-400 bg-black/40 px-2.5 py-1 rounded-lg">
+                        Payload: {targetUrl}
+                      </p>
+                    </>
+                  )}
+                  {status === 'writing' && (
+                    <>
+                      <div className="inline-block px-3 py-1 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 text-xs font-black uppercase tracking-wider animate-pulse">
+                        📡 Sensor Active • Hold Card to Device
+                      </div>
+                      <h4 className="text-lg font-black text-cyan-300">
+                        Hold Card Steady Near Phone!
+                      </h4>
+                      <p className="text-xs text-slate-200 font-semibold bg-black/40 p-2.5 rounded-xl border border-cyan-500/30">
+                        👉 Keep the card touching the back of your phone until writing completes. Do not move it!
+                      </p>
+                      <p className="text-[11px] font-mono text-cyan-400 truncate">
+                        Writing payload: {targetUrl}
+                      </p>
+                    </>
+                  )}
+                  {status === 'success' && (
+                    <div className="space-y-3">
+                      <div className="inline-block px-3 py-1 rounded-full bg-emerald-950 border border-emerald-400 text-emerald-300 text-xs font-black uppercase tracking-wider">
+                        ✓ Writing Complete
+                      </div>
+                      <h4 className="text-lg font-black text-emerald-400">
+                        Card Successfully Programmed!
+                      </h4>
+                      <div className="p-3 rounded-xl bg-black/50 border border-emerald-500/40 text-left space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400">Written Record:</span>
+                          <span className="font-mono font-bold text-cyan-300">{targetUrl}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400">Assigned Profile:</span>
+                          <span className="font-bold text-white">@{activeProfile.slug} ({activeProfile.displayName})</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-300">
+                        🎉 Success! You may now remove your card from the device. When tapped, it will immediately resolve and forward to your profile!
+                      </p>
+                      <div className="pt-1 flex items-center justify-center gap-2">
+                        <a
+                          href={targetUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-300 hover:text-white bg-cyan-950/60 border border-cyan-500/40 px-3.5 py-1.5 rounded-xl transition shadow-sm"
+                        >
+                          <span>Test Open Link in Browser</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  {status === 'error' && (
+                    <div className="p-4 rounded-2xl bg-rose-950/50 border border-rose-500/40 space-y-3 text-left">
+                      <div className="flex items-center gap-2 text-rose-300 font-bold text-xs">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                        <span>Chrome Security Policy: NFC Sensor Restricted on Local IP</span>
+                      </div>
+                      <p className="text-xs text-rose-200/90 leading-relaxed">
+                        Chrome on Android blocks hardware NFC on local network IPs until marked as trusted.
+                      </p>
+                      <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 space-y-1.5 text-[11px] text-slate-300">
+                        <span className="font-bold text-cyan-300 block">⚡ Quick 20-Second Fix in Chrome:</span>
+                        <p>1. Open a new tab and go to: <code className="text-white font-mono bg-slate-900 px-1.5 py-0.5 rounded select-all">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code></p>
+                        <p>2. Paste this exact origin into the box: <code className="text-cyan-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded select-all">{typeof window !== 'undefined' ? window.location.origin : 'http://192.168.254.138:5173'}</code></p>
+                        <p>3. Select <strong>Enabled</strong> and tap <strong>Relaunch</strong>.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-              {/* Status Text Messages */}
-              <div className="relative z-10 space-y-1 max-w-sm">
-                {status === 'idle' && (
-                  <>
-                    <h4 className="text-base font-bold text-white">Ready to Program NFC Card</h4>
-                    <p className="text-xs text-slate-400">
-                      Click the button below, then touch your generic NFC card to the back of your phone.
-                    </p>
-                  </>
-                )}
-                {status === 'writing' && (
-                  <>
-                    <h4 className="text-base font-extrabold text-cyan-300 animate-pulse">
-                      Hold Card Firmly to Phone...
-                    </h4>
-                    <p className="text-xs text-slate-300">
-                      Writing NDEF URL payload: <strong className="text-cyan-400">{targetUrl}</strong>
-                    </p>
-                  </>
-                )}
-                {status === 'success' && (
-                  <>
-                    <h4 className="text-base font-extrabold text-emerald-400">
-                      Card Successfully Programmed!
-                    </h4>
-                    <p className="text-xs text-slate-300">
-                      Your NFC card is now live. Anyone who taps it will instantly open your TapIt link!
-                    </p>
-                  </>
-                )}
-                {status === 'error' && (
-                  <>
-                    <h4 className="text-base font-bold text-rose-400">Writing Failed</h4>
-                    <p className="text-xs text-rose-300/90">{errorMessage}</p>
-                  </>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 pt-2">
-                {isSupported ? (
+                {/* Action Buttons - Always Visible */}
+                <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 pt-2">
                   <Button
-                    variant="glow"
-                    size="md"
-                    onClick={handleWriteNFC}
-                    isLoading={status === 'writing'}
-                    leftIcon={<Radio className="w-4 h-4" />}
+                    variant={status === 'writing' ? 'danger' : 'glow'}
+                    size="lg"
+                    onClick={status === 'writing' ? handleReset : handleWriteNFC}
+                    isLoading={false}
+                    leftIcon={status === 'writing' ? <RotateCw className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
                   >
-                    {status === 'writing' ? 'Waiting for Card Tap...' : 'Touch Card to Write'}
+                    {status === 'writing' ? 'Cancel / Stop Listening' : status === 'success' ? 'Write Tag Again' : 'Start NFC Writing'}
                   </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    size="md"
-                    onClick={handleCopyUrl}
-                    leftIcon={copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  >
-                    {copied ? 'Copied to Clipboard!' : 'Copy Target URL'}
-                  </Button>
-                )}
 
-                {status !== 'idle' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setStatus('idle')}
-                    leftIcon={<RotateCw className="w-3.5 h-3.5" />}
-                  >
-                    Reset
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Quick QR Code for Android Chrome Writing */}
-            <div className="p-4 rounded-2xl bg-[#081326] border border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="space-y-1 text-center sm:text-left">
-                <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5 justify-center sm:justify-start">
-                  <Smartphone className="w-3.5 h-3.5" />
-                  Writing from Desktop or iPhone?
-                </span>
-                <p className="text-[11px] text-slate-300 max-w-md">
-                  Scan this QR code with an Android phone (Chrome) to open this live writer, or paste the URL into the free <strong>NFC Tools</strong> app.
-                </p>
-              </div>
-              <div className="p-2 rounded-xl bg-white shrink-0 shadow-md">
-                <QRCodeSVG value={targetUrl} size={64} level="M" />
+                  {status !== 'idle' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleReset}
+                      leftIcon={<RotateCw className="w-3.5 h-3.5" />}
+                    >
+                      Reset State
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -439,14 +656,14 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         {activeTab === 'read' && (
           <div className="space-y-5">
             <div className="relative rounded-3xl bg-[#060e1e] border border-white/[0.08] p-6 text-center flex flex-col items-center justify-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-400/40 text-cyan-400 flex items-center justify-center shadow-glow-cyan">
+              <div className="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-400/40 text-cyan-400 flex items-center justify-center shadow-glow-cyan">
                 <Radio className={`w-8 h-8 ${status === 'scanning' ? 'animate-pulse' : ''}`} />
               </div>
 
               <div className="space-y-1">
-                <h4 className="text-base font-bold text-white">Scan Generic NFC Card</h4>
+                <h4 className="text-base font-bold text-white">Scan & Inspect Generic NFC Card</h4>
                 <p className="text-xs text-slate-400 max-w-sm">
-                  Touch any physical NFC smart card, keyfob, or sticker to your phone to read its hardware UID and stored NDEF records.
+                  Touch any physical NFC smart card, keyfob, or sticker to your phone to inspect its UID and records.
                 </p>
               </div>
 
@@ -458,8 +675,13 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                   isLoading={status === 'scanning'}
                   leftIcon={<Radio className="w-4 h-4" />}
                 >
-                  {status === 'scanning' ? 'Scanning for NFC Tag...' : 'Start Scanning'}
+                  {status === 'scanning' ? 'Holding Sensor Active... Touch Card' : 'Start Scanning'}
                 </Button>
+                {status !== 'idle' && (
+                  <Button variant="ghost" size="sm" onClick={handleReset}>
+                    Reset
+                  </Button>
+                )}
               </div>
             </div>
 

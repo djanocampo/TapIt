@@ -11,12 +11,16 @@ import {
   Cpu, 
   Check, 
   Sparkles,
-  Link2
+  Link2,
+  HardDrive,
+  Trash2,
+  RotateCw
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
+import { LocalStorageCacheModal } from '../../components/common/LocalStorageCacheModal';
 
 export const SystemSettingsPage: React.FC = () => {
-  const { systemSettings, updateSystemSettings } = useTapIt();
+  const { systemSettings, updateSystemSettings, clearLocalStorageCache, reloadFromStorage, getStorageMetrics } = useTapIt();
 
   const [platformName, setPlatformName] = useState(systemSettings.platformName);
   const [maintenanceMode, setMaintenanceMode] = useState(systemSettings.maintenanceMode);
@@ -26,6 +30,10 @@ export const SystemSettingsPage: React.FC = () => {
   const [maxCardsPerUser, setMaxCardsPerUser] = useState(systemSettings.maxCardsPerUser);
   const [platforms, setPlatforms] = useState(systemSettings.supportedPlatforms);
   const [isSaved, setIsSaved] = useState(false);
+  const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
+
+  const metrics = getStorageMetrics();
+  const approxKb = (metrics.approxBytes / 1024).toFixed(1);
 
   const togglePlatform = (key: string) => {
     setPlatforms((prev) =>
@@ -52,11 +60,75 @@ export const SystemSettingsPage: React.FC = () => {
   return (
     <div className="space-y-8 max-w-4xl">
       {/* Header */}
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white font-display">Global System Settings</h2>
-        <p className="text-xs sm:text-sm text-slate-400">
-          Configure platform security parameters, supported link platform integrations, and operational toggles.
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white font-display">Global System Settings</h2>
+          <p className="text-xs sm:text-sm text-slate-400">
+            Configure platform security parameters, supported link platform integrations, and local cache controls.
+          </p>
+        </div>
+
+        <Button
+          variant="glow"
+          size="sm"
+          onClick={() => setIsCacheModalOpen(true)}
+          leftIcon={<HardDrive className="w-4 h-4 text-cyan-300" />}
+        >
+          Cache Inspector ({approxKb} KB)
+        </Button>
+      </div>
+
+      {/* Local Storage Cache & Database Maintenance */}
+      <div className="bg-[#081224] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <HardDrive className="w-4 h-4 text-cyan-400" />
+            Client Storage Cache & State Hydration
+          </h3>
+          <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 px-3 py-1 rounded-full">
+            ● Local Storage Engine Active
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-300 leading-relaxed">
+          The browser client caches user accounts, profiles, NFC tokens, and live telemetry in LocalStorage. You can inspect memory usage or clear cache to reset the environment.
         </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => {
+              if (window.confirm('Wipe all local storage cache and reload?')) {
+                clearLocalStorageCache({ keepSession: false, reload: true });
+              }
+            }}
+            leftIcon={<Trash2 className="w-4 h-4" />}
+          >
+            Clear Local Storage Cache & Hard Reload
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsCacheModalOpen(true)}
+            leftIcon={<HardDrive className="w-4 h-4" />}
+          >
+            Open Storage Inspector
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              reloadFromStorage();
+              triggerConfetti();
+            }}
+            leftIcon={<RotateCw className="w-3.5 h-3.5 text-cyan-400" />}
+          >
+            Sync from LocalStorage
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSaveSettings} className="space-y-6">
@@ -160,6 +232,12 @@ export const SystemSettingsPage: React.FC = () => {
           </Button>
         </div>
       </form>
+
+      {/* Local Storage Cache Modal */}
+      <LocalStorageCacheModal
+        isOpen={isCacheModalOpen}
+        onClose={() => setIsCacheModalOpen(false)}
+      />
     </div>
   );
 };

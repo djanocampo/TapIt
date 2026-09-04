@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTapIt } from '../../store';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { LocalStorageCacheModal } from '../common/LocalStorageCacheModal';
 import { 
   Bell, 
   Menu, 
@@ -13,7 +14,10 @@ import {
   Clock, 
   X,
   Layers,
-  Sparkles
+  Sparkles,
+  HardDrive,
+  LogOut,
+  User
 } from 'lucide-react';
 import { formatRelativeTime } from '../../lib/utils';
 import { Button } from '../ui/Button';
@@ -31,10 +35,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onOpenMobileMenu,
   onOpenShareModal,
 }) => {
-  const { activeProfile, notifications, markNotificationAsRead, clearAllNotifications, openSimulator } = useTapIt();
+  const navigate = useNavigate();
+  const { currentUser, activeProfile, notifications, markNotificationAsRead, clearAllNotifications, logout, getStorageMetrics } = useTapIt();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const metrics = getStorageMetrics();
+  const approxKb = (metrics.approxBytes / 1024).toFixed(1);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="bg-[#050a17]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 lg:px-8 py-3 sm:py-4 sticky top-0 z-30 flex items-center justify-between gap-4">
@@ -50,13 +63,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Quick NFC Simulator Button */}
+        {/* Local Storage Cache Quick Inspector */}
         <button
-          onClick={() => openSimulator()}
-          className="hidden sm:flex items-center gap-1.5 bg-slate-900 border border-slate-700/80 hover:border-cyan-500/50 text-cyan-300 text-xs px-3 py-2 rounded-xl transition font-medium"
+          type="button"
+          onClick={() => setIsCacheModalOpen(true)}
+          title="Inspect / Clear Local Storage Cache"
+          className="hidden sm:flex items-center gap-1.5 bg-[#081326] border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02]"
         >
-          <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-          <span>Simulate NFC</span>
+          <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="font-mono text-[11px] font-bold">{approxKb} KB</span>
         </button>
 
         {/* Live Public URL Preview Button */}
@@ -147,7 +162,23 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </div>
           )}
         </div>
+
+        {/* Quick Sign Out Button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-500/30 transition shrink-0 hidden sm:block"
+          title="Sign Out"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
+
+      {/* Local Storage Cache Modal */}
+      <LocalStorageCacheModal
+        isOpen={isCacheModalOpen}
+        onClose={() => setIsCacheModalOpen(false)}
+      />
     </header>
   );
 };

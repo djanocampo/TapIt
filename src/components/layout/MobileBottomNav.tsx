@@ -30,7 +30,7 @@ interface MobileBottomNavProps {
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, activeProfile } = useTapIt();
+  const { currentUser, activeProfile, logout } = useTapIt();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const isActiveRoute = (path: string) => {
@@ -47,6 +47,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
 
   const handleLogout = () => {
     setIsMoreOpen(false);
+    logout();
     navigate('/login');
   };
 

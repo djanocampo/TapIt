@@ -18,10 +18,8 @@ import {
   Globe,
   Share2
 } from 'lucide-react';
-import { useTapIt } from '../../store';
 
 export const FeaturesPage: React.FC = () => {
-  const { openSimulator } = useTapIt();
 
   const featureBlocks = [
     {
@@ -111,25 +109,26 @@ export const FeaturesPage: React.FC = () => {
           })}
         </div>
 
-        {/* Interactive Simulation Banner */}
+        {/* Hardware Web NFC Flashing Banner */}
         <div className="bg-gradient-to-r from-[#0a1226] via-[#121b38] to-[#0a1226] border border-cyan-500/30 rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-2xl">
           <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto shadow-glow-cyan">
-            <Radio className="w-8 h-8 animate-pulse" />
+            <Zap className="w-8 h-8 animate-pulse text-cyan-400" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-display">
-            Want to test an NFC card tap right now?
+            Ready to Flash & Claim Your Physical NFC Smart Card?
           </h2>
           <p className="text-sm text-slate-300 max-w-xl mx-auto">
-            Use our built-in NFC simulator to test card token resolutions, unclaimed chip claiming, and live telemetry logging without needing physical hardware.
+            Program physical NTAG213/215 microchips directly in your mobile browser using our native Web NFC engine. No third-party apps required.
           </p>
-          <Button
-            variant="glow"
-            size="lg"
-            onClick={() => openSimulator()}
-            leftIcon={<Radio className="w-4 h-4" />}
-          >
-            Launch Interactive NFC Simulator
-          </Button>
+          <Link to="/register">
+            <Button
+              variant="glow"
+              size="lg"
+              leftIcon={<Zap className="w-4 h-4" />}
+            >
+              Get Started Now
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

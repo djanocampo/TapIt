@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { TapItProvider } from './store';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { BackendSyncInit } from './components/sync/BackendSyncInit';
 
 // Layouts
 import { RootLayout } from './layouts/RootLayout';
@@ -49,6 +50,7 @@ import { SystemSettingsPage } from './pages/admin/SystemSettingsPage';
 export const App: React.FC = () => {
   return (
     <TapItProvider>
+      <BackendSyncInit />
       <BrowserRouter>
         <Routes>
           {/* Public Marketing Routes */}
@@ -70,12 +72,13 @@ export const App: React.FC = () => {
           <Route path="/card/disabled" element={<DisabledCardPage cardToken="LOST_CARD_09" />} />
 
           {/* Public Profile Mobile-First View */}
-          <Route path="/@:username" element={<PublicProfilePage />} />
-          <Route path="/@:username/:profileSlug" element={<PublicProfilePage />} />
           <Route path="/p/:profileSlug" element={<PublicProfilePage />} />
+          <Route path="/u/:username" element={<PublicProfilePage />} />
+          <Route path="/@:username" element={<PublicProfilePage />} />
+          <Route path="/:profileSlug" element={<PublicProfilePage />} />
           <Route path="/:username/:profileSlug" element={<PublicProfilePage />} />
 
-          {/* User Dashboard Routes (Protected: Admin) */}
+          {/* User Dashboard Routes (Protected: User or Admin) */}
           <Route
             path="/dashboard"
             element={

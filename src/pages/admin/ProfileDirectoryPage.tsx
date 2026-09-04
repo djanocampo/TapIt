@@ -24,7 +24,7 @@ import {
 import { formatRelativeTime } from '../../lib/utils';
 
 export const ProfileDirectoryPage: React.FC = () => {
-  const { allUsers, profiles, links, cards, openSimulator } = useTapIt();
+  const { allUsers, profiles, links, cards } = useTapIt();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   
@@ -298,22 +298,13 @@ export const ProfileDirectoryPage: React.FC = () => {
                               </div>
 
                               {/* Card Bottom Actions */}
-                              <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => openSimulator(assignedCard || null)}
-                                  className="text-[11px] font-semibold text-slate-300 hover:text-white flex items-center gap-1 transition"
-                                >
-                                  <Radio className="w-3.5 h-3.5 text-cyan-400" />
-                                  <span>Simulate Tap</span>
-                                </button>
-
+                              <div className="pt-3 border-t border-white/[0.06] flex items-center justify-end">
                                 <Link
                                   to={`/@${prof.slug}`}
                                   target="_blank"
                                   className="text-[11px] font-bold text-cyan-400 hover:underline flex items-center gap-1"
                                 >
-                                  <span>Inspect Public</span>
+                                  <span>Inspect Public Profile</span>
                                   <ExternalLink className="w-3 h-3" />
                                 </Link>
                               </div>

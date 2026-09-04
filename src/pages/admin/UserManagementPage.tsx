@@ -89,7 +89,7 @@ export const UserManagementPage: React.FC = () => {
     setIsWizardOpen(true);
   };
 
-  // Start NFC Listening / Writing with interactive states
+  // Start NFC Listening / Writing with real Web NFC
   const handleStartNFCWrite = async () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
     const targetUrl = `${origin}/t/${wizardCardToken}`;
@@ -98,7 +98,7 @@ export const UserManagementPage: React.FC = () => {
     if ('NDEFReader' in window) {
       try {
         setNfcState('listening');
-        setNfcStatusMessage('Tap and hold the NFC card near your device...');
+        setNfcStatusMessage('Tap and hold the physical NFC card near your device...');
 
         const NDEFReader = (window as any).NDEFReader;
         const ndef = new NDEFReader();
@@ -111,38 +111,25 @@ export const UserManagementPage: React.FC = () => {
           { signal: ndefControllerRef.current.signal }
         );
 
-        // Transition to writing state for clear visual confirmation
-        setNfcState('writing');
-        setNfcStatusMessage('Writing URL record... Loading...');
-
-        setTimeout(() => {
-          setNfcState('success');
-          setNfcStatusMessage('Success! You may now remove the card.');
-          playSuccessTone();
-          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-          triggerConfetti();
-        }, 500);
+        setNfcState('success');
+        setNfcStatusMessage('Success! NFC card programmed.');
+        playSuccessTone();
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        triggerConfetti();
       } catch (err: any) {
         console.error('NFC Write Error:', err);
         setNfcState('error');
-        setNfcStatusMessage(err.message || 'Writing was interrupted. Please hold card firmly to device.');
+        if (err.name === 'NotAllowedError') {
+          setNfcStatusMessage('NFC permission was denied in your browser settings.');
+        } else if (err.name === 'NotReadableError') {
+          setNfcStatusMessage('NFC device is unavailable. Please make sure NFC is enabled in phone settings.');
+        } else {
+          setNfcStatusMessage(err.message || 'Writing was interrupted. Please hold card firmly to device.');
+        }
       }
     } else {
-      // Browser doesn't support Web NFC (e.g. Desktop Chrome / iOS Safari) -> Provide interactive Simulation Mode
-      setNfcState('listening');
-      setNfcStatusMessage('Tap and hold the NFC card near your device...');
-
-      setTimeout(() => {
-        setNfcState('writing');
-        setNfcStatusMessage('Writing URL record... Loading...');
-
-        setTimeout(() => {
-          setNfcState('success');
-          setNfcStatusMessage('Success! You may now remove the card.');
-          playSuccessTone();
-          triggerConfetti();
-        }, 1000);
-      }, 1000);
+      setNfcState('error');
+      setNfcStatusMessage('Web NFC writing requires Google Chrome on Android. For other devices, copy the activation URL or use the free NFC Tools app to write.');
     }
   };
 

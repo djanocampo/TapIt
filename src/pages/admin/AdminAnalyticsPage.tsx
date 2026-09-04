@@ -18,7 +18,10 @@ import {
 import { formatNumber } from '../../lib/utils';
 
 export const AdminAnalyticsPage: React.FC = () => {
-  const { cards, profiles, allUsers } = useTapIt();
+  const { cards, profiles, allUsers, analyticsEvents } = useTapIt();
+
+  const totalProfileVisits = analyticsEvents.filter((e) => e.eventType === 'profile_view').length;
+  const totalNFCTaps = cards.reduce((sum, c) => sum + c.taps, 0);
 
   return (
     <div className="space-y-8">
@@ -33,7 +36,7 @@ export const AdminAnalyticsPage: React.FC = () => {
 
         <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
           <Activity className="w-4 h-4 animate-pulse" />
-          <span>Global Event Ingestion: Healthy (124 EPS)</span>
+          <span>Global Event Ingestion: Active</span>
         </div>
       </div>
 
@@ -41,29 +44,29 @@ export const AdminAnalyticsPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Global Profile Visits"
-          value={1248392}
-          change={32.6}
+          value={totalProfileVisits}
+          change={totalProfileVisits > 0 ? 100 : 0}
           icon={Globe}
           variant="cyan"
         />
         <MetricCard
           title="Total NFC Hardware Taps"
-          value={842190}
-          change={44.1}
+          value={totalNFCTaps}
+          change={totalNFCTaps > 0 ? 100 : 0}
           icon={Radio}
           variant="purple"
         />
         <MetricCard
           title="Active Creators & Pros"
           value={allUsers.length}
-          change={12.4}
+          change={allUsers.length > 0 ? 100 : 0}
           icon={Users}
           variant="emerald"
         />
         <MetricCard
           title="Suspicious Tap Detection"
-          value="0.04%"
-          change={-0.8}
+          value="0.0%"
+          change={0}
           icon={ShieldCheck}
           variant="amber"
         />

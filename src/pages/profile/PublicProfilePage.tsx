@@ -15,13 +15,16 @@ export const PublicProfilePage: React.FC = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
 
   // Normalize username query (remove @ if present)
-  const cleanUsername = username ? username.replace(/^@/, '') : '';
+  const rawIdentifier = (profileSlug || username || '').trim();
+  const cleanUsername = rawIdentifier.replace(/^@/, '').toLowerCase();
 
-  // Match profile by slug or default to active
+  // Match profile by slug, name, or default to active/first profile
   const targetProfile = 
-    profiles.find((p) => p.slug.toLowerCase() === cleanUsername.toLowerCase()) ||
-    profiles.find((p) => p.slug.toLowerCase() === (profileSlug || '').toLowerCase()) ||
-    profiles.find((p) => p.name.toLowerCase() === cleanUsername.toLowerCase()) ||
+    profiles.find((p) => p.slug.toLowerCase() === cleanUsername) ||
+    profiles.find((p) => p.name.toLowerCase() === cleanUsername) ||
+    profiles.find((p) => p.displayName.toLowerCase() === cleanUsername) ||
+    profiles.find((p) => p.id === cleanUsername) ||
+    profiles.find((p) => p.isActive) ||
     profiles[0];
 
   // Log view event on mount

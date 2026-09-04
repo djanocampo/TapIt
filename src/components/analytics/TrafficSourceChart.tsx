@@ -1,15 +1,51 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Radio, QrCode, Globe, Share2 } from 'lucide-react';
-
-const SOURCE_DATA = [
-  { name: 'NFC Tap', value: 62, count: '1,542 taps', color: '#06b6d4', icon: Radio },
-  { name: 'QR Code', value: 21, count: '522 scans', color: '#8b5cf6', icon: QrCode },
-  { name: 'Direct Visit', value: 12, count: '298 visits', color: '#10b981', icon: Globe },
-  { name: 'Social / Referral', value: 5, count: '124 clicks', color: '#f59e0b', icon: Share2 },
-];
+import { useTapIt } from '../../store';
 
 export const TrafficSourceChart: React.FC = () => {
+  const { analyticsEvents, cards } = useTapIt();
+
+  const nfcCount = analyticsEvents.filter((e) => e.trafficSource === 'nfc' || e.eventType === 'nfc_tap').length + cards.reduce((s, c) => s + c.taps, 0);
+  const qrCount = analyticsEvents.filter((e) => e.trafficSource === 'qr' || e.eventType === 'qr_scan').length;
+  const directCount = analyticsEvents.filter((e) => e.trafficSource === 'direct' || e.eventType === 'profile_view').length;
+  const linkCount = analyticsEvents.filter((e) => e.eventType === 'link_click').length;
+
+  const total = nfcCount + qrCount + directCount + linkCount;
+
+  const sourceData = [
+    { 
+      name: 'NFC Tap', 
+      value: total > 0 ? Math.round((nfcCount / total) * 100) : 0, 
+      count: `${nfcCount} taps`, 
+      color: '#06b6d4', 
+      icon: Radio 
+    },
+    { 
+      name: 'QR Code', 
+      value: total > 0 ? Math.round((qrCount / total) * 100) : 0, 
+      count: `${qrCount} scans`, 
+      color: '#8b5cf6', 
+      icon: QrCode 
+    },
+    { 
+      name: 'Direct Visit', 
+      value: total > 0 ? Math.round((directCount / total) * 100) : 0, 
+      count: `${directCount} visits`, 
+      color: '#10b981', 
+      icon: Globe 
+    },
+    { 
+      name: 'Link Clicks', 
+      value: total > 0 ? Math.round((linkCount / total) * 100) : 0, 
+      count: `${linkCount} clicks`, 
+      color: '#f59e0b', 
+      icon: Share2 
+    },
+  ];
+
+  const topSourcePct = total > 0 ? Math.max(...sourceData.map(s => s.value)) : 0;
+
   return (
     <div className="bg-[#0d1322] border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4 flex flex-col justify-between">
       <div>
@@ -19,42 +55,51 @@ export const TrafficSourceChart: React.FC = () => {
 
       {/* Donut Chart */}
       <div className="h-44 w-full relative flex items-center justify-center">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={SOURCE_DATA}
-              innerRadius={52}
-              outerRadius={75}
-              paddingAngle={4}
-              dataKey="value"
-            >
-              {SOURCE_DATA.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} stroke="#0d1322" strokeWidth={3} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(val: any) => [`${val}%`, 'Share']}
-              contentStyle={{
-                backgroundColor: '#070a13',
-                borderColor: '#334155',
-                borderRadius: '10px',
-                fontSize: '11px',
-                color: '#fff',
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        {total === 0 ? (
+          <div className="text-center space-y-1">
+            <span className="text-xs text-slate-400 block font-semibold">No Traffic Logged Yet</span>
+            <span className="text-[11px] text-slate-500 block">Tap a card to start streaming telemetry</span>
+          </div>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={sourceData}
+                  innerRadius={52}
+                  outerRadius={75}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {sourceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#0d1322" strokeWidth={3} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(val: any) => [`${val}%`, 'Share']}
+                  contentStyle={{
+                    backgroundColor: '#070a13',
+                    borderColor: '#334155',
+                    borderRadius: '10px',
+                    fontSize: '11px',
+                    color: '#fff',
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
 
-        {/* Center label */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-xl font-extrabold text-white font-display">62%</span>
-          <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">NFC Lead</span>
-        </div>
+            {/* Center label */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-xl font-extrabold text-white font-display">{topSourcePct}%</span>
+              <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Top Source</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Sources list */}
       <div className="space-y-2 pt-2 border-t border-slate-800/80">
-        {SOURCE_DATA.map((item) => {
+        {sourceData.map((item) => {
           const Icon = item.icon;
           return (
             <div key={item.name} className="flex items-center justify-between text-xs">

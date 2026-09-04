@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTapIt } from '../../store';
+import { NFCCard } from '../../types';
+import { WebNFCWriterModal } from '../../components/nfc/WebNFCWriterModal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Radio, CreditCard, Sparkles, CheckCircle2, ArrowRight, Layers, Smartphone } from 'lucide-react';
+import { Radio, CreditCard, Sparkles, CheckCircle2, ArrowRight, Layers, Smartphone, Zap } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 
 interface UnclaimedCardPageProps {
@@ -22,6 +24,8 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
   const [selectedProfileId, setSelectedProfileId] = useState<string>(profiles[0]?.id || '');
   const [customCardName, setCustomCardName] = useState('My TapIt NFC Card');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isWriterOpen, setIsWriterOpen] = useState(false);
+  const [activatedCard, setActivatedCard] = useState<NFCCard | null>(null);
 
   const handleClaim = () => {
     setIsProcessing(true);
@@ -30,6 +34,9 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
       setIsProcessing(false);
       if (res.success) {
         triggerConfetti();
+        if (res.card) {
+          setActivatedCard(res.card);
+        }
         setStep('success');
       } else {
         alert(res.message);
@@ -171,21 +178,51 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-              <Link to="/dashboard/cards">
-                <Button variant="secondary" size="md" className="w-full justify-center">
-                  My TapIt Cards
-                </Button>
-              </Link>
-              <Link to={`/@${assignedProfile?.slug}`}>
-                <Button variant="glow" size="md" className="w-full justify-center" rightIcon={<Smartphone className="w-4 h-4" />}>
-                  View Live Profile
-                </Button>
-              </Link>
+            <div className="space-y-3 pt-2">
+              <Button
+                variant="glow"
+                size="lg"
+                onClick={() => setIsWriterOpen(true)}
+                className="w-full justify-center"
+                leftIcon={<Zap className="w-4 h-4 text-cyan-300" />}
+              >
+                Program / Write Physical NFC Tag
+              </Button>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Link to="/dashboard/cards" className="w-full">
+                  <Button variant="secondary" size="md" className="w-full justify-center">
+                    My TapIt Cards
+                  </Button>
+                </Link>
+                <Link to={`/@${assignedProfile?.slug}`} className="w-full">
+                  <Button variant="outline" size="md" className="w-full justify-center" rightIcon={<Smartphone className="w-4 h-4" />}>
+                    View Live Profile
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* WEB NFC WRITER MODAL */}
+      <WebNFCWriterModal
+        isOpen={isWriterOpen}
+        onClose={() => setIsWriterOpen(false)}
+        card={activatedCard || {
+          id: 'new-activated',
+          cardToken,
+          name: customCardName,
+          profileId: selectedProfileId,
+          status: 'active',
+          material: 'matte-black',
+          createdAt: new Date().toISOString(),
+          taps: 0,
+          uniqueTappers: 0
+        }}
+        profile={assignedProfile}
+      />
     </div>
   );
 };

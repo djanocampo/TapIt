@@ -1,8 +1,9 @@
-# TapIt — Master Architecture & Phase-by-Phase Documentation
+# TapIt — Master Architecture & System Documentation
 
 > **Tagline**: *Tap. Connect. Analyze. Your digital identity, one tap away.*  
 > **Repository**: `TapIt`  
-> **Tech Stack**: React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons, Recharts, Web NFC API (`navigator.ndef`)
+> **Tech Stack**: React 18, Vite, TypeScript, Tailwind CSS, PostgreSQL / Supabase, Web NFC API (`navigator.ndef`), Recharts, Lucide Icons  
+> **Architecture Reference**: [DATABASE_INDEXING.md](file:///d:/TapIt/DATABASE_INDEXING.md) & [Dual-Layer Sync Pattern.md](file:///d:/TapIt/Dual-Layer%20Sync%20Pattern.md)
 
 ---
 
@@ -11,239 +12,243 @@
 | Phase | Title | Scope & Objectives | Status |
 |:---:|---|---|:---:|
 | **Phase 1** | **Foundation & Design System** | Electric Cyan branding, transparent logo, dark mode tokens, typography | `[COMPLETE]` |
-| **Phase 2** | **Role Architecture & RBAC** | Strict 2-User Model (Admin & Djan), ProtectedRoute, Auth lifecycle | `[COMPLETE]` |
+| **Phase 2** | **Role Architecture & RBAC** | System Admin & End-User RBAC, ProtectedRoute, universal session lifecycle | `[COMPLETE]` |
 | **Phase 3** | **Public Website & 3D Cards** | Marketing pages, 3D rotating smart cards, interactive flip preview | `[COMPLETE]` |
-| **Phase 4** | **Hardware NFC & Dynamic Tokens** | Web NFC chip writer, 3-stage flasher, token resolver (`/t/:token`) | `[COMPLETE]` |
+| **Phase 4** | **Hardware NFC & Dynamic Tokens** | Web NFC chip writer, 3-stage flasher, dynamic token routing (`/t/:token`) | `[COMPLETE]` |
 | **Phase 5** | **User Provisioning & Invite Wizard** | Step-by-step Add User wizard, single-use invite links (`/invite/:token`) | `[COMPLETE]` |
 | **Phase 6** | **User Dashboard & Profile Studio** | Collapsible editor cards, contact checkboxes, 1-column links, 1-click copy | `[COMPLETE]` |
 | **Phase 7** | **Admin Suite & Directory** | Account-based profile accordions, standardized card inventory table | `[COMPLETE]` |
 | **Phase 8** | **Mobile Bottom Nav & Telemetry** | 5-Tab mobile bottom bar, "More" sheet, client device detection, Wi-Fi testing | `[COMPLETE]` |
+| **Phase 9** | **Normalized PostgreSQL Database** | 9 Relational 3NF tables, foreign key cascades, RLS policies, Realtime publication | `[COMPLETE]` |
+| **Phase 10** | **Database Indexing Architecture** | Foreign key indexes, token lookups, and composite B-Tree indexes (DATABASE_INDEXING.md) | `[COMPLETE]` |
+| **Phase 11** | **Dual-Layer Sync Engine** | Instant LocalStorage Layer 1 + non-blocking Supabase Layer 2 + O(1) deduplication | `[COMPLETE]` |
+| **Phase 12** | **Clean Auth & 1st User Flow** | Purged demo logins, clean Admin credentials, 1st user registration & binding | `[COMPLETE]` |
 
 ---
 
-## 🚀 Phase 1: Foundation & Brand Design System `[COMPLETE]`
+## 🔐 System Administrator & Authentication Credentials
 
-### 1.1 Objectives & Deliverables
-Establish a cohesive, high-converting visual identity and responsive web architecture built on modern dark mode and the official TapIt logo palette.
+TapIt operates with a **Clean Slate Onboarding Architecture**. All pre-seeded dummy accounts and 1-click demo logins have been purged. Only the root System Administrator exists by default:
 
-### 1.2 Implemented Features & Architecture
-* **Color Palette**:
-  * **Primary Accent**: Electric Cyan (`#00f0ff` / `#06b6d4` / `#38bdf8`)
-  * **Background Foundation**: Oceanic Midnight & Obsidian Dark (`#040c1a` / `#050a17` / `#081224`)
-  * **Text & Contrast**: Crisp Pure White (`#ffffff`) with muted slate metadata (`#94a3b8`)
-* **Typography**: Plus Jakarta Sans (`font-sans`), Outfit (`font-display`), JetBrains Mono (`font-mono`).
-* **Visual FX**: Glassmorphism (`backdrop-blur-2xl`), animated cyan radar scanning rings, and celebration confetti (`canvas-confetti`).
-* **Core Layouts**: [RootLayout.tsx](file:///d:/TapIt/src/layouts/RootLayout.tsx), [DashboardLayout.tsx](file:///d:/TapIt/src/layouts/DashboardLayout.tsx), [AdminLayout.tsx](file:///d:/TapIt/src/layouts/AdminLayout.tsx).
+* **Admin Portal URL**: [`/login`](http://localhost:5173/login) ➔ Redirects to [`/admin`](http://localhost:5173/admin)
+* **Email / Username**: `admin@tapit.app` or `admin`
+* **Password**: `admin123` (or `admin`)
+* **Role**: `admin`
+* **Admin Capabilities**:
+  * Root access to System Admin Suite (`/admin`) and User Dashboard (`/dashboard`).
+  * Hardware NFC Smart Card batch generation & token provisioning.
+  * User provisioning wizard & temporary invitation link generation (`/invite/:token`).
+  * User account moderation (active/suspended).
+  * Global telemetry, analytics, and platform system settings.
 
----
-
-## 🔐 Phase 2: Role Architecture & Access Control (RBAC) `[COMPLETE]`
-
-### 2.1 Objectives & Deliverables
-Enforce a clean, unambiguous **2-User Security Model** for demonstration, tracking, and operational boundaries.
-
-### 2.2 Account Specifications
-| User Account | Email | Password | Role | Permissions & Access Scope |
-|---|---|---|:---:|---|
-| **Admin** | `admin@tapit.app` | `••••••••••••` | `admin` | Full root access to **Admin Suite (`/admin`)** and **User Dashboard (`/dashboard`)**. Provisions cards, creates invites, and monitors global telemetry. |
-| **Djan** | `djan.ocampo@tapit.app` | `••••••••••••` | `user` | Full access to **User Dashboard (`/dashboard`)**. Manages personal personas, links, and assigned smart cards. *Blocked from `/admin` (auto-redirects to `/dashboard`).* |
-
-### 2.3 Universal Authentication & Session Lifecycle
-* **State Store**: [store/index.tsx](file:///d:/TapIt/src/store/index.tsx) with persistent LocalStorage key `tapit_app_state_v9`.
-* **Session Methods**: `login(user, role)` and `logout()`.
-* **Guard Component**: [ProtectedRoute.tsx](file:///d:/TapIt/src/components/auth/ProtectedRoute.tsx) blocks unauthenticated users and unauthorized roles.
-* **Universal Sign Out**: Accessible via Mobile Bottom Nav, Desktop Sidebars, Marketing Navbar, and Account Settings.
+### 👤 Testing Your 1st Personal User Account
+1. Open [`/register`](http://localhost:5173/register).
+2. Enter your Name, Email, Password, and unique **Username** (e.g., `djan`).
+3. Submit the registration. TapIt automatically:
+   * Creates your user entity in LocalStorage and PostgreSQL.
+   * Auto-provisions your **Primary Profile** mapped to `tapit.app/@username` and `tapit.app/username`.
+   * Generates your custom dynamic **QR Code** asset.
+   * Auto-authenticates and navigates to your **User Dashboard** (`/dashboard`).
 
 ---
 
-## 🌐 Phase 3: Public Website & Interactive 3D Showcase `[COMPLETE]`
+## 🗄️ Normalized Database Architecture (`supabase/schema.sql`)
 
-### 3.1 Objectives & Deliverables
-Present an engaging marketing landing page that highlights physical-to-digital contactless networking and realistic smart card finishes.
+TapIt follows a **Third Normal Form (3NF) Relational Architecture** in PostgreSQL / Supabase, defined in [`supabase/schema.sql`](file:///d:/TapIt/supabase/schema.sql).
 
-### 3.2 Implemented Components
-* **Landing Page ([LandingPage.tsx](file:///d:/TapIt/src/pages/public/LandingPage.tsx))**:
-  * Hero section with dynamic headline, animated gradient background, and primary CTAs.
-  * 3-Step *How It Works* guide and live telemetry counter metrics.
-* **3D Rotating Smart Card Hero ([Rotating3DCardHero.tsx](file:///d:/TapIt/src/components/nfc/Rotating3DCardHero.tsx))**:
-  * **Matte Black (Obsidian)** & **Pure White (Ceramic)** finishes.
-  * Continuous 360° rotation with pause/resume controls and holographic reflections.
-  * Features the centered transparent **`TapIt Logo`** front and back.
-* **Public Profile Renderer ([PublicProfileRenderer.tsx](file:///d:/TapIt/src/components/profile/PublicProfileRenderer.tsx))**:
-  * Clean layout without distracting badges ("TapIt Live" removed).
-  * Direct contact badges (Email/Phone) respect user privacy toggles.
-  * Native OS Web Share API trigger (`navigator.share`).
+### Entity Relationship Diagram (ERD)
+
+```
+┌─────────────────┐       1:N       ┌─────────────────────┐
+│  public.users   │────────────────▶│   public.profiles   │
+└────────┬────────┘                 └──────────┬──────────┘
+         │                                     │
+     1:N │                                 1:N │
+         ▼                                     ▼
+┌─────────────────┐                 ┌─────────────────────┐
+│public.nfc_cards │                 │    public.links     │
+└────────┬────────┘                 └──────────┬──────────┘
+         │                                     │
+     1:N │                                 1:N │
+         ▼                                     ▼
+┌─────────────────────────────────────────────────────────┐
+│                public.analytics_events                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Table Definitions
+
+| Table Name | Primary Key | Foreign Keys & Cascades | Key Columns & Responsibilities |
+|---|---|---|---|
+| **`public.users`** | `id` (TEXT) | — | `username` (UNIQUE), `email` (UNIQUE), `password_hash`, `role` (`admin`/`user`), `avatar`, `headline`, `bio`, `status`, `created_at`, `last_login_at`. |
+| **`public.profiles`** | `id` (TEXT) | `user_id` ➔ `users(id)` `ON DELETE CASCADE` | `slug` (UNIQUE), `name`, `display_name`, `headline`, `bio`, `avatar`, `cover_image`, `email`, `phone`, `theme` (JSONB), `is_active`, `is_archived`, `socials` (JSONB). |
+| **`public.links`** | `id` (TEXT) | `profile_id` ➔ `profiles(id)` `ON DELETE CASCADE` | `title`, `url`, `icon`, `category`, `position`, `is_active`, `is_featured`, `clicks`, `last_clicked_at`. |
+| **`public.nfc_cards`** | `id` (TEXT) | `user_id` ➔ `users(id)`, `profile_id` ➔ `profiles(id)` | `card_token` (UNIQUE), `name`, `material` (`matte-black`, `white-ceramic`, etc.), `status` (`active`, `unclaimed`, `disabled`), `taps`, `unique_tappers`, `last_tapped_at`. |
+| **`public.qr_codes`** | `id` (TEXT) | `profile_id` ➔ `profiles(id)` `ON DELETE CASCADE` | `token` (UNIQUE), `fg_color`, `bg_color`, `include_logo`, `scans`, `last_scanned_at`. |
+| **`public.analytics_events`** | `id` (TEXT) | `profile_id` ➔ `profiles(id)` `ON DELETE CASCADE`, `card_id` ➔ `nfc_cards(id)`, `link_id` ➔ `links(id)` | `event_type` (`profile_view`, `nfc_tap`, `qr_scan`, `link_click`), `traffic_source`, `device_type`, `browser`, `os`, `country`, `city`, `timestamp`. |
+| **`public.user_invites`** | `id` (TEXT) | `used_by_user_id` ➔ `users(id)` | `invite_token` (UNIQUE), `initial_name`, `card_token`, `material`, `is_used`, `created_at`. |
+| **`public.notifications`** | `id` (TEXT) | `recipient_user_id` ➔ `users(id)` `ON DELETE CASCADE` | `title`, `message`, `type` (`info`, `success`, `warning`, `tap`), `read`, `link`, `timestamp`. |
+| **`public.system_settings`** | `id` (TEXT) | — | `platform_name`, `maintenance_mode`, `allow_public_registrations`, `enforce_nfc_verification`, `max_profiles_per_user`, `default_theme`, `supported_platforms` (JSONB). |
 
 ---
 
-## ⚡ Phase 4: Hardware NFC Layer & Dynamic Token Engine `[COMPLETE]`
+## ⚡ Database Indexing Architecture ([DATABASE_INDEXING.md](file:///d:/TapIt/DATABASE_INDEXING.md) Compliance)
 
-### 4.1 Objectives & Deliverables
-Connect physical NFC microchips to dynamic cloud URLs so users never need to reprogram hardware when changing profiles or updating links.
+To ensure sub-millisecond query performance and eliminate sequential table scans ($O(N)$), high-throughput B-Tree indexes are applied:
 
-### 4.2 Core Architectural Superpower: Dynamic Token Routing
-Physical TapIt NFC cards store **only a lightweight URL record**:
+### Indexing Specification Matrix
+
+```sql
+-- 1. Foreign Key B-Tree Indexes
+CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_links_profile_id ON public.links(profile_id);
+CREATE INDEX IF NOT EXISTS idx_nfc_cards_user_id ON public.nfc_cards(user_id);
+CREATE INDEX IF NOT EXISTS idx_nfc_cards_profile_id ON public.nfc_cards(profile_id);
+CREATE INDEX IF NOT EXISTS idx_qr_codes_profile_id ON public.qr_codes(profile_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_profile_id ON public.analytics_events(profile_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_card_id ON public.analytics_events(card_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_link_id ON public.analytics_events(link_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON public.notifications(recipient_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_invites_used_by ON public.user_invites(used_by_user_id);
+
+-- 2. Unique & High-Cardinality Lookups
+CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
+CREATE INDEX IF NOT EXISTS idx_profiles_slug ON public.profiles(slug);
+CREATE INDEX IF NOT EXISTS idx_nfc_cards_token ON public.nfc_cards(card_token);
+CREATE INDEX IF NOT EXISTS idx_qr_codes_token ON public.qr_codes(token);
+CREATE INDEX IF NOT EXISTS idx_user_invites_token ON public.user_invites(invite_token);
+
+-- 3. Composite B-Tree Indexes (Equality First, Range/Sort Second)
+CREATE INDEX IF NOT EXISTS idx_links_profile_pos ON public.links(profile_id, position ASC);
+CREATE INDEX IF NOT EXISTS idx_analytics_profile_time ON public.analytics_events(profile_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_card_time ON public.analytics_events(card_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_type_time ON public.analytics_events(event_type, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read_time ON public.notifications(recipient_user_id, read, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_profiles_user_active ON public.profiles(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_nfc_cards_user_status ON public.nfc_cards(user_id, status);
+```
+
+---
+
+## 🔄 Dual-Layer Synchronization Engine ([Dual-Layer Sync Pattern.md](file:///d:/TapIt/Dual-Layer%20Sync%20Pattern.md))
+
+TapIt employs a **Local-First, Dual-Layer Synchronization Engine**:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                        USER ACTION                           │
+│     (Edit bio, add link, tap NFC, change theme, scan QR)     │
+└──────────────────┬───────────────────────────────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────────────────────────────┐
+│              LAYER 1: LocalStorage (Instant UI)              │
+│                                                              │
+│  • React Context state updates immediately (<1ms)            │
+│  • localStorage.setItem() persists state to client cache     │
+│  • window.dispatchEvent('tapit_*_updated') fires             │
+│  • Zero spinners or network lag for the user                 │
+└──────────────────┬───────────────────────────────────────────┘
+                   │  fire-and-forget (async, non-blocking)
+                   ▼
+┌──────────────────────────────────────────────────────────────┐
+│           LAYER 2: Supabase Remote (Persistent Cloud)        │
+│                                                              │
+│  • void syncToSupabase() non-blocking background push        │
+│  • upsert() with onConflict: 'id' for idempotent writes      │
+│  • Errors caught gracefully — UI is never interrupted        │
+│  • Supabase Realtime postgres_changes broadcasts to devices  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Core Engine Files:
+1. **[`src/lib/supabase.ts`](file:///d:/TapIt/src/lib/supabase.ts)**: Safe Supabase client initializer with automatic inert fallback for local offline mode.
+2. **[`src/services/dualLayerSync.ts`](file:///d:/TapIt/src/services/dualLayerSync.ts)**: CamelCase ↔ snake_case transformers, push upsert handlers, O(1) Map deduplication merge algorithms, and Realtime websocket listeners.
+3. **[`src/components/sync/BackendSyncInit.tsx`](file:///d:/TapIt/src/components/sync/BackendSyncInit.tsx)**: Headless React orchestrator mounted in [`src/App.tsx`](file:///d:/TapIt/src/App.tsx) handling boot hydration, `online`, `focus`, `visibilitychange`, and realtime channel updates.
+4. **[`src/store/index.tsx`](file:///d:/TapIt/src/store/index.tsx)**: Central React Context store with integrated background sync dispatchers (`void syncProfilesToSupabase(...)`).
+
+---
+
+## ⚡ Dynamic Token NFC Hardware Engine
+
+Physical TapIt NFC smart cards store a **lightweight, unchangeable dynamic token URL**:
 ```
 https://tapit.app/t/TAP-8xK29mQ
 ```
-When tapped by an iPhone or Android phone:
-1. Opens `/t/:token` handled by [NFCTapHandler.tsx](file:///d:/TapIt/src/pages/nfc/NFCTapHandler.tsx).
-2. Resolves which user and profile is currently active or assigned to that hardware card.
-3. Redirects seamlessly to the live public profile (`/@slug?src=nfc`).
-4. Logs tap telemetry (Timestamp, Form Factor, OS, Browser).
 
-### 4.3 Web NFC Chip Writer ([WebNFCWriterModal.tsx](file:///d:/TapIt/src/components/nfc/WebNFCWriterModal.tsx))
-Native Chromium `NDEFReader` writer with 3-stage live feedback:
-1. `Listening`: *"Tap and hold the NFC card near your device..."* (radar ring pulse)
-2. `Writing`: *"Writing NFC URL Record... Loading..."* (spinner)
-3. `Success`: *"Success! You may now remove the card."* (green checkmark, audio chime, haptic vibration)
+### Resolution Flow:
+1. Smartphone taps physical NFC chip ➔ Opens `/t/:token`.
+2. Handled by [`NFCTapHandler.tsx`](file:///d:/TapIt/src/pages/nfc/NFCTapHandler.tsx).
+3. Resolves assigned user and active persona profile in `<10ms`.
+4. Redirects to public bio link (`/@username` or `/djan`).
+5. Logs tap telemetry (Timestamp, Device Type, OS, Browser).
 
----
+### Web NFC Writer Modal ([`WebNFCWriterModal.tsx`](file:///d:/TapIt/src/components/nfc/WebNFCWriterModal.tsx))
+Native Chromium `NDEFReader` hardware flasher:
+1. `Card Selector`: Select token and format (Dynamic `/t/:token` vs Direct `/@slug`).
+2. `Sensor Active`: Radar ring pulse (*"📡 Sensor Active • Hold Card to Device"*).
+3. `Writing`: Real-time transfer (*"Keep touching back of phone. Do not move!"*).
+4. `Success`: Dual-tone rising chime, haptic feedback, and confetti (*"✓ Writing Complete! You may now remove card."*).
 
-## 👥 Phase 5: User Provisioning & Step-by-Step Invite Wizard `[COMPLETE]`
-
-### 5.1 Objectives & Deliverables
-Enable the Admin to onboard new users, program physical smart cards, and generate temporary activation links.
-
-### 5.2 Add User Wizard Workflow ([UserManagementPage.tsx](file:///d:/TapIt/src/pages/admin/UserManagementPage.tsx))
-* **Step 1: Hardware Token & NFC Flashing**:
-  * Input member name/nickname.
-  * Select card finish (`Matte Black` / `White Ceramic`).
-  * Web NFC In-App Flasher writes `https://tapit.app/t/TAP-XXXXXX` directly to the chip.
-* **Step 2: Temporary Activation Link Generation**:
-  * Generates single-use invite URL (`/invite/INV-XXXXXX`) and vector QR code.
-* **Step 3: User Activation & Card Binding ([InviteRegistrationPage.tsx](file:///d:/TapIt/src/pages/auth/InviteRegistrationPage.tsx))**:
-  * User opens link on mobile or desktop.
-  * Inputs Full Name, Username, Email, and Password.
-  * Creates account, binds physical card, creates initial profile, and auto-authenticates into `/dashboard`.
-  * User can subsequently log in anytime at `/login`.
+> [!TIP]
+> For chip pinouts (NTAG213/215/216), antenna locations for Samsung/Pixel/iPhone, local Wi-Fi Chrome flag setup, and Android OS handling, read **[NFC_TAG_WRITING_GUIDE.md](file:///d:/TapIt/NFC_TAG_WRITING_GUIDE.md)**.
 
 ---
 
-## 🎨 Phase 6: User Dashboard Suite & Profile Studio `[COMPLETE]`
-
-### 6.1 Objectives & Deliverables
-Provide a powerful self-service portal for managing multiple personas, links, cards, and analytics.
-
-### 6.2 Module Breakdown
-* **Dashboard Overview ([DashboardOverview.tsx](file:///d:/TapIt/src/pages/dashboard/DashboardOverview.tsx))**:
-  * Personalized greeting and active persona status banner.
-  * 1-Click **`[Copy Profile Link]`** with visual copied confirmation.
-  * 4 KPI telemetry cards, weekly traffic chart, and linked card widget.
-* **My Profiles ([MyProfilesPage.tsx](file:///d:/TapIt/src/pages/dashboard/MyProfilesPage.tsx))**:
-  * Multi-profile management (Professional, Personal, Creator).
-  * 1-Click **`[Copy Link]`** button right next to each profile slug (`tapit.app/@slug`).
-  * 1-Click **"Set as Active"** to change which persona your physical card opens.
-* **Profile Editor ([ProfileEditorPage.tsx](file:///d:/TapIt/src/pages/dashboard/ProfileEditorPage.tsx))**:
-  * **Collapsible / Expandable Cards**: Dedicated expand/collapse button on each card section.
-  * **Contact Privacy**: Checkboxes for `[✓] Display email publicly` and `[✓] Display phone publicly`.
-  * **Unified "Links" Card**: Single-column list with `[+ Add Link]` button, preset icon picker, move up/down reordering, visibility toggle, and delete.
-  * **Real-Time Live Phone Preview**: Sticky mobile preview updates live with every keystroke.
-* **My TapIt Cards ([MyCardsPage.tsx](file:///d:/TapIt/src/pages/dashboard/MyCardsPage.tsx) / [NFCCardPreview.tsx](file:///d:/TapIt/src/components/nfc/NFCCardPreview.tsx))**:
-  * Realistic 3D Matte Black and Pure White cards matching the landing page.
-  * Click to flip 180° and inspect the back face.
-  * Profile reassignment dropdown and tap simulator.
-* **Links Monitoring ([MyLinksPage.tsx](file:///d:/TapIt/src/pages/dashboard/MyLinksPage.tsx))**:
-  * Clean telemetry monitoring view with right-aligned profile switcher.
-* **Dynamic QR Studio ([QRStudioPage.tsx](file:///d:/TapIt/src/pages/dashboard/QRStudioPage.tsx))**:
-  * Vector QR generator with center logo embed and PNG/SVG export.
-* **Account Settings ([SettingsPage.tsx](file:///d:/TapIt/src/pages/dashboard/SettingsPage.tsx))**:
-  * Profile settings, data export, demo data reset, and Sign Out action.
-
----
-
-## 🛡️ Phase 7: Administrator Suite & Directory Management `[COMPLETE]`
-
-### 7.1 Objectives & Deliverables
-Equip administrators with oversight tools for user accounts, profile moderation, card inventory, and platform health.
-
-### 7.2 Module Breakdown
-* **Admin Overview ([AdminOverview.tsx](file:///d:/TapIt/src/pages/admin/AdminOverview.tsx))**:
-  * Platform metrics, active user distribution, live tap feed, and telemetry charts.
-* **User Management ([UserManagementPage.tsx](file:///d:/TapIt/src/pages/admin/UserManagementPage.tsx))**:
-  * Directory of registered users (Admin, Djan, invited members).
-  * 1-Click Add User Wizard button and account status toggles.
-* **Profile Directory ([ProfileDirectoryPage.tsx](file:///d:/TapIt/src/pages/admin/ProfileDirectoryPage.tsx))**:
-  * **Organized Per User Account**: Hierarchical accordion drawers grouping profiles by account.
-  * Live search, role filter, expand all, and collapse all controls.
-* **NFC Card Inventory ([CardInventoryPage.tsx](file:///d:/TapIt/src/pages/admin/CardInventoryPage.tsx))**:
-  * **Standardized Table Structure**:
-    1. `Hardware Token`: Token, card model, and finish (`Matte Black` / `Pure White`).
-    2. `User`: Resolved user account (displays `Unassigned` if null).
-    3. `Assigned Profile`: Persona name and public slug.
-    4. `Status`: Active, Unclaimed, or Disabled.
-    5. `Taps Recorded`: Total tap volume.
-    6. `Admin Actions`: `[Flash Chip]` Web NFC writer + `[Disable / Reactivate]`.
-
----
-
-## 📱 Phase 8: Mobile-First Bottom Nav & Client Telemetry `[COMPLETE]`
-
-### 8.1 Objectives & Deliverables
-Deliver an optimal mobile UX with a native-feeling bottom navigation bar and real-time client device detection.
-
-### 8.2 Glassmorphic Mobile Bottom Navigation ([MobileBottomNav.tsx](file:///d:/TapIt/src/components/layout/MobileBottomNav.tsx))
-Fixed at the bottom on mobile devices (`< md`):
-* **User View Tabs**: 🏠 `Overview` | 👤 `Profiles` | 🔗 `Links` | 💳 `Cards` | ⋯ `More`
-* **Admin View Tabs**: 🛡️ `Overview` | 👥 `Users` | 🗂️ `Profiles` | 💳 `Cards` | ⋯ `More`
-* **"More" Slide-Up Bottom Sheet**:
-  * Secondary routes (QR Studio, Analytics, Appearance, Settings).
-  * View Live Public Profile link (`/@slug`).
-  * Cross-portal switcher (between Admin Suite and User View).
-  * **Sign Out of TapIt** action.
-
-### 8.3 Device & Form Factor Telemetry Engine
-User-Agent parsing automatically detects and logs:
-* **Form Factor**: `Mobile`, `Tablet`, or `Desktop`
-* **Operating System**: `iOS` (iPhone/iPad), `Android`, `macOS`, `Windows`, `Linux`
-* **Browser Engine**: `Safari`, `Chrome`, `Firefox`, `Edge`, `Other`
-
-### 8.4 Local Wi-Fi Testing Guide
-* Dev server configuration in [vite.config.ts](file:///d:/TapIt/vite.config.ts): `server: { host: true, port: 5173 }`.
-* Connect any phone on the same Wi-Fi: `http://192.168.254.138:5173`.
-
----
-
-## 📁 Repository Directory Map
+## 📁 Repository Structure
 
 ```
 TapIt/
-├── .planning/                     # Project management specifications & state
-│   ├── PROJECT.md                 # Vision, taglines, and core roles
-│   ├── REQUIREMENTS.md            # System requirements matrix
+├── .planning/                     # System requirements, roadmap, and state
+│   ├── PROJECT.md                 # Product vision and core taglines
+│   ├── REQUIREMENTS.md            # Technical requirements matrix
 │   ├── ROADMAP.md                 # Multi-phase development roadmap
 │   └── STATE.md                   # Current execution checkpoint
-├── public/                        # Public static assets
+├── public/                        # Static assets
+├── supabase/                      # Database migrations & schemas
+│   └── schema.sql                 # 3NF PostgreSQL schema, indexes, RLS, & Realtime
 ├── src/
-│   ├── assets/                    # Transparent TapIt Logo and images
+│   ├── assets/                    # Transparent TapIt Logo & visual assets
 │   ├── components/
 │   │   ├── auth/                  # ProtectedRoute RBAC guard
+│   │   ├── common/                # LocalStorageCacheModal
 │   │   ├── layout/                # Navbar, DashboardSidebar, AdminSidebar, MobileBottomNav
-│   │   ├── nfc/                   # WebNFCWriterModal, NFCTapSimulatorModal, 3D Hero Card, NFCCardPreview
+│   │   ├── nfc/                   # WebNFCWriterModal, NFCTapSimulatorModal, 3D Hero Card
 │   │   ├── profile/               # PublicProfileRenderer, MobileFramePreview, ShareModal
+│   │   ├── sync/                  # BackendSyncInit (Headless Dual-Layer Orchestrator)
 │   │   └── ui/                    # Button, Input, Modal, Toggle, Badge
 │   ├── data/
-│   │   ├── mockData.ts            # Seed accounts (Admin, Djan), cards, and profiles
-│   │   └── themes.ts              # Preset visual theme configs
+│   │   ├── mockData.ts            # Clean initial state (Admin only)
+│   │   └── themes.ts              # Preset theme styles
+│   ├── lib/
+│   │   ├── supabase.ts            # Safe Supabase client with offline fallback
+│   │   └── utils.ts               # Utility functions & confetti triggers
 │   ├── layouts/
-│   │   ├── AdminLayout.tsx        # Administrator suite layout with mobile bottom nav
-│   │   ├── DashboardLayout.tsx    # User portal dashboard layout with mobile bottom nav
-│   │   └── RootLayout.tsx         # Public marketing landing layout
+│   │   ├── AdminLayout.tsx        # Admin suite layout with bottom navigation
+│   │   ├── DashboardLayout.tsx    # User portal layout with bottom navigation
+│   │   └── RootLayout.tsx         # Public marketing layout
 │   ├── pages/
-│   │   ├── admin/                 # Overview, UserManagement, ProfileDirectory, CardInventory
+│   │   ├── admin/                 # Overview, Users, Profiles, Cards, Analytics, Settings
 │   │   ├── auth/                  # LoginPage, RegisterPage, InviteRegistrationPage
-│   │   ├── dashboard/             # Overview, MyProfiles, ProfileEditor, MyLinks, MyCards, QRStudio, SettingsPage
+│   │   ├── dashboard/             # Overview, Profiles, Editor, Links, Cards, QRStudio, Analytics, Settings
 │   │   ├── nfc/                   # NFCTapHandler, UnclaimedCardPage, DisabledCardPage
 │   │   ├── profile/               # PublicProfilePage
 │   │   └── public/                # LandingPage, FeaturesPage, HowItWorksPage
+│   ├── services/
+│   │   └── dualLayerSync.ts       # Dual-Layer push, pull, O(1) merge & Realtime engine
 │   ├── store/
-│   │   └── index.tsx              # Central state store with localStorage persistence & Web NFC
+│   │   └── index.tsx              # Central state store with localStorage & dual-layer sync
 │   ├── types/
-│   │   └── index.ts               # TypeScript data models & interfaces
-│   ├── App.tsx                    # React Router DOM v6 route definitions
+│   │   └── index.ts               # TypeScript data models
+│   ├── App.tsx                    # Routes & sync orchestrator mount
 │   ├── main.tsx                   # React root entry point
-│   └── index.css                  # Global Tailwind CSS and custom animations
+│   └── index.css                  # Tailwind styles and keyframe animations
+├── .env.example                   # Environment configuration template
+├── DATABASE_INDEXING.md           # Database indexing specification blueprint
 ├── DOCUMENTATION.md               # Master phase-by-phase system documentation
+├── Dual-Layer Sync Pattern.md     # Dual-layer data synchronization guide
+├── NFC_TAG_WRITING_GUIDE.md       # Hardware NFC writing & chip flashing guide
 ├── package.json                   # Dependencies and npm scripts
 ├── tailwind.config.js             # Tailwind theme configuration
 ├── tsconfig.json                  # TypeScript compiler settings
@@ -255,19 +260,19 @@ TapIt/
 ## 🛠️ Build & Verification Commands
 
 ```bash
-# Install dependencies
+# 1. Install dependencies (including @supabase/supabase-js)
 npm install
 
-# Start local development server (broadcasted on 0.0.0.0 for Wi-Fi mobile testing)
+# 2. Start local dev server (broadcasts on 0.0.0.0 for Wi-Fi mobile testing)
 npm run dev
 
-# Run TypeScript type check and compile production bundle
+# 3. Verify TypeScript type safety and compile production bundle
 npm run build
 
-# Preview production build locally
+# 4. Preview production build locally
 npm run preview
 ```
 
 ---
 
-*Documentation Version: 3.5.0 | Last Updated: September 2026 | Built for TapIt Smart Identity Platform.*
+*Documentation Version: 4.0.0 | Last Updated: September 2026 | Built for TapIt Smart Identity Platform.*

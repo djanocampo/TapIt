@@ -16,17 +16,25 @@ import {
   Clock, 
   Sparkles,
   Copy,
-  Check
+  Check,
+  Zap,
+  ExternalLink
 } from 'lucide-react';
 import { formatRelativeTime } from '../../lib/utils';
 
 export const DashboardOverview: React.FC = () => {
-  const { currentUser, profiles, activeProfile, links, cards, notifications, openSimulator } = useTapIt();
+  const { currentUser, profiles, activeProfile, links, cards, notifications, analyticsEvents } = useTapIt();
   const [copied, setCopied] = React.useState(false);
 
   // Active profile's links and card
   const profileLinks = links.filter((l) => l.profileId === activeProfile.id);
   const activeCard = cards.find((c) => c.profileId === activeProfile.id) || cards[0];
+
+  // Dynamic metrics computed from real state
+  const totalTaps = cards.reduce((sum, c) => sum + c.taps, 0);
+  const totalClicks = links.reduce((sum, l) => sum + l.clicks, 0);
+  const totalViews = analyticsEvents.filter(e => e.eventType === 'profile_view').length;
+  const uniqueVisitors = new Set(analyticsEvents.map(e => e.id)).size;
 
   // Dynamic greeting based on time of day
   const hour = new Date().getHours();
@@ -52,7 +60,7 @@ export const DashboardOverview: React.FC = () => {
             {greeting}, {currentUser.name.split(' ')[0]} 👋
           </h2>
           <p className="text-xs sm:text-sm text-slate-300">
-            Your digital identity is live and ready to connect. Here is your networking telemetry.
+            Your digital identity is live and ready to connect. Here is your real-time networking telemetry.
           </p>
         </div>
 
@@ -71,18 +79,16 @@ export const DashboardOverview: React.FC = () => {
           </button>
 
           <Link to="/dashboard/cards">
-            <Button variant="secondary" size="sm" leftIcon={<CreditCard className="w-4 h-4" />}>
+            <Button variant="glow" size="sm" leftIcon={<CreditCard className="w-4 h-4" />}>
               My Cards
             </Button>
           </Link>
-          <Button
-            variant="glow"
-            size="sm"
-            onClick={() => openSimulator(activeCard)}
-            leftIcon={<Radio className="w-4 h-4" />}
-          >
-            Simulate Tap
-          </Button>
+
+          <Link to={`/@${activeProfile.slug}`} target="_blank">
+            <Button variant="secondary" size="sm" leftIcon={<ExternalLink className="w-4 h-4 text-cyan-400" />}>
+              View Live Profile
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -90,29 +96,29 @@ export const DashboardOverview: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Profile Views"
-          value={2847}
-          change={18.4}
+          value={totalViews}
+          change={totalViews > 0 ? 100 : 0}
           icon={Eye}
           variant="cyan"
         />
         <MetricCard
           title="NFC Taps"
-          value={1542}
-          change={24.2}
+          value={totalTaps}
+          change={totalTaps > 0 ? 100 : 0}
           icon={Radio}
           variant="cyan"
         />
         <MetricCard
           title="Link Clicks"
-          value={4521}
-          change={12.8}
+          value={totalClicks}
+          change={totalClicks > 0 ? 100 : 0}
           icon={MousePointerClick}
           variant="cyan"
         />
         <MetricCard
           title="Unique Visitors"
-          value={1932}
-          change={9.6}
+          value={uniqueVisitors}
+          change={uniqueVisitors > 0 ? 100 : 0}
           icon={Users}
           variant="cyan"
         />
@@ -143,12 +149,14 @@ export const DashboardOverview: React.FC = () => {
               <NFCCardPreview
                 card={activeCard}
                 profile={activeProfile}
-                onTapSimulate={() => openSimulator(activeCard)}
                 interactive={false}
               />
             ) : (
-              <div className="text-center py-6 text-xs text-slate-400">
-                No active NFC card linked yet.
+              <div className="text-center py-6 text-xs text-slate-400 space-y-2">
+                <p>No active NFC card linked yet.</p>
+                <Link to="/dashboard/cards" className="inline-block text-cyan-400 hover:underline font-semibold">
+                  + Claim or Write Tag
+                </Link>
               </div>
             )}
           </div>
@@ -163,22 +171,29 @@ export const DashboardOverview: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
             </div>
 
-            <div className="space-y-3">
-              {notifications.slice(0, 5).map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3 rounded-2xl bg-[#050c18] border border-white/[0.06] hover:border-cyan-500/30 transition space-y-1"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-100">{item.title}</span>
-                    <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                      {formatRelativeTime(item.timestamp)}
-                    </span>
+            {notifications.length === 0 ? (
+              <div className="text-center py-6 text-xs text-slate-400 space-y-1">
+                <p>No recent activity recorded yet.</p>
+                <p className="text-[11px] text-slate-500">Tap a physical NFC card or share your profile to see live telemetry stream.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {notifications.slice(0, 5).map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-2xl bg-[#050c18] border border-white/[0.06] hover:border-cyan-500/30 transition space-y-1"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-100">{item.title}</span>
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                        {formatRelativeTime(item.timestamp)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">{item.message}</p>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">{item.message}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

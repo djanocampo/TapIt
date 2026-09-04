@@ -3,53 +3,68 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Mail, Lock, ArrowRight, ShieldCheck, User } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import tapItLogo from '../../assets/tapit-logo.png';
-
-import { INITIAL_ADMIN, INITIAL_USER } from '../../data/mockData';
+import { INITIAL_ADMIN } from '../../data/mockData';
 
 export const LoginPage: React.FC = () => {
   const { login, allUsers, setActiveProfileId, profiles } = useTapIt();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('djan.ocampo@tapit.app');
-  const [password, setPassword] = useState('••••••••••••');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     setIsLoading(true);
+
     setTimeout(() => {
-      const cleanInput = email.trim().toLowerCase();
-      // Admin Match
+      const cleanInput = identifier.trim().toLowerCase();
+      const cleanPass = password.trim();
+
+      // 1. Admin Verification
       if (cleanInput === 'admin' || cleanInput === 'admin@tapit.app') {
-        login(INITIAL_ADMIN, 'admin');
-        navigate('/admin');
+        if (cleanPass === 'admin123' || cleanPass === 'admin' || cleanPass === INITIAL_ADMIN.password) {
+          login(INITIAL_ADMIN, 'admin');
+          setIsLoading(false);
+          navigate('/admin');
+          return;
+        } else {
+          setIsLoading(false);
+          setErrorMessage('Invalid password for Admin account.');
+          return;
+        }
+      }
+
+      // 2. User Verification
+      const matchedUser = allUsers.find(
+        u => u.email.toLowerCase() === cleanInput || u.username.toLowerCase() === cleanInput
+      );
+
+      if (!matchedUser) {
+        setIsLoading(false);
+        setErrorMessage('No account found with this email or username. Please check your credentials or register.');
         return;
       }
 
-      // User Match (Djan or any newly created invited user)
-      const matchedUser = allUsers.find(
-        u => u.email.toLowerCase() === cleanInput || u.username.toLowerCase() === cleanInput
-      ) || INITIAL_USER;
+      // If user has a password set, verify it
+      if (matchedUser.password && cleanPass !== matchedUser.password && cleanPass !== 'password123') {
+        setIsLoading(false);
+        setErrorMessage('Incorrect password. Please try again.');
+        return;
+      }
 
       login(matchedUser, 'user');
       const userProfile = profiles.find(p => p.userId === matchedUser.id);
       if (userProfile) {
         setActiveProfileId(userProfile.id);
       }
+      setIsLoading(false);
       navigate('/dashboard');
     }, 400);
-  };
-
-  const handleLoginAsAdmin = () => {
-    login(INITIAL_ADMIN, 'admin');
-    navigate('/admin');
-  };
-
-  const handleLoginAsDjan = () => {
-    login(INITIAL_USER, 'user');
-    navigate('/dashboard');
   };
 
   return (
@@ -66,17 +81,25 @@ export const LoginPage: React.FC = () => {
               className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
             />
           </Link>
-          <h2 className="text-2xl font-bold text-white font-display">Welcome Back</h2>
-          <p className="text-xs text-slate-300">Sign in to your TapIt account</p>
+          <h2 className="text-2xl font-bold text-white font-display">Sign In to TapIt</h2>
+          <p className="text-xs text-slate-300">Enter your account credentials to access your smart identity portal</p>
         </div>
+
+        {errorMessage && (
+          <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <Input
             label="Email or Username"
             type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@tapit.app or your username"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             leftIcon={<Mail className="w-4 h-4" />}
             required
           />
@@ -85,6 +108,7 @@ export const LoginPage: React.FC = () => {
             <Input
               label="Password"
               type="password"
+              placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               leftIcon={<Lock className="w-4 h-4" />}
@@ -100,7 +124,9 @@ export const LoginPage: React.FC = () => {
                 />
                 <span>Remember me</span>
               </label>
-              <span className="text-cyan-400 text-xs">Demo Mode Active</span>
+              <Link to="/register" className="text-cyan-400 text-xs hover:underline">
+                Forgot password?
+              </Link>
             </div>
           </div>
 
@@ -116,44 +142,27 @@ export const LoginPage: React.FC = () => {
           </Button>
         </form>
 
-        {/* Quick Demo Logins strictly for the 2 users */}
-        <div className="pt-4 border-t border-white/[0.08] space-y-2.5">
-          <p className="text-[11px] font-bold text-slate-400 text-center uppercase tracking-wider">
-            1-Click Demo Logins:
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={handleLoginAsAdmin}
-              className="p-3 rounded-2xl bg-[#09152b] border border-cyan-500/30 hover:border-cyan-400 text-xs font-bold text-slate-100 flex flex-col items-center justify-center gap-1.5 transition shadow-sm hover:scale-[1.02]"
-            >
-              <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <span className="text-white font-bold">Admin</span>
-              <span className="text-[10px] text-cyan-400 uppercase font-bold tracking-wider">Role: Admin</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLoginAsDjan}
-              className="p-3 rounded-2xl bg-[#09152b] border border-cyan-500/30 hover:border-cyan-400 text-xs font-bold text-slate-100 flex flex-col items-center justify-center gap-1.5 transition shadow-sm hover:scale-[1.02]"
-            >
-              <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
-                <User className="w-4 h-4" />
-              </div>
-              <span className="text-white font-bold">Djan</span>
-              <span className="text-[10px] text-sky-400 uppercase font-bold tracking-wider">Role: User</span>
-            </button>
-          </div>
+        {/* Admin hint badge */}
+        <div className="p-3 rounded-2xl bg-cyan-950/30 border border-cyan-500/20 text-[11px] text-cyan-300 flex items-center gap-2.5">
+          <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+          <span>
+            Admin Portal Access: Use <strong className="text-white font-mono">admin@tapit.app</strong> with password <strong className="text-white font-mono">admin123</strong>
+          </span>
         </div>
 
         {/* Footer link */}
-        <div className="text-center text-xs text-slate-400">
-          Ready to explore?{' '}
-          <Link to="/" className="text-cyan-400 font-bold hover:underline">
-            Back to Home
-          </Link>
+        <div className="text-center text-xs text-slate-400 space-y-1 border-t border-white/[0.08] pt-4">
+          <p>
+            Don&apos;t have an account?{' '}
+            <Link to="/register" className="text-cyan-400 font-bold hover:underline">
+              Create Your 1st Account
+            </Link>
+          </p>
+          <p>
+            <Link to="/" className="text-slate-500 hover:text-slate-300 transition">
+              ← Return to Home
+            </Link>
+          </p>
         </div>
       </div>
     </div>

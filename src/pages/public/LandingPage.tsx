@@ -18,8 +18,6 @@ import { Rotating3DCardHero } from '../../components/nfc/Rotating3DCardHero';
 import tapItLogo from '../../assets/tapit-logo.png';
 
 export const LandingPage: React.FC = () => {
-  const { openSimulator } = useTapIt();
-
   return (
     <div className="min-h-screen bg-[#040c1a] text-slate-100 overflow-hidden relative selection:bg-cyan-500 selection:text-black">
       {/* Ambient Atmospheric Glows */}
@@ -61,13 +59,12 @@ export const LandingPage: React.FC = () => {
                 </span>
               </Link>
 
-              <button
-                onClick={() => openSimulator()}
+              <Link
+                to="/features"
                 className="inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/80 px-5 py-3.5 rounded-full transition-all duration-200"
               >
-                <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
-                <span>Try Demo</span>
-              </button>
+                <span>Explore Features</span>
+              </Link>
             </div>
           </div>
 

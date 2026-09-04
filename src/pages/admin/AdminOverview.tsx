@@ -58,29 +58,29 @@ export const AdminOverview: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total Users"
-          value={12483}
-          change={21.8}
+          value={allUsers.length}
+          change={allUsers.length > 0 ? 100 : 0}
           icon={Users}
           variant="purple"
         />
         <MetricCard
           title="Active Profiles"
-          value={9842}
-          change={15.4}
+          value={profiles.filter(p => p.isActive).length}
+          change={profiles.length > 0 ? 100 : 0}
           icon={UserSquare2}
           variant="cyan"
         />
         <MetricCard
           title="Registered NFC Cards"
-          value={6294}
-          change={28.1}
+          value={cards.length}
+          change={cards.length > 0 ? 100 : 0}
           icon={CreditCard}
           variant="emerald"
         />
         <MetricCard
           title="Total Profile Visits"
-          value={1248392}
-          change={32.6}
+          value={analyticsEvents.filter(e => e.eventType === 'profile_view').length}
+          change={analyticsEvents.length > 0 ? 100 : 0}
           icon={Eye}
           variant="amber"
         />

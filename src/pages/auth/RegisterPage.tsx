@@ -3,59 +3,81 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Radio, Mail, Lock, User, AtSign, Check, X, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, AtSign, Check, X, ArrowRight } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
+import tapItLogo from '../../assets/tapit-logo.png';
 
 export const RegisterPage: React.FC = () => {
-  const { setRole } = useTapIt();
+  const { registerUser, allUsers } = useTapIt();
   const navigate = useNavigate();
 
-  const [name, setName] = useState('Djan Ocampo');
-  const [email, setEmail] = useState('djan.ocampo@tapit.app');
-  const [username, setUsername] = useState('djan');
-  const [password, setPassword] = useState('password123');
-  const [confirmPassword, setConfirmPassword] = useState('password123');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Simulated taken usernames
-  const TAKEN_USERNAMES = ['admin', 'root', 'support', 'help', 'system'];
-  const isUsernameTaken = TAKEN_USERNAMES.includes(username.toLowerCase().trim());
-  const isUsernameValid = username.length >= 3 && !isUsernameTaken;
+  // Check taken usernames against live state
+  const cleanUser = username.toLowerCase().trim();
+  const isUsernameTaken = allUsers.some(u => u.username.toLowerCase() === cleanUser);
+  const isUsernameValid = cleanUser.length >= 3 && !isUsernameTaken;
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isUsernameValid) return;
+    setErrorMessage('');
+    if (!isUsernameValid) {
+      setErrorMessage('Please choose a valid and available username.');
+      return;
+    }
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      setErrorMessage('Passwords do not match.');
       return;
     }
 
     setIsLoading(true);
     setTimeout(() => {
-      triggerConfetti();
-      setRole('admin');
-      navigate('/dashboard');
-    }, 700);
+      const res = registerUser({
+        name,
+        email,
+        username: cleanUser,
+        password,
+      });
+
+      setIsLoading(false);
+      if (res.success) {
+        triggerConfetti();
+        navigate('/dashboard');
+      } else {
+        setErrorMessage(res.message);
+      }
+    }, 400);
   };
 
   return (
-    <div className="min-h-screen bg-[#070a13] flex items-center justify-center p-4 py-16 relative">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#040c1a] flex items-center justify-center p-4 py-16 relative selection:bg-cyan-500 selection:text-black">
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6">
+      <div className="w-full max-w-md bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6 backdrop-blur-2xl">
         {/* Brand */}
-        <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-0.5 shadow-glow-cyan">
-              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                <Radio className="w-5 h-5 text-cyan-400" />
-              </div>
-            </div>
-            <span className="text-2xl font-extrabold text-white font-display">TapIt</span>
+        <div className="text-center space-y-2 flex flex-col items-center">
+          <Link to="/" className="inline-flex items-center gap-2 mb-2 group">
+            <img
+              src={tapItLogo}
+              alt="TapIt"
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
           </Link>
-          <h2 className="text-xl font-bold text-white font-display">Create Your TapIt Account</h2>
-          <p className="text-xs text-slate-400">Claim your personalized URL and start sharing with one tap</p>
+          <h2 className="text-2xl font-bold text-white font-display">Create Your TapIt Account</h2>
+          <p className="text-xs text-slate-300">Claim your personalized URL and start sharing with one tap</p>
         </div>
+
+        {errorMessage && (
+          <div className="p-3 rounded-2xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs text-center font-medium">
+            {errorMessage}
+          </div>
+        )}
 
         {/* Register Form */}
         <form onSubmit={handleRegister} className="space-y-4">

@@ -8,7 +8,6 @@ interface NFCCardPreviewProps {
   card: NFCCard;
   profile?: Profile;
   onManage?: () => void;
-  onTapSimulate?: () => void;
   interactive?: boolean;
 }
 
@@ -16,7 +15,6 @@ export const NFCCardPreview: React.FC<NFCCardPreviewProps> = ({
   card,
   profile,
   onManage,
-  onTapSimulate,
   interactive = true,
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -217,29 +215,16 @@ export const NFCCardPreview: React.FC<NFCCardPreviewProps> = ({
         </div>
 
         {/* Action Buttons */}
-        {interactive && (
-          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
-            {onTapSimulate && (
-              <button
-                type="button"
-                onClick={onTapSimulate}
-                className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 border border-cyan-500/30 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5"
-              >
-                <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                <span>Simulate Tap</span>
-              </button>
-            )}
-
-            {onManage && (
-              <button
-                type="button"
-                onClick={onManage}
-                className="text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition flex items-center gap-1 ml-auto"
-              >
-                <span>Reassign Profile</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {interactive && onManage && (
+          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-end">
+            <button
+              type="button"
+              onClick={onManage}
+              className="text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition flex items-center gap-1"
+            >
+              <span>Reassign Profile</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </div>

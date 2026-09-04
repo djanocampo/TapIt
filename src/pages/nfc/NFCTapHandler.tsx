@@ -11,7 +11,8 @@ export const NFCTapHandler: React.FC = () => {
   const { cards, recordCardTap, profiles } = useTapIt();
 
   const [status, setStatus] = useState<'resolving' | 'active' | 'unclaimed' | 'disabled' | 'not_found'>('resolving');
-  const [resolvedProfileSlug, setResolvedProfileSlug] = useState<string>('');
+  const [targetSlug, setTargetSlug] = useState<string>('');
+  const [profileName, setProfileName] = useState<string>('');
 
   useEffect(() => {
     if (!token) {
@@ -19,27 +20,29 @@ export const NFCTapHandler: React.FC = () => {
       return;
     }
 
-    const timer = setTimeout(() => {
-      const result = recordCardTap(token);
+    const cleanToken = token.trim();
+    const result = recordCardTap(cleanToken);
 
-      if (result.status === 'active') {
-        const assignedProfile = result.profile || profiles.find(p => p.id === result.card?.profileId) || profiles[0];
-        setResolvedProfileSlug(assignedProfile.slug);
-        setStatus('active');
-        // Redirect seamlessly to public profile with NFC attribution
-        setTimeout(() => {
-          navigate(`/@${assignedProfile.slug}?src=nfc`);
-        }, 1000);
-      } else if (result.status === 'unclaimed') {
-        setStatus('unclaimed');
-      } else if (result.status === 'disabled' || result.status === 'suspended') {
-        setStatus('disabled');
-      } else {
-        setStatus('not_found');
-      }
-    }, 600);
+    if (result.status === 'active') {
+      const assignedProfile = result.profile || profiles.find(p => p.id === result.card?.profileId) || profiles[0];
+      const slug = assignedProfile?.slug || 'djan';
+      setTargetSlug(slug);
+      setProfileName(assignedProfile?.displayName || assignedProfile?.name || 'Profile');
+      setStatus('active');
 
-    return () => clearTimeout(timer);
+      // Snappy redirect to public profile with NFC source tag
+      const timer = setTimeout(() => {
+        navigate(`/@${slug}?src=nfc`, { replace: true });
+      }, 400);
+
+      return () => clearTimeout(timer);
+    } else if (result.status === 'unclaimed') {
+      setStatus('unclaimed');
+    } else if (result.status === 'disabled' || result.status === 'suspended') {
+      setStatus('disabled');
+    } else {
+      setStatus('not_found');
+    }
   }, [token]);
 
   if (status === 'unclaimed') {

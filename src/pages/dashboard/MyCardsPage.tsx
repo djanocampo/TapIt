@@ -26,7 +26,7 @@ import {
 import { formatNumber, triggerConfetti } from '../../lib/utils';
 
 export const MyCardsPage: React.FC = () => {
-  const { cards, profiles, currentRole, claimCard, updateCard, toggleCardStatus, reassignCard, openSimulator } = useTapIt();
+  const { cards, profiles, currentRole, claimCard, updateCard, toggleCardStatus, reassignCard } = useTapIt();
 
   // Manage Modal State
   const [selectedCard, setSelectedCard] = useState<NFCCard | null>(null);
@@ -39,11 +39,14 @@ export const MyCardsPage: React.FC = () => {
   const [claimToken, setClaimToken] = useState('');
   const [claimProfileId, setClaimProfileId] = useState(profiles[0]?.id || '');
   const [claimName, setClaimName] = useState('');
+  const [claimError, setClaimError] = useState('');
 
+  // Edit modal form states
   const [editName, setEditName] = useState('');
   const [editProfileId, setEditProfileId] = useState('');
   const [editMaterial, setEditMaterial] = useState<CardMaterial>('matte-black');
 
+  // Handlers
   const handleOpenManage = (card: NFCCard) => {
     setSelectedCard(card);
     setEditName(card.name);
@@ -53,9 +56,35 @@ export const MyCardsPage: React.FC = () => {
   };
 
   const handleOpenWriter = (card?: NFCCard) => {
-    if (currentRole !== 'admin') return;
     setWriterCard(card || cards[0] || null);
     setIsNfcWriterOpen(true);
+  };
+
+  const handleClaimCard = (e: React.FormEvent) => {
+    e.preventDefault();
+    setClaimError('');
+
+    if (!claimToken.trim()) {
+      setClaimError('Please enter a valid card token.');
+      return;
+    }
+
+    const res = claimCard(claimToken.trim(), claimProfileId, claimName.trim() || undefined);
+    if (!res.success) {
+      setClaimError(res.message);
+      return;
+    }
+
+    triggerConfetti();
+    setIsClaimModalOpen(false);
+    setClaimToken('');
+    setClaimName('');
+    
+    // Auto-open writer terminal for newly claimed card
+    if (res.card) {
+      setWriterCard(res.card);
+      setIsNfcWriterOpen(true);
+    }
   };
 
   const handleSaveManage = (e: React.FormEvent) => {
@@ -71,40 +100,25 @@ export const MyCardsPage: React.FC = () => {
     setIsManageModalOpen(false);
   };
 
-  const handleClaimCard = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!claimToken.trim()) return;
-
-    const res = claimCard(claimToken, claimProfileId, claimName);
-    if (res.success) {
-      triggerConfetti();
-      setIsClaimModalOpen(false);
-      setClaimToken('');
-      setClaimName('');
-    } else {
-      alert(res.message);
-    }
-  };
-
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white font-display">My TapIt NFC Cards</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white font-display">My TapIt Smart Cards</h2>
           <p className="text-xs sm:text-sm text-slate-400">
-            Manage your physical NFC smart cards, reassign profiles, and monitor tap telemetry.
+            Manage your physical NFC smart cards, reassign profile destinations, or write to new tags.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <Button
-            variant="secondary"
+            variant="glow"
             size="md"
-            onClick={() => openSimulator()}
-            leftIcon={<Radio className="w-4 h-4 text-cyan-400 animate-pulse" />}
+            onClick={() => handleOpenWriter()}
+            leftIcon={<Zap className="w-4 h-4 text-cyan-300" />}
           >
-            Simulate Tap
+            Write NFC Tag
           </Button>
 
           <Button
@@ -119,55 +133,92 @@ export const MyCardsPage: React.FC = () => {
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cards.map((card) => {
-          const assignedProfile = profiles.find((p) => p.id === card.profileId);
-
-          return (
-            <div
-              key={card.id}
-              className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-5 shadow-xl space-y-4 flex flex-col justify-between backdrop-blur-xl"
+      {cards.length === 0 ? (
+        <div className="bg-[#081224]/80 border border-white/[0.08] rounded-3xl p-8 sm:p-12 text-center space-y-4 backdrop-blur-xl">
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
+            <CreditCard className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-white font-display">No Physical Smart Cards Claimed Yet</h3>
+          <p className="text-sm text-slate-400 max-w-md mx-auto">
+            Ready to set up your NFC card? Click &ldquo;Claim Card&rdquo; with your hardware token or tap &ldquo;Write NFC Tag&rdquo; to program your chip directly.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <Button
+              variant="glow"
+              size="sm"
+              onClick={() => handleOpenWriter()}
+              leftIcon={<Zap className="w-4 h-4 text-cyan-300" />}
             >
-              <div>
-                <NFCCardPreview
-                  card={card}
-                  profile={assignedProfile}
-                  onManage={() => handleOpenManage(card)}
-                  onTapSimulate={() => openSimulator(card)}
-                  interactive={true}
-                />
-              </div>
+              Write NFC Tag
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsClaimModalOpen(true)}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Claim Card
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cards.map((card) => {
+            const assignedProfile = profiles.find((p) => p.id === card.profileId);
 
-              {/* Status Bar & Quick Kill Switch */}
-              <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
-                <div className="text-xs text-slate-400">
-                  Status:{' '}
-                  <strong className={card.status === 'active' ? 'text-cyan-400' : 'text-rose-400'}>
-                    {card.status}
-                  </strong>
+            return (
+              <div
+                key={card.id}
+                className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-5 shadow-xl space-y-4 flex flex-col justify-between backdrop-blur-xl"
+              >
+                <div>
+                  <NFCCardPreview
+                    card={card}
+                    profile={assignedProfile}
+                    onManage={() => handleOpenManage(card)}
+                    interactive={true}
+                  />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={card.status === 'active' ? 'danger' : 'outline'}
-                    size="xs"
-                    onClick={() => toggleCardStatus(card.id)}
-                  >
-                    {card.status === 'active' ? 'Disable Card' : 'Reactivate'}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="xs"
-                    onClick={() => handleOpenManage(card)}
-                  >
-                    Configure
-                  </Button>
+                {/* Status Bar & Quick Action Controls */}
+                <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-xs text-slate-400">
+                    Status:{' '}
+                    <strong className={card.status === 'active' ? 'text-cyan-400' : 'text-rose-400'}>
+                      {card.status}
+                    </strong>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="glow"
+                      size="xs"
+                      onClick={() => handleOpenWriter(card)}
+                      leftIcon={<Zap className="w-3 h-3 text-cyan-300" />}
+                    >
+                      Write Tag
+                    </Button>
+                    <Button
+                      variant={card.status === 'active' ? 'danger' : 'outline'}
+                      size="xs"
+                      onClick={() => toggleCardStatus(card.id)}
+                    >
+                      {card.status === 'active' ? 'Disable' : 'Reactivate'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      onClick={() => handleOpenManage(card)}
+                    >
+                      Configure
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* WEB NFC WRITER MODAL */}
       <WebNFCWriterModal

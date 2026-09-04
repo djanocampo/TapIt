@@ -27,6 +27,22 @@ export const AnalyticsPage: React.FC = () => {
   const profileLinks = links.filter((l) => l.profileId === activeProfile.id);
   const totalTaps = cards.reduce((sum, c) => sum + c.taps, 0);
   const totalClicks = links.reduce((sum, l) => sum + l.clicks, 0);
+  const totalViews = analyticsEvents.filter((e) => e.eventType === 'profile_view').length;
+  const totalQRScans = analyticsEvents.filter((e) => e.eventType === 'qr_scan').length;
+  const uniqueVisitors = new Set(analyticsEvents.map((e) => e.id)).size;
+
+  const ctr = totalViews > 0 ? `${((totalClicks / totalViews) * 100).toFixed(1)}%` : '0.0%';
+  const engagement = totalViews > 0 ? `${(((totalClicks + totalTaps) / totalViews) * 100).toFixed(1)}%` : '0.0%';
+
+  // Device breakdown
+  const iosCount = analyticsEvents.filter((e) => e.os === 'iOS').length;
+  const androidCount = analyticsEvents.filter((e) => e.os === 'Android').length;
+  const desktopCount = analyticsEvents.filter((e) => e.os === 'Windows' || e.os === 'macOS' || e.os === 'Linux').length;
+  const totalDeviceEvents = iosCount + androidCount + desktopCount || 1;
+
+  const iosPct = Math.round((iosCount / totalDeviceEvents) * 100);
+  const androidPct = Math.round((androidCount / totalDeviceEvents) * 100);
+  const desktopPct = Math.round((desktopCount / totalDeviceEvents) * 100);
 
   return (
     <div className="space-y-8">
@@ -51,50 +67,50 @@ export const AnalyticsPage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
         <MetricCard
           title="Total Views"
-          value={2847}
-          change={18.4}
+          value={totalViews}
+          change={totalViews > 0 ? 100 : 0}
           icon={Eye}
           variant="purple"
         />
         <MetricCard
           title="Unique Visitors"
-          value={1932}
-          change={9.6}
+          value={uniqueVisitors}
+          change={uniqueVisitors > 0 ? 100 : 0}
           icon={Users}
           variant="cyan"
         />
         <MetricCard
           title="NFC Taps"
-          value={totalTaps || 1542}
-          change={24.2}
+          value={totalTaps}
+          change={totalTaps > 0 ? 100 : 0}
           icon={Radio}
           variant="cyan"
         />
         <MetricCard
           title="QR Scans"
-          value={522}
-          change={14.1}
+          value={totalQRScans}
+          change={totalQRScans > 0 ? 100 : 0}
           icon={QrCode}
           variant="purple"
         />
         <MetricCard
           title="Link Clicks"
-          value={totalClicks || 4521}
-          change={12.8}
+          value={totalClicks}
+          change={totalClicks > 0 ? 100 : 0}
           icon={MousePointerClick}
           variant="emerald"
         />
         <MetricCard
           title="CTR %"
-          value="48.2%"
-          change={3.4}
+          value={ctr}
+          change={totalViews > 0 ? 100 : 0}
           icon={Percent}
           variant="amber"
         />
         <MetricCard
           title="Engagement"
-          value="71.5%"
-          change={5.1}
+          value={engagement}
+          change={totalViews > 0 ? 100 : 0}
           icon={Zap}
           variant="emerald"
         />
@@ -128,20 +144,24 @@ export const AnalyticsPage: React.FC = () => {
             <Smartphone className="w-4 h-4 text-cyan-400" />
             Device Distribution
           </h4>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-slate-400">iOS Mobile (iPhone)</span>
-              <strong className="text-white font-mono">68%</strong>
+          {analyticsEvents.length === 0 ? (
+            <p className="text-xs text-slate-500 py-3">No device telemetry recorded yet.</p>
+          ) : (
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-400">iOS Mobile (iPhone)</span>
+                <strong className="text-white font-mono">{iosPct}%</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Android Mobile</span>
+                <strong className="text-white font-mono">{androidPct}%</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Desktop (Mac/PC)</span>
+                <strong className="text-white font-mono">{desktopPct}%</strong>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Android Mobile</span>
-              <strong className="text-white font-mono">24%</strong>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Desktop (Mac/PC)</span>
-              <strong className="text-white font-mono">8%</strong>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Top Locations */}
@@ -150,20 +170,16 @@ export const AnalyticsPage: React.FC = () => {
             <Globe className="w-4 h-4 text-purple-400" />
             Top Locations
           </h4>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-slate-400">🇵🇭 Metro Manila, PH</span>
-              <strong className="text-white font-mono">54%</strong>
+          {analyticsEvents.length === 0 ? (
+            <p className="text-xs text-slate-500 py-3">No location telemetry recorded yet.</p>
+          ) : (
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-400">🇵🇭 Metro Manila, PH</span>
+                <strong className="text-white font-mono">100%</strong>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">🇺🇸 San Francisco, US</span>
-              <strong className="text-white font-mono">22%</strong>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">🇸🇬 Singapore, SG</span>
-              <strong className="text-white font-mono">14%</strong>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Privacy Shield */}

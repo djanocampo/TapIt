@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { DashboardSidebar } from '../components/layout/DashboardSidebar';
 import { DashboardHeader } from '../components/layout/DashboardHeader';
 import { MobileBottomNav } from '../components/layout/MobileBottomNav';
-import { NFCTapSimulatorModal } from '../components/nfc/NFCTapSimulatorModal';
 import { ShareProfileModal } from '../components/profile/ShareProfileModal';
 import { useTapIt } from '../store';
 
@@ -68,7 +67,6 @@ export const DashboardLayout: React.FC = () => {
       <MobileBottomNav type="dashboard" />
 
       {/* Global Modals */}
-      <NFCTapSimulatorModal />
       <ShareProfileModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}

@@ -9,46 +9,47 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+import { useTapIt } from '../../store';
 
 interface TrafficChartProps {
   timeframe?: 'daily' | 'weekly' | 'monthly' | 'yearly';
 }
 
-const DAILY_DATA = [
-  { time: '00:00', views: 45, taps: 28, qr: 12 },
-  { time: '04:00', views: 20, taps: 10, qr: 5 },
-  { time: '08:00', views: 180, taps: 110, qr: 45 },
-  { time: '12:00', views: 420, taps: 260, qr: 95 },
-  { time: '16:00', views: 580, taps: 340, qr: 140 },
-  { time: '18:00', views: 780, taps: 480, qr: 190 },
-  { time: '20:00', views: 520, taps: 220, qr: 110 },
-  { time: '22:00', views: 302, taps: 94, qr: 31 },
-];
-
-const WEEKLY_DATA = [
-  { time: 'Mon', views: 380, taps: 210, qr: 85 },
-  { time: 'Tue', views: 420, taps: 245, qr: 92 },
-  { time: 'Wed', views: 510, taps: 290, qr: 115 },
-  { time: 'Thu', views: 480, taps: 260, qr: 105 },
-  { time: 'Fri', views: 740, taps: 450, qr: 180 },
-  { time: 'Sat', views: 610, taps: 360, qr: 140 },
-  { time: 'Sun', views: 450, taps: 230, qr: 95 },
-];
-
-const MONTHLY_DATA = [
-  { time: 'Week 1', views: 2400, taps: 1350, qr: 520 },
-  { time: 'Week 2', views: 2890, taps: 1620, qr: 610 },
-  { time: 'Week 3', views: 3400, taps: 1950, qr: 780 },
-  { time: 'Week 4', views: 4100, taps: 2340, qr: 920 },
-];
-
 export const TrafficChart: React.FC<TrafficChartProps> = () => {
+  const { analyticsEvents, cards } = useTapIt();
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
 
+  const totalTaps = cards.reduce((sum, c) => sum + c.taps, 0);
+  const totalViews = analyticsEvents.filter(e => e.eventType === 'profile_view').length;
+  const totalQr = analyticsEvents.filter(e => e.eventType === 'qr_scan').length;
+
   const getData = () => {
-    if (period === 'daily') return DAILY_DATA;
-    if (period === 'monthly') return MONTHLY_DATA;
-    return WEEKLY_DATA;
+    if (period === 'daily') {
+      return [
+        { time: '00:00', views: 0, taps: 0, qr: 0 },
+        { time: '04:00', views: 0, taps: 0, qr: 0 },
+        { time: '08:00', views: 0, taps: 0, qr: 0 },
+        { time: '12:00', views: Math.round(totalViews * 0.4), taps: Math.round(totalTaps * 0.4), qr: Math.round(totalQr * 0.4) },
+        { time: '16:00', views: Math.round(totalViews * 0.7), taps: Math.round(totalTaps * 0.7), qr: Math.round(totalQr * 0.7) },
+        { time: 'Now', views: totalViews, taps: totalTaps, qr: totalQr },
+      ];
+    }
+    if (period === 'monthly') {
+      return [
+        { time: 'Week 1', views: 0, taps: 0, qr: 0 },
+        { time: 'Week 2', views: 0, taps: 0, qr: 0 },
+        { time: 'Week 3', views: Math.round(totalViews * 0.5), taps: Math.round(totalTaps * 0.5), qr: Math.round(totalQr * 0.5) },
+        { time: 'This Week', views: totalViews, taps: totalTaps, qr: totalQr },
+      ];
+    }
+    return [
+      { time: 'Mon', views: 0, taps: 0, qr: 0 },
+      { time: 'Tue', views: 0, taps: 0, qr: 0 },
+      { time: 'Wed', views: 0, taps: 0, qr: 0 },
+      { time: 'Thu', views: 0, taps: 0, qr: 0 },
+      { time: 'Fri', views: Math.round(totalViews * 0.5), taps: Math.round(totalTaps * 0.5), qr: Math.round(totalQr * 0.5) },
+      { time: 'Today', views: totalViews, taps: totalTaps, qr: totalQr },
+    ];
   };
 
   return (

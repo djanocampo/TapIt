@@ -2,7 +2,6 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
-import { NFCTapSimulatorModal } from '../components/nfc/NFCTapSimulatorModal';
 
 export const RootLayout: React.FC = () => {
   return (
@@ -12,7 +11,6 @@ export const RootLayout: React.FC = () => {
         <Outlet />
       </main>
       <Footer />
-      <NFCTapSimulatorModal />
     </div>
   );
 };

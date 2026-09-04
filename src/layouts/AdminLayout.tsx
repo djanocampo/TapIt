@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { AdminSidebar } from '../components/layout/AdminSidebar';
 import { MobileBottomNav } from '../components/layout/MobileBottomNav';
-import { NFCTapSimulatorModal } from '../components/nfc/NFCTapSimulatorModal';
-import { ShieldAlert, ExternalLink, Sparkles } from 'lucide-react';
+import { LocalStorageCacheModal } from '../components/common/LocalStorageCacheModal';
+import { ShieldAlert, ExternalLink, Sparkles, HardDrive } from 'lucide-react';
+import { useTapIt } from '../store';
 
 export const AdminLayout: React.FC = () => {
   const location = useLocation();
+  const { getStorageMetrics } = useTapIt();
+  const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
+
+  const metrics = getStorageMetrics();
+  const approxKb = (metrics.approxBytes / 1024).toFixed(1);
 
   const getPageInfo = () => {
     switch (location.pathname) {
@@ -54,6 +60,16 @@ export const AdminLayout: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsCacheModalOpen(true)}
+                title="Inspect / Clear Local Storage Cache"
+                className="hidden sm:flex items-center gap-1.5 bg-[#081326] border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02]"
+              >
+                <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="font-mono text-[11px] font-bold">{approxKb} KB</span>
+              </button>
+
               <Link
                 to="/dashboard"
                 className="text-xs font-bold text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-500/30 px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm"
@@ -71,11 +87,14 @@ export const AdminLayout: React.FC = () => {
         </div>
       </div>
 
+      {/* Local Storage Cache Modal */}
+      <LocalStorageCacheModal
+        isOpen={isCacheModalOpen}
+        onClose={() => setIsCacheModalOpen(false)}
+      />
+
       {/* Modern Mobile Bottom Navigation Bar (Admin Suite) */}
       <MobileBottomNav type="admin" />
-
-      {/* Global Tap Simulator Modal */}
-      <NFCTapSimulatorModal />
     </div>
   );
 };
