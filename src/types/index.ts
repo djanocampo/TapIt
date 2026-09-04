@@ -190,6 +190,8 @@ export interface SystemSettings {
 
 export interface NotificationItem {
   id: string;
+  recipientUserId?: string;
+  profileId?: string;
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'tap';

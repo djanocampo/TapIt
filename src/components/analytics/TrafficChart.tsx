@@ -11,17 +11,23 @@ import {
 } from 'recharts';
 import { useTapIt } from '../../store';
 
+import { AnalyticsEvent, NFCCard } from '../../types';
+
 interface TrafficChartProps {
   timeframe?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  events?: AnalyticsEvent[];
+  cards?: NFCCard[];
 }
 
-export const TrafficChart: React.FC<TrafficChartProps> = () => {
-  const { analyticsEvents, cards } = useTapIt();
+export const TrafficChart: React.FC<TrafficChartProps> = ({ events, cards: customCards }) => {
+  const store = useTapIt();
+  const activeEvents = events || store.analyticsEvents;
+  const activeCards = customCards || store.cards;
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
 
-  const totalTaps = cards.reduce((sum, c) => sum + c.taps, 0);
-  const totalViews = analyticsEvents.filter(e => e.eventType === 'profile_view').length;
-  const totalQr = analyticsEvents.filter(e => e.eventType === 'qr_scan').length;
+  const totalTaps = activeCards.reduce((sum, c) => sum + c.taps, 0);
+  const totalViews = activeEvents.filter(e => e.eventType === 'profile_view').length;
+  const totalQr = activeEvents.filter(e => e.eventType === 'qr_scan').length;
 
   const getData = () => {
     if (period === 'daily') {

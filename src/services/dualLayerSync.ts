@@ -247,6 +247,8 @@ export const mapNotificationToDB = (n: NotificationItem) => ({
   type: n.type || 'info',
   read: n.read,
   link: n.link || null,
+  recipient_user_id: n.recipientUserId || null,
+  profile_id: n.profileId || null,
   timestamp: n.timestamp,
 });
 
@@ -257,6 +259,8 @@ export const mapDBToNotification = (r: any): NotificationItem => ({
   type: r.type,
   read: r.read,
   link: r.link || undefined,
+  recipientUserId: r.recipient_user_id || undefined,
+  profileId: r.profile_id || undefined,
   timestamp: r.timestamp,
 });
 

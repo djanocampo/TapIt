@@ -24,7 +24,7 @@ import {
 import { formatRelativeTime } from '../../lib/utils';
 
 export const ProfileDirectoryPage: React.FC = () => {
-  const { allUsers, profiles, links, cards } = useTapIt();
+  const { allUsers, allProfiles, allLinks, allCards } = useTapIt();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   
@@ -58,7 +58,7 @@ export const ProfileDirectoryPage: React.FC = () => {
 
   // Group profiles by user ID
   const filteredUsers = allUsers.filter((user) => {
-    const userProfiles = profiles.filter(p => p.userId === user.id);
+    const userProfiles = allProfiles.filter(p => p.userId === user.id);
     const matchesUser = 
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,7 +84,7 @@ export const ProfileDirectoryPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-lg sm:text-xl font-bold text-white font-display">User Profile Directory</h2>
             <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-              {profiles.length} Profiles across {allUsers.length} Accounts
+              {allProfiles.length} Profiles across {allUsers.length} Accounts
             </span>
           </div>
           <p className="text-xs text-slate-400">
@@ -144,8 +144,8 @@ export const ProfileDirectoryPage: React.FC = () => {
           </div>
         ) : (
           filteredUsers.map((user) => {
-            const userProfiles = profiles.filter((p) => p.userId === user.id);
-            const userCards = cards.filter((c) => c.userId === user.id);
+            const userProfiles = allProfiles.filter((p) => p.userId === user.id);
+            const userCards = allCards.filter((c) => c.userId === user.id);
             const isExpanded = !!expandedUserIds[user.id];
 
             return (
@@ -230,8 +230,8 @@ export const ProfileDirectoryPage: React.FC = () => {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {userProfiles.map((prof) => {
-                          const profLinks = links.filter((l) => l.profileId === prof.id);
-                          const assignedCard = cards.find((c) => c.profileId === prof.id);
+                          const profLinks = allLinks.filter((l) => l.profileId === prof.id);
+                          const assignedCard = allCards.find((c) => c.profileId === prof.id);
 
                           return (
                             <div

@@ -2,14 +2,22 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Radio, QrCode, Globe, Share2 } from 'lucide-react';
 import { useTapIt } from '../../store';
+import { AnalyticsEvent, NFCCard } from '../../types';
 
-export const TrafficSourceChart: React.FC = () => {
-  const { analyticsEvents, cards } = useTapIt();
+interface TrafficSourceChartProps {
+  events?: AnalyticsEvent[];
+  cards?: NFCCard[];
+}
 
-  const nfcCount = analyticsEvents.filter((e) => e.trafficSource === 'nfc' || e.eventType === 'nfc_tap').length + cards.reduce((s, c) => s + c.taps, 0);
-  const qrCount = analyticsEvents.filter((e) => e.trafficSource === 'qr' || e.eventType === 'qr_scan').length;
-  const directCount = analyticsEvents.filter((e) => e.trafficSource === 'direct' || e.eventType === 'profile_view').length;
-  const linkCount = analyticsEvents.filter((e) => e.eventType === 'link_click').length;
+export const TrafficSourceChart: React.FC<TrafficSourceChartProps> = ({ events, cards: customCards }) => {
+  const store = useTapIt();
+  const activeEvents: AnalyticsEvent[] = events || store.analyticsEvents;
+  const activeCards: NFCCard[] = customCards || store.cards;
+
+  const nfcCount = activeEvents.filter((e: AnalyticsEvent) => e.trafficSource === 'nfc' || e.eventType === 'nfc_tap').length + activeCards.reduce((s: number, c: NFCCard) => s + c.taps, 0);
+  const qrCount = activeEvents.filter((e: AnalyticsEvent) => e.trafficSource === 'qr' || e.eventType === 'qr_scan').length;
+  const directCount = activeEvents.filter((e: AnalyticsEvent) => e.trafficSource === 'direct' || e.eventType === 'profile_view').length;
+  const linkCount = activeEvents.filter((e: AnalyticsEvent) => e.eventType === 'link_click').length;
 
   const total = nfcCount + qrCount + directCount + linkCount;
 

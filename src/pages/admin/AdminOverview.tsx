@@ -21,7 +21,7 @@ import {
 import { formatNumber } from '../../lib/utils';
 
 export const AdminOverview: React.FC = () => {
-  const { allUsers, profiles, cards, analyticsEvents } = useTapIt();
+  const { allUsers, allProfiles, allCards, allAnalyticsEvents } = useTapIt();
 
   return (
     <div className="space-y-8">
@@ -65,22 +65,22 @@ export const AdminOverview: React.FC = () => {
         />
         <MetricCard
           title="Active Profiles"
-          value={profiles.filter(p => p.isActive).length}
-          change={profiles.length > 0 ? 100 : 0}
+          value={allProfiles.filter(p => p.isActive).length}
+          change={allProfiles.length > 0 ? 100 : 0}
           icon={UserSquare2}
           variant="cyan"
         />
         <MetricCard
           title="Registered NFC Cards"
-          value={cards.length}
-          change={cards.length > 0 ? 100 : 0}
+          value={allCards.length}
+          change={allCards.length > 0 ? 100 : 0}
           icon={CreditCard}
           variant="emerald"
         />
         <MetricCard
           title="Total Profile Visits"
-          value={analyticsEvents.filter(e => e.eventType === 'profile_view').length}
-          change={analyticsEvents.length > 0 ? 100 : 0}
+          value={allAnalyticsEvents.filter(e => e.eventType === 'profile_view').length}
+          change={allAnalyticsEvents.length > 0 ? 100 : 0}
           icon={Eye}
           variant="amber"
         />
@@ -89,7 +89,7 @@ export const AdminOverview: React.FC = () => {
       {/* CHARTS & QUICK ACTIONS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8 space-y-6">
-          <TrafficChart timeframe="weekly" />
+          <TrafficChart timeframe="weekly" events={allAnalyticsEvents} cards={allCards} />
         </div>
 
         <div className="lg:col-span-4 space-y-6">
@@ -127,7 +127,7 @@ export const AdminOverview: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white">Profile Directory</h4>
-                    <p className="text-[10px] text-slate-400">{profiles.length} published profiles</p>
+                    <p className="text-[10px] text-slate-400">{allProfiles.length} published profiles</p>
                   </div>
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition" />
@@ -143,7 +143,7 @@ export const AdminOverview: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white">NFC Chip Inventory</h4>
-                    <p className="text-[10px] text-slate-400">{cards.length} provisioned cards</p>
+                    <p className="text-[10px] text-slate-400">{allCards.length} provisioned cards</p>
                   </div>
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition" />

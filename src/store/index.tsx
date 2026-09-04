@@ -55,6 +55,8 @@ interface TapItContextType {
   currentUser: User;
   currentRole: UserRole;
   isAuthenticated: boolean;
+
+  // User-scoped collections (Dashboard default)
   profiles: Profile[];
   activeProfile: Profile;
   links: LinkItem[];
@@ -63,6 +65,14 @@ interface TapItContextType {
   analyticsEvents: AnalyticsEvent[];
   notifications: NotificationItem[];
   systemSettings: SystemSettings;
+
+  // Global collections (Admin Suite)
+  allProfiles: Profile[];
+  allCards: NFCCard[];
+  allLinks: LinkItem[];
+  allQRCodes: QRCodeItem[];
+  allAnalyticsEvents: AnalyticsEvent[];
+  allNotifications: NotificationItem[];
   allUsers: User[];
   invites: UserInvite[];
   isSimulatorOpen: boolean;
@@ -192,6 +202,13 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentUser(user);
     setCurrentRole(role);
     setIsAuthenticated(true);
+    const userProfs = profiles.filter(p => p.userId === user.id);
+    if (userProfs.length > 0) {
+      const active = userProfs.find(p => p.isActive) || userProfs[0];
+      setActiveProfileIdState(active.id);
+    } else {
+      setActiveProfileIdState(`prof_${user.id}`);
+    }
     try {
       localStorage.setItem(`${STORAGE_KEY}_currentUser`, JSON.stringify(user));
       localStorage.setItem(`${STORAGE_KEY}_role`, JSON.stringify(role));
@@ -210,35 +227,71 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentRole(role);
     if (role === 'admin') {
       setCurrentUser(INITIAL_ADMIN);
+      const adminProfs = profiles.filter(p => p.userId === INITIAL_ADMIN.id);
+      if (adminProfs.length > 0) {
+        setActiveProfileIdState(adminProfs[0].id);
+      }
     } else {
       const existingUser = allUsers.find(u => u.role === 'user') || INITIAL_ADMIN;
       setCurrentUser(existingUser);
+      const userProfs = profiles.filter(p => p.userId === existingUser.id);
+      if (userProfs.length > 0) {
+        setActiveProfileIdState(userProfs[0].id);
+      }
     }
   };
 
-  const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles.find(p => p.userId === currentUser.id) || profiles[0] || {
-    id: 'prof_default',
+  // ── USER-SCOPED DATA DERIVATION ──
+  const userProfiles = profiles.filter(p => p.userId === currentUser.id);
+
+  // Fallback profile if current user has no profile yet
+  const defaultUserProfile: Profile = {
+    id: `prof_${currentUser.id}`,
     userId: currentUser.id,
-    name: 'Primary Profile',
-    slug: currentUser.username || 'user',
+    name: `${currentUser.name ? currentUser.name.split(' ')[0] : 'My'}'s Profile`,
+    slug: (currentUser.username || `user-${currentUser.id.slice(-4)}`).toLowerCase(),
     displayName: currentUser.name || 'TapIt User',
-    headline: currentUser.headline || 'Digital Identity Owner',
+    headline: currentUser.headline || 'Digital Identity & Links',
     bio: currentUser.bio || 'Connect with me across the web!',
-    avatar: currentUser.avatar || '',
+    avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
     theme: THEME_PRESETS['minimal-dark'],
     isActive: true,
     isArchived: false,
-    createdAt: new Date().toISOString(),
+    createdAt: currentUser.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     socials: {}
   };
+
+  const scopedProfiles = userProfiles.length > 0 ? userProfiles : [defaultUserProfile];
+
+  const activeProfile = scopedProfiles.find(p => p.id === activeProfileId) || 
+    scopedProfiles.find(p => p.isActive) || 
+    scopedProfiles[0];
+
+  const scopedProfileIds = new Set(scopedProfiles.map(p => p.id));
+
+  const scopedLinks = links.filter(l => scopedProfileIds.has(l.profileId));
+
+  const scopedCards = cards.filter(c => c.userId === currentUser.id || (c.profileId && scopedProfileIds.has(c.profileId)));
+
+  const scopedCardIds = new Set(scopedCards.map(c => c.id));
+
+  const scopedQRCodes = qrCodes.filter(q => scopedProfileIds.has(q.profileId));
+
+  const scopedAnalyticsEvents = analyticsEvents.filter(e => 
+    scopedProfileIds.has(e.profileId) || (e.cardId && scopedCardIds.has(e.cardId))
+  );
+
+  const scopedNotifications = notifications.filter(n => 
+    !n.recipientUserId || n.recipientUserId === currentUser.id
+  );
 
   const setActiveProfileId = (id: string) => {
     setActiveProfileIdState(id);
     setProfiles(prev => {
       const updated = prev.map(p => ({
         ...p,
-        isActive: p.id === id,
+        isActive: p.userId === currentUser.id ? p.id === id : p.isActive,
       }));
       void syncProfilesToSupabase(updated);
       return updated;
@@ -1065,18 +1118,17 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } catch {}
     }
 
-    if (options.reload) {
-      window.location.reload();
+    if (options?.reload ?? true) {
+      if (typeof window !== 'undefined') window.location.reload();
     }
   };
 
+  const resetAllData = () => {
+    clearLocalStorageCache({ keepSession: false, reload: true });
+  };
+
   const reloadFromStorage = () => {
-    setIsAuthenticated(loadStoredData('isAuthenticated', false));
-    const loadedRole = loadStoredData<UserRole>('role', 'user');
-    setCurrentRole(loadedRole);
-    setCurrentUser(loadStoredData('currentUser', INITIAL_ADMIN));
     setProfiles(loadStoredData('profiles', INITIAL_PROFILES));
-    setActiveProfileIdState(loadStoredData('activeProfileId', ''));
     setLinks(loadStoredData('links', INITIAL_LINKS));
     setCards(loadStoredData('cards', INITIAL_CARDS));
     setQrCodes(loadStoredData('qrCodes', INITIAL_QR_CODES));
@@ -1087,13 +1139,9 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setInvites(loadStoredData('invites', []));
   };
 
-  const resetAllData = () => {
-    clearLocalStorageCache({ keepSession: false, reload: true });
-  };
-
   const getStorageMetrics = () => {
-    let approxBytes = 0;
     let keysCount = 0;
+    let approxBytes = 0;
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -1107,10 +1155,10 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return {
       keysCount,
       approxBytes,
-      profilesCount: profiles.length,
-      cardsCount: cards.length,
-      linksCount: links.length,
-      eventsCount: analyticsEvents.length,
+      profilesCount: scopedProfiles.length,
+      cardsCount: scopedCards.length,
+      linksCount: scopedLinks.length,
+      eventsCount: scopedAnalyticsEvents.length,
     };
   };
 
@@ -1120,14 +1168,24 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         currentUser,
         currentRole,
         isAuthenticated,
-        profiles,
+
+        // User-scoped collections (Dashboard default)
+        profiles: scopedProfiles,
         activeProfile,
-        links,
-        cards,
-        qrCodes,
-        analyticsEvents,
-        notifications,
+        links: scopedLinks,
+        cards: scopedCards,
+        qrCodes: scopedQRCodes,
+        analyticsEvents: scopedAnalyticsEvents,
+        notifications: scopedNotifications,
         systemSettings,
+
+        // Global collections (Admin Suite)
+        allProfiles: profiles,
+        allCards: cards,
+        allLinks: links,
+        allQRCodes: qrCodes,
+        allAnalyticsEvents: analyticsEvents,
+        allNotifications: notifications,
         allUsers,
         invites,
         isSimulatorOpen,

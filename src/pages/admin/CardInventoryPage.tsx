@@ -23,7 +23,7 @@ import {
 import { formatNumber, triggerConfetti } from '../../lib/utils';
 
 export const CardInventoryPage: React.FC = () => {
-  const { cards, profiles, allUsers, generateBatchCards, toggleCardStatus, updateCard, deleteCard } = useTapIt();
+  const { allCards, allProfiles, allUsers, generateBatchCards, toggleCardStatus, updateCard, deleteCard } = useTapIt();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -40,9 +40,9 @@ export const CardInventoryPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<NFCCard | null>(null);
 
-  const filteredCards = cards.filter((c) => {
+  const filteredCards = allCards.filter((c) => {
     const assignedUser = allUsers.find(u => u.id === c.userId);
-    const assignedProfile = profiles.find(p => p.id === c.profileId);
+    const assignedProfile = allProfiles.find(p => p.id === c.profileId);
 
     const matchesSearch = 
       c.cardToken.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -62,7 +62,7 @@ export const CardInventoryPage: React.FC = () => {
   };
 
   const handleOpenWriter = (card?: NFCCard) => {
-    setWriterCard(card || cards[0] || null);
+    setWriterCard(card || allCards[0] || null);
     setIsNfcWriterOpen(true);
   };
 
@@ -87,7 +87,7 @@ export const CardInventoryPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-lg sm:text-xl font-bold text-white font-display">NFC Hardware Inventory</h2>
             <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-              {cards.length} Total Registered Cards
+              {allCards.length} Total Registered Cards
             </span>
           </div>
           <p className="text-xs text-slate-400">
@@ -133,7 +133,7 @@ export const CardInventoryPage: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:outline-none"
           >
-            <option value="all">All Statuses ({cards.length})</option>
+            <option value="all">All Statuses ({allCards.length})</option>
             <option value="active">Active</option>
             <option value="unclaimed">Unclaimed</option>
             <option value="disabled">Disabled</option>
@@ -158,7 +158,7 @@ export const CardInventoryPage: React.FC = () => {
             <tbody className="divide-y divide-white/[0.06] text-slate-200">
               {filteredCards.map((card) => {
                 const assignedUser = allUsers.find((u) => u.id === card.userId);
-                const assignedProfile = profiles.find((p) => p.id === card.profileId);
+                const assignedProfile = allProfiles.find((p) => p.id === card.profileId);
 
                 return (
                   <tr key={card.id} className="hover:bg-white/[0.03] transition">
@@ -286,7 +286,7 @@ export const CardInventoryPage: React.FC = () => {
         isOpen={isNfcWriterOpen}
         onClose={() => setIsNfcWriterOpen(false)}
         card={writerCard}
-        profile={profiles.find((p) => p.id === (writerCard?.profileId || profiles[0]?.id))}
+        profile={allProfiles.find((p) => p.id === (writerCard?.profileId || allProfiles[0]?.id))}
       />
 
       {/* DELETE CONFIRMATION MODAL */}

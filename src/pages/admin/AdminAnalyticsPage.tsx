@@ -18,10 +18,10 @@ import {
 import { formatNumber } from '../../lib/utils';
 
 export const AdminAnalyticsPage: React.FC = () => {
-  const { cards, profiles, allUsers, analyticsEvents } = useTapIt();
+  const { allCards, allProfiles, allUsers, allAnalyticsEvents } = useTapIt();
 
-  const totalProfileVisits = analyticsEvents.filter((e) => e.eventType === 'profile_view').length;
-  const totalNFCTaps = cards.reduce((sum, c) => sum + c.taps, 0);
+  const totalProfileVisits = allAnalyticsEvents.filter((e) => e.eventType === 'profile_view').length;
+  const totalNFCTaps = allCards.reduce((sum, c) => sum + c.taps, 0);
 
   return (
     <div className="space-y-8">
@@ -75,10 +75,10 @@ export const AdminAnalyticsPage: React.FC = () => {
       {/* Global Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8">
-          <TrafficChart timeframe="weekly" />
+          <TrafficChart timeframe="weekly" events={allAnalyticsEvents} cards={allCards} />
         </div>
         <div className="lg:col-span-4">
-          <TrafficSourceChart />
+          <TrafficSourceChart events={allAnalyticsEvents} cards={allCards} />
         </div>
       </div>
 
