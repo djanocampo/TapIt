@@ -153,30 +153,15 @@ interface TapItContextType {
 
 const STORAGE_KEY = 'tapit_app_live_v11';
 
-// Auto-clear stale data caches on startup when Supabase is active,
-// ensuring every refresh/visit pulls the authoritative, current data directly from DB.
-if (typeof window !== 'undefined' && isSupabaseConfigured()) {
+// Auto-heal legacy prof_usr_ keys on startup
+if (typeof window !== 'undefined') {
   try {
-    const entityKeys = ['profiles', 'links', 'cards', 'qrCodes', 'analyticsEvents', 'notifications', 'allUsers', 'invites'];
-    entityKeys.forEach(k => {
-      localStorage.removeItem(`${STORAGE_KEY}_${k}`);
-    });
-    // Remove any older tapit versions that may linger in localStorage
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i);
-      if (
-        key &&
-        key.startsWith('tapit_') &&
-        !key.endsWith('_currentUser') &&
-        !key.endsWith('_role') &&
-        !key.endsWith('_isAuthenticated') &&
-        !key.endsWith('_activeProfileId')
-      ) {
-        localStorage.removeItem(key);
-      }
+    const storedActive = localStorage.getItem(`${STORAGE_KEY}_activeProfileId`);
+    if (storedActive && storedActive.includes('prof_usr_')) {
+      localStorage.setItem(`${STORAGE_KEY}_activeProfileId`, storedActive.replace('prof_usr_', 'prof_'));
     }
   } catch (e) {
-    console.warn('Cache auto-clean error:', e);
+    console.warn('Storage init cleanup error:', e);
   }
 }
 
@@ -186,18 +171,16 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Layer 1: Load initial state from LocalStorage or clean initial state
   const loadStoredData = <T,>(key: string, fallback: T): T => {
     try {
-      // When Supabase is active, do not load stale entity caches from localStorage
-      if (
-        isSupabaseConfigured() &&
-        key !== 'currentUser' &&
-        key !== 'role' &&
-        key !== 'isAuthenticated' &&
-        key !== 'activeProfileId'
-      ) {
-        return fallback;
-      }
       const item = localStorage.getItem(`${STORAGE_KEY}_${key}`);
-      return item ? JSON.parse(item) : fallback;
+      if (!item) return fallback;
+      const parsed = JSON.parse(item);
+      if (key === 'profiles' && Array.isArray(parsed)) {
+        return parsed.map((p: any) => ({
+          ...p,
+          id: p.id && p.id.startsWith('prof_usr_') ? p.id.replace('prof_usr_', 'prof_') : p.id
+        })) as unknown as T;
+      }
+      return parsed;
     } catch {
       return fallback;
     }
@@ -223,23 +206,20 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [simulatorCard, setSimulatorCard] = useState<NFCCard | null>(null);
 
-  // Sync to Layer 1 (LocalStorage) - only sync session and preferences.
-  // When Supabase is active, avoid persisting entity tables to localStorage so the browser never holds stale DB caches.
+  // Sync to Layer 1 (LocalStorage) - immediate local persistence for zero-latency UI
   useEffect(() => {
     try {
       localStorage.setItem(`${STORAGE_KEY}_role`, JSON.stringify(currentRole));
       localStorage.setItem(`${STORAGE_KEY}_activeProfileId`, JSON.stringify(activeProfileId));
-      if (!isSupabaseConfigured()) {
-        localStorage.setItem(`${STORAGE_KEY}_profiles`, JSON.stringify(profiles));
-        localStorage.setItem(`${STORAGE_KEY}_links`, JSON.stringify(links));
-        localStorage.setItem(`${STORAGE_KEY}_cards`, JSON.stringify(cards));
-        localStorage.setItem(`${STORAGE_KEY}_qrCodes`, JSON.stringify(qrCodes));
-        localStorage.setItem(`${STORAGE_KEY}_analyticsEvents`, JSON.stringify(analyticsEvents));
-        localStorage.setItem(`${STORAGE_KEY}_notifications`, JSON.stringify(notifications));
-        localStorage.setItem(`${STORAGE_KEY}_systemSettings`, JSON.stringify(systemSettings));
-        localStorage.setItem(`${STORAGE_KEY}_allUsers`, JSON.stringify(allUsers));
-        localStorage.setItem(`${STORAGE_KEY}_invites`, JSON.stringify(invites));
-      }
+      localStorage.setItem(`${STORAGE_KEY}_profiles`, JSON.stringify(profiles));
+      localStorage.setItem(`${STORAGE_KEY}_links`, JSON.stringify(links));
+      localStorage.setItem(`${STORAGE_KEY}_cards`, JSON.stringify(cards));
+      localStorage.setItem(`${STORAGE_KEY}_qrCodes`, JSON.stringify(qrCodes));
+      localStorage.setItem(`${STORAGE_KEY}_analyticsEvents`, JSON.stringify(analyticsEvents));
+      localStorage.setItem(`${STORAGE_KEY}_notifications`, JSON.stringify(notifications));
+      localStorage.setItem(`${STORAGE_KEY}_systemSettings`, JSON.stringify(systemSettings));
+      localStorage.setItem(`${STORAGE_KEY}_allUsers`, JSON.stringify(allUsers));
+      localStorage.setItem(`${STORAGE_KEY}_invites`, JSON.stringify(invites));
     } catch (e) {
       console.warn('Storage sync error:', e);
     }
@@ -255,7 +235,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const active = userProfs.find(p => p.isActive) || userProfs[0];
       setActiveProfileIdState(active.id);
     } else {
-      setActiveProfileIdState(`prof_${user.id}`);
+      setActiveProfileIdState(`prof_${user.id.replace(/^usr_/, '')}`);
     }
     try {
       localStorage.setItem(`${STORAGE_KEY}_currentUser`, JSON.stringify(user));
@@ -310,7 +290,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Fallback profile if current user has no profile yet
   const defaultUserProfile: Profile = {
-    id: `prof_${currentUser.id}`,
+    id: `prof_${currentUser.id.replace(/^usr_/, '')}`,
     userId: currentUser.id,
     name: `${currentUser.name ? currentUser.name.split(' ')[0] : 'My'}'s Profile`,
     slug: (currentUser.username || `user-${currentUser.id.slice(-4)}`).toLowerCase(),
@@ -399,23 +379,23 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateProfile = async (id: string, updates: Partial<Profile>): Promise<{ success: boolean; profile?: Profile; message?: string }> => {
-    let targetProf: Profile | undefined;
+    const cleanId = id.startsWith('prof_usr_') ? id.replace('prof_usr_', 'prof_') : id;
 
-    setProfiles(prev => {
-      const exists = prev.some(p => p.id === id);
-      let updated: Profile[];
-      if (exists) {
-        updated = prev.map(p => {
-          if (p.id === id) {
-            const up = { ...p, ...updates, updatedAt: new Date().toISOString() };
-            targetProf = up;
-            return up;
-          }
-          return p;
-        });
-      } else {
-        const fallback: Profile = {
-          id,
+    // Deterministically find the existing profile in state or build fallback
+    const matchedProf = profiles.find(p => p.id === id) ||
+      profiles.find(p => p.id === cleanId) ||
+      profiles.find(p => p.userId === currentUser.id) ||
+      profiles.find(p => updates.slug && p.slug.toLowerCase() === updates.slug.toLowerCase());
+
+    const targetProf: Profile = matchedProf
+      ? {
+          ...matchedProf,
+          ...updates,
+          theme: updates.theme || matchedProf.theme || THEME_PRESETS['cyberpunk-neon'],
+          updatedAt: new Date().toISOString(),
+        }
+      : {
+          id: cleanId,
           userId: currentUser.id,
           name: updates.name || updates.displayName || `${currentUser.name}'s Profile`,
           slug: (updates.slug || currentUser.username || `user-${Date.now().toString().slice(-4)}`).toLowerCase(),
@@ -431,27 +411,44 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           socials: updates.socials || {},
           ...updates,
         };
-        targetProf = fallback;
-        updated = [fallback, ...prev];
-        setActiveProfileIdState(id);
+
+    // Update local React state immediately
+    setProfiles(prev => {
+      const exists = prev.some(p => p.id === targetProf.id);
+      if (exists) {
+        return prev.map(p => (p.id === targetProf.id ? targetProf : p));
       }
-      return updated;
+      return [targetProf, ...prev];
     });
 
+    setActiveProfileIdState(targetProf.id);
     try {
-      localStorage.setItem(`${STORAGE_KEY}_activeProfileId`, JSON.stringify(id));
+      localStorage.setItem(`${STORAGE_KEY}_activeProfileId`, JSON.stringify(targetProf.id));
     } catch {}
 
     // Direct single-profile authoritative push to Supabase
-    if (targetProf) {
-      const ok = await upsertSingleProfile(targetProf);
-      if (!ok) {
-        return { success: false, message: 'Could not sync profile to remote database.' };
-      }
-      return { success: true, profile: targetProf };
+    const ok = await upsertSingleProfile(targetProf);
+    if (!ok) {
+      return { success: false, message: 'Could not sync profile to remote database.' };
     }
 
-    return { success: true };
+    // If targetProf.id was aligned or self-healed, ensure state and links are aligned
+    if (targetProf.id !== id && targetProf.id !== cleanId) {
+      const finalId = targetProf.id;
+      setProfiles(prev => prev.map(p => (p.id === id || p.id === cleanId ? { ...p, id: finalId } : p)));
+      setActiveProfileIdState(finalId);
+      try {
+        localStorage.setItem(`${STORAGE_KEY}_activeProfileId`, JSON.stringify(finalId));
+      } catch {}
+
+      setLinks(prev => {
+        const updatedLinks = prev.map(l => (l.profileId === id || l.profileId === cleanId ? { ...l, profileId: finalId } : l));
+        void syncLinksToSupabase(updatedLinks);
+        return updatedLinks;
+      });
+    }
+
+    return { success: true, profile: targetProf };
   };
 
   const deleteProfile = (id: string) => {
@@ -1244,7 +1241,23 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Remote Hydration callback from BackendSyncInit
   const hydrateFromRemote = (payload: RemoteHydrationPayload) => {
     if (payload.users !== undefined && payload.users.length > 0) setAllUsers(payload.users);
-    if (payload.profiles !== undefined && payload.profiles.length > 0) setProfiles(payload.profiles);
+    if (payload.profiles !== undefined && payload.profiles.length > 0) {
+      setProfiles(payload.profiles);
+      const userProfs = payload.profiles.filter(p => p.userId === currentUser.id);
+      if (userProfs.length > 0) {
+        setActiveProfileIdState(prev => {
+          const isValid = userProfs.some(p => p.id === prev);
+          if (!isValid || prev.startsWith('prof_usr_')) {
+            const active = userProfs.find(p => p.isActive) || userProfs[0];
+            try {
+              localStorage.setItem(`${STORAGE_KEY}_activeProfileId`, JSON.stringify(active.id));
+            } catch {}
+            return active.id;
+          }
+          return prev;
+        });
+      }
+    }
     if (payload.links !== undefined && payload.links.length > 0) setLinks(payload.links);
     if (payload.cards !== undefined) setCards(payload.cards);
     if (payload.qrCodes !== undefined) setQrCodes(payload.qrCodes);

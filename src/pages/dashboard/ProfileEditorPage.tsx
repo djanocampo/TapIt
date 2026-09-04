@@ -85,7 +85,8 @@ export const ProfileEditorPage: React.FC = () => {
     reorderLinks 
   } = useTapIt();
 
-  const targetProfile = profiles.find((p) => p.id === id) || activeProfile;
+  const cleanId = id ? (id.startsWith('prof_usr_') ? id.replace('prof_usr_', 'prof_') : id) : undefined;
+  const targetProfile = profiles.find((p) => p.id === id || (cleanId && p.id === cleanId)) || activeProfile;
 
   // Collapsible cards state
   const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({
@@ -100,9 +101,15 @@ export const ProfileEditorPage: React.FC = () => {
   };
 
   // Theme & Appearance State
-  const [currentTheme, setCurrentTheme] = useState<ProfileThemeConfig>(
-    targetProfile.theme || THEME_PRESETS['cyberpunk-neon']
-  );
+  const [currentTheme, setCurrentTheme] = useState<ProfileThemeConfig>(() => {
+    const raw = targetProfile.theme;
+    if (typeof raw === 'string') return THEME_PRESETS[raw] || THEME_PRESETS['cyberpunk-neon'];
+    if (raw && typeof raw === 'object') {
+      const base = THEME_PRESETS[raw.id] || THEME_PRESETS['cyberpunk-neon'];
+      return { ...base, ...raw };
+    }
+    return THEME_PRESETS['cyberpunk-neon'];
+  });
 
   // Form inputs state
   const [formData, setFormData] = useState({
@@ -140,7 +147,11 @@ export const ProfileEditorPage: React.FC = () => {
 
   useEffect(() => {
     if (targetProfile) {
-      setCurrentTheme(targetProfile.theme || THEME_PRESETS['cyberpunk-neon']);
+      const raw = targetProfile.theme;
+      let safeT: ProfileThemeConfig = THEME_PRESETS['cyberpunk-neon'];
+      if (typeof raw === 'string') safeT = THEME_PRESETS[raw] || safeT;
+      else if (raw && typeof raw === 'object') safeT = { ...(THEME_PRESETS[raw.id] || safeT), ...raw };
+      setCurrentTheme(safeT);
       setFormData({
         name: targetProfile.name || '',
         displayName: targetProfile.displayName || '',
@@ -237,6 +248,15 @@ export const ProfileEditorPage: React.FC = () => {
         alert(result.message || 'Failed to save profile changes. Please try again.');
         setIsSaving(false);
         return;
+      }
+
+      if (result?.profile) {
+        setFormData(prev => ({
+          ...prev,
+          slug: result.profile!.slug || prev.slug,
+          displayName: result.profile!.displayName ?? prev.displayName,
+          name: result.profile!.name ?? prev.name,
+        }));
       }
 
       setIsSaved(true);

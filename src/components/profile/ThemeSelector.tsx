@@ -27,6 +27,17 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   onSelectTheme,
   onUpdateStyleOptions,
 }) => {
+  const safeTheme: ProfileThemeConfig = {
+    ...(THEME_PRESETS[currentTheme?.id] || THEME_PRESETS['cyberpunk-neon']),
+    ...(currentTheme || {}),
+  };
+
+  const currentAccent = safeTheme.accentColor || '#06b6d4';
+  const currentBg = safeTheme.bgColor || '#05050f';
+  const currentCardBg = safeTheme.cardBg || 'rgba(19, 14, 38, 0.65)';
+  const currentCardBorder = safeTheme.cardBorder || 'rgba(168, 85, 247, 0.4)';
+  const currentTextColor = safeTheme.textColor || '#ffffff';
+
   const buttonStyles: { id: ButtonStyle; label: string; desc: string; previewClass: string }[] = [
     { id: 'rounded', label: 'Rounded Rect', desc: 'Sleek 12px curvature', previewClass: 'rounded-xl' },
     { id: 'pill', label: 'Pill Shape', desc: 'Smooth full capsule', previewClass: 'rounded-full' },
@@ -70,7 +81,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
         
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Object.values(THEME_PRESETS).map((preset) => {
-            const isSelected = currentTheme.id === preset.id;
+            const isSelected = safeTheme.id === preset.id;
             return (
               <button
                 key={preset.id}
@@ -136,17 +147,17 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           <div className="flex items-center gap-2">
             <span
               className="w-3.5 h-3.5 rounded-full border border-white/40 shadow-sm"
-              style={{ backgroundColor: currentTheme.accentColor }}
+              style={{ backgroundColor: currentAccent }}
             />
             <span className="text-[11px] font-mono text-cyan-400 font-bold">
-              {currentTheme.accentColor.toUpperCase()}
+              {currentAccent.toUpperCase()}
             </span>
           </div>
         </div>
 
         <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-3">
           {ACCENT_PALETTE.map((color) => {
-            const isSelected = currentTheme.accentColor.toLowerCase() === color.hex.toLowerCase();
+            const isSelected = currentAccent.toLowerCase() === color.hex.toLowerCase();
             return (
               <button
                 key={color.hex}
@@ -183,7 +194,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           <div className="relative flex items-center">
             <input
               type="color"
-              value={currentTheme.accentColor.startsWith('#') ? currentTheme.accentColor : '#06b6d4'}
+              value={currentAccent.startsWith('#') ? currentAccent : '#06b6d4'}
               onChange={(e) => handleAccentChange(e.target.value)}
               className="w-9 h-9 rounded-xl cursor-pointer border border-white/20 bg-transparent p-0.5"
               id="custom-accent-color"
@@ -197,7 +208,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           </div>
           <input
             type="text"
-            value={currentTheme.accentColor}
+            value={currentAccent}
             onChange={(e) => {
               const val = e.target.value;
               if (val.startsWith('#') || val.length <= 7) {
@@ -224,7 +235,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {buttonStyles.map((style) => {
-            const isSelected = currentTheme.buttonStyle === style.id;
+            const isSelected = (safeTheme.buttonStyle || 'rounded') === style.id;
             return (
               <button
                 key={style.id}
@@ -240,9 +251,9 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                 <div
                   className={`w-full h-8 flex items-center justify-center text-[10px] font-bold px-2 truncate transition-colors ${style.previewClass}`}
                   style={{
-                    backgroundColor: currentTheme.cardBg,
-                    borderColor: isSelected ? currentTheme.accentColor : currentTheme.cardBorder,
-                    color: currentTheme.textColor,
+                    backgroundColor: currentCardBg,
+                    borderColor: isSelected ? currentAccent : currentCardBorder,
+                    color: currentTextColor,
                   }}
                 >
                   <span className="truncate">Button Item</span>
@@ -272,7 +283,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {fontStyles.map((font) => {
-            const isSelected = currentTheme.fontStyle === font.id;
+            const isSelected = (safeTheme.fontStyle || 'plus-jakarta') === font.id;
             return (
               <button
                 key={font.id}

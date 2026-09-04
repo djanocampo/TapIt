@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import { downloadVCard } from '../../lib/utils';
 import { Button } from '../ui/Button';
+import { THEME_PRESETS } from '../../data/themes';
+import { ProfileThemeConfig } from '../../types';
 
 interface PublicProfileRendererProps {
   profile: Profile;
@@ -74,7 +76,10 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
   onOpenShare,
   isEmbed = false,
 }) => {
-  const theme = profile.theme;
+  const rawTheme = profile?.theme;
+  const theme: ProfileThemeConfig = typeof rawTheme === 'string'
+    ? (THEME_PRESETS[rawTheme] || THEME_PRESETS['cyberpunk-neon'])
+    : { ...(THEME_PRESETS[rawTheme?.id] || THEME_PRESETS['cyberpunk-neon']), ...(rawTheme || {}) };
   const activeLinks = links
     .filter((l) => l.profileId === profile.id && l.isActive)
     .sort((a, b) => a.position - b.position);

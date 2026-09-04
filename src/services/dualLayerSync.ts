@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { 
   User, 
   Profile, 
+  ProfileThemeConfig,
   LinkItem, 
   NFCCard, 
   QRCodeItem, 
@@ -10,6 +11,7 @@ import {
   NotificationItem, 
   SystemSettings 
 } from '../types';
+import { THEME_PRESETS } from '../data/themes';
 
 // ==============================================================================
 // DUAL-LAYER SYNC ENGINE
@@ -77,31 +79,44 @@ export const mapProfileToDB = (p: Profile) => ({
   updated_at: p.updatedAt || new Date().toISOString(),
 });
 
-export const mapDBToProfile = (r: any): Profile => ({
-  id: r.id,
-  userId: r.user_id,
-  name: r.name,
-  slug: r.slug,
-  displayName: r.display_name || '',
-  headline: r.headline || '',
-  bio: r.bio || '',
-  avatar: r.avatar || '',
-  coverImage: r.cover_image || undefined,
-  email: r.email || undefined,
-  showEmail: r.show_email ?? true,
-  phone: r.phone || undefined,
-  showPhone: r.show_phone ?? true,
-  location: r.location || undefined,
-  website: r.website || undefined,
-  company: r.company || undefined,
-  jobTitle: r.job_title || undefined,
-  theme: r.theme,
-  isActive: r.is_active,
-  isArchived: r.is_archived,
-  socials: r.socials || {},
-  createdAt: r.created_at,
-  updatedAt: r.updated_at,
-});
+export const mapDBToProfile = (r: any): Profile => {
+  const rawTheme = r.theme;
+  let theme: ProfileThemeConfig;
+  if (typeof rawTheme === 'string') {
+    theme = THEME_PRESETS[rawTheme] || THEME_PRESETS['cyberpunk-neon'];
+  } else if (rawTheme && typeof rawTheme === 'object') {
+    const basePreset = THEME_PRESETS[rawTheme.id] || THEME_PRESETS['cyberpunk-neon'];
+    theme = { ...basePreset, ...rawTheme };
+  } else {
+    theme = THEME_PRESETS['cyberpunk-neon'];
+  }
+
+  return {
+    id: r.id,
+    userId: r.user_id,
+    name: r.name,
+    slug: r.slug,
+    displayName: r.display_name || '',
+    headline: r.headline || '',
+    bio: r.bio || '',
+    avatar: r.avatar || '',
+    coverImage: r.cover_image || undefined,
+    email: r.email || undefined,
+    showEmail: r.show_email ?? true,
+    phone: r.phone || undefined,
+    showPhone: r.show_phone ?? true,
+    location: r.location || undefined,
+    website: r.website || undefined,
+    company: r.company || undefined,
+    jobTitle: r.job_title || undefined,
+    theme,
+    isActive: r.is_active,
+    isArchived: r.is_archived,
+    socials: r.socials || {},
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+};
 
 export const mapLinkToDB = (l: LinkItem) => ({
   id: l.id,
@@ -378,7 +393,11 @@ export async function syncProfilesToSupabase(profiles: Profile[]): Promise<void>
 export async function syncLinksToSupabase(links: LinkItem[]): Promise<void> {
   if (!isSupabaseConfigured() || links.length === 0) return;
   try {
-    const validLinks = links.filter(l => l.id && !l.id.startsWith('lnk_00') && l.profileId && !l.profileId.startsWith('prof_00'));
+    const healedLinks = links.map(l => ({
+      ...l,
+      profileId: l.profileId?.startsWith('prof_usr_') ? l.profileId.replace('prof_usr_', 'prof_') : l.profileId,
+    }));
+    const validLinks = healedLinks.filter(l => l.id && !l.id.startsWith('lnk_00') && l.profileId && !l.profileId.startsWith('prof_00'));
     if (validLinks.length === 0) return;
     const rows = validLinks.map(mapLinkToDB);
     const { error } = await supabase.from('links').upsert(rows, { onConflict: 'id' });
@@ -431,12 +450,26 @@ export async function upsertSingleProfile(profile: Profile): Promise<boolean> {
   if (!isSupabaseConfigured()) return true;
   try {
     const row = mapProfileToDB(profile);
+
+    // Self-healing check: verify if a profile already exists in Supabase for this user or slug
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id, user_id, slug')
+      .or(`slug.eq.${row.slug},user_id.eq.${row.user_id}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      row.id = existing.id;
+      profile.id = existing.id;
+    }
+
     const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' });
     if (error) {
       console.error('[Supabase Direct] upsertSingleProfile error:', error.message, error.details);
       return false;
     }
-    console.log(`[Supabase Direct] Profile ${profile.id} (${profile.slug}) successfully synced to Supabase`);
+    console.log(`[Supabase Direct] Profile ${row.id} (${row.slug}) successfully synced to Supabase`);
     return true;
   } catch (err) {
     console.error('[Supabase Direct] upsertSingleProfile network error:', err);

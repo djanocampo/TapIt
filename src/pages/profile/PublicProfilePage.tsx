@@ -86,9 +86,13 @@ export const PublicProfilePage: React.FC = () => {
     };
   }, [cleanUsername]);
 
-  const targetProfile = remoteProfile || localMatch;
+  // Always prioritize whichever record (local live store vs remote fetch) has the latest updatedAt timestamp
+  const targetProfile = (localMatch && remoteProfile)
+    ? (new Date(localMatch.updatedAt || 0).getTime() >= new Date(remoteProfile.updatedAt || 0).getTime() ? localMatch : remoteProfile)
+    : (remoteProfile || localMatch);
+
   const activeLinks = targetProfile
-    ? (remoteLinks || allLinks.filter((l) => l.profileId === targetProfile.id))
+    ? (remoteLinks && remoteLinks.length > 0 ? remoteLinks : allLinks.filter((l) => l.profileId === targetProfile.id))
     : [];
 
   // Log view event on mount
