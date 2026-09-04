@@ -13,6 +13,7 @@
 - **Phase 10: Database Indexing Architecture (DATABASE_INDEXING.md)** `[COMPLETE]`
 - **Phase 11: Dual-Layer Sync Engine (Dual-Layer Sync Pattern.md)** `[COMPLETE]`
 - **Phase 12: Clean Authentication & 1st User Onboarding Experience** `[COMPLETE]`
+- **Phase 13: Role Isolation, User Scope & Hardware Lifecycle** `[COMPLETE]`
 
 ---
 
@@ -89,3 +90,14 @@
 - [x] Preserved single root Admin account (`admin@tapit.app` / `admin123`).
 - [x] End-to-end 1st user registration via `/register` creating user identity, primary profile (`/@username`), and dynamic QR code.
 - [x] Built Storage Cache Inspector & Reset Modal (`LocalStorageCacheModal.tsx`).
+
+## Phase 13: Role Isolation, User Scope & Hardware Lifecycle `[COMPLETE]`
+- [x] Enforced strict route separation: `/dashboard` for Users only, `/admin` for Administrators only.
+- [x] Added automated unauthorized route redirection (Admin ➔ `/admin`, User ➔ `/dashboard`).
+- [x] Purged all cross-linking buttons from navbar, sidebar, and layout headers.
+- [x] User-scoped state store: dynamic scoping of profiles, links, cards, QR codes, and analytics for authenticated users.
+- [x] Global data exposure (`allUsers`, `allProfiles`, `allCards`, `allLinks`, `allAnalyticsEvents`) reserved exclusively for Admin Suite.
+- [x] Authoritative pull sync eliminating ghost/resurrected records.
+- [x] Multi-key NFC card deletion (`nfc_cards` by `id` & `card_token` + `user_invites`).
+- [x] Admin user deletion with persona/link purge and hardware card unbinding back to unclaimed inventory.
+- [x] Removed default profile fallbacks (`profiles[0]`): clean 404 "Profile Not Found" for deleted profiles and "Unclaimed Card" for unlinked NFC tokens.

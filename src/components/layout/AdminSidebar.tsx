@@ -48,19 +48,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ onCloseMobile }) => 
         </div>
       </div>
 
-      {/* Return to Dashboard */}
-      <div className="p-3">
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-[#0a162c] border border-white/10 hover:border-cyan-400/40 px-3 py-2 rounded-xl transition shadow-sm"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Return to User Dashboard</span>
-        </Link>
-      </div>
-
       {/* Admin Nav */}
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto py-2">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto py-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (

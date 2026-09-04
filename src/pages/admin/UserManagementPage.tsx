@@ -31,12 +31,14 @@ import {
   HelpCircle,
   Hourglass,
   HandMetal,
-  RotateCw
+  RotateCw,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { formatRelativeTime, triggerConfetti } from '../../lib/utils';
 
 export const UserManagementPage: React.FC = () => {
-  const { allUsers, toggleUserStatus, createInvite } = useTapIt();
+  const { allUsers, toggleUserStatus, createInvite, deleteUser } = useTapIt();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -44,6 +46,10 @@ export const UserManagementPage: React.FC = () => {
   // Wizard Modal State
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState<1 | 2>(1);
+
+  // Delete User Modal State
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Wizard Step 1 inputs
   const [wizardName, setWizardName] = useState('');
@@ -368,13 +374,29 @@ export const UserManagementPage: React.FC = () => {
                   </td>
 
                   <td className="py-3.5 px-4 text-right">
-                    <Button
-                      variant={user.status === 'active' ? 'secondary' : 'primary'}
-                      size="xs"
-                      onClick={() => toggleUserStatus(user.id)}
-                    >
-                      {user.status === 'active' ? 'Suspend' : 'Reactivate'}
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant={user.status === 'active' ? 'secondary' : 'primary'}
+                        size="xs"
+                        onClick={() => toggleUserStatus(user.id)}
+                      >
+                        {user.status === 'active' ? 'Suspend' : 'Reactivate'}
+                      </Button>
+
+                      {user.role !== 'admin' && user.id !== 'usr_admin_001' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserToDelete(user);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/20 hover:border-rose-500/40 transition shadow-sm"
+                          title="Delete User Account"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -717,6 +739,68 @@ export const UserManagementPage: React.FC = () => {
                 onClick={() => setIsWizardOpen(false)}
               >
                 Done & Return to Directory
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* =========================================================
+          DELETE USER CONFIRMATION MODAL
+          ========================================================= */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setUserToDelete(null);
+        }}
+        title="Delete User Account"
+        description="This action is irreversible and permanently wipes the user and their personas."
+        maxWidth="md"
+      >
+        {userToDelete && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/30 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div className="space-y-1.5 text-xs">
+                <p className="font-bold text-white text-sm">
+                  Are you sure you want to delete {userToDelete.name}?
+                </p>
+                <p className="text-slate-300 leading-relaxed">
+                  This will permanently remove <span className="font-mono text-cyan-400 font-bold">@{userToDelete.username}</span> ({userToDelete.email}), their digital personas, and custom link trees.
+                </p>
+                <p className="text-slate-400 text-[11px]">
+                  Any physical NFC cards registered to this user will be unlinked and returned to the unclaimed card inventory.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setUserToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                type="button"
+                leftIcon={<Trash2 className="w-4 h-4" />}
+                onClick={() => {
+                  if (userToDelete) {
+                    deleteUser(userToDelete.id);
+                    setIsDeleteModalOpen(false);
+                    setUserToDelete(null);
+                  }
+                }}
+              >
+                Confirm Delete User
               </Button>
             </div>
           </div>

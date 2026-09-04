@@ -316,6 +316,49 @@ export async function deleteSupabaseRecord(table: string, id: string): Promise<v
   }
 }
 
+export async function deleteSupabaseCard(idOrToken: string, cardToken?: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const token = cardToken || idOrToken;
+    const { error } = await supabase
+      .from('nfc_cards')
+      .delete()
+      .or(`id.eq.${idOrToken},card_token.eq.${token},id.eq.${token},card_token.eq.${idOrToken}`);
+    if (error) {
+      console.warn('[Supabase Delete] nfc_cards delete warning:', error.message);
+    }
+    // Clean up any matching hardware invite
+    await supabase
+      .from('user_invites')
+      .delete()
+      .or(`card_token.eq.${token},card_token.eq.${idOrToken}`);
+  } catch (err) {
+    console.warn('[Supabase Delete] Card deletion network error:', err);
+  }
+}
+
+export async function deleteSupabaseUser(userId: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    // 1. Delete user row from users table (Postgres cascades to profiles & links)
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+    if (error) {
+      console.warn('[Supabase Delete] User delete warning:', error.message);
+    }
+    // 2. Unbind physical cards assigned to this user back to unclaimed inventory
+    await supabase
+      .from('nfc_cards')
+      .update({ user_id: null, profile_id: null, status: 'unclaimed' })
+      .eq('user_id', userId);
+    // 3. Clean up invites used by this user
+    await supabase.from('user_invites').delete().eq('used_by_user_id', userId);
+    // 4. Clean up notifications for this user
+    await supabase.from('notifications').delete().eq('recipient_user_id', userId);
+  } catch (err) {
+    console.warn('[Supabase Delete] User deletion network error:', err);
+  }
+}
+
 export async function syncProfilesToSupabase(profiles: Profile[]): Promise<void> {
   if (!isSupabaseConfigured() || profiles.length === 0) return;
   try {
@@ -415,7 +458,7 @@ export async function syncSettingsToSupabase(settings: SystemSettings): Promise<
 }
 
 // ==============================================================================
-// MERGE & HYDRATION LAYER (Remote Pull + O(1) Map Deduplication)
+// MERGE & HYDRATION LAYER (Remote Authoritative Pull with Offline Fallback)
 // ==============================================================================
 
 export async function fetchRemoteUsers(local: User[]): Promise<User[]> {
@@ -423,15 +466,8 @@ export async function fetchRemoteUsers(local: User[]): Promise<User[]> {
   try {
     const { data, error } = await supabase.from('users').select('*');
     if (error || !data) return local;
-
-    const merged = new Map<string, User>();
-    local.forEach(u => merged.set(u.id, u));
-    data.forEach(r => {
-      const parsed = mapDBToUser(r);
-      const existing = merged.get(parsed.id);
-      merged.set(parsed.id, existing ? { ...existing, ...parsed } : parsed);
-    });
-    return Array.from(merged.values());
+    if (data.length === 0 && local.length > 0) return local;
+    return data.map(mapDBToUser);
   } catch {
     return local;
   }
@@ -442,15 +478,8 @@ export async function fetchRemoteProfiles(local: Profile[]): Promise<Profile[]> 
   try {
     const { data, error } = await supabase.from('profiles').select('*');
     if (error || !data) return local;
-
-    const merged = new Map<string, Profile>();
-    local.forEach(p => merged.set(p.id, p));
-    data.forEach(r => {
-      const parsed = mapDBToProfile(r);
-      const existing = merged.get(parsed.id);
-      merged.set(parsed.id, existing ? { ...existing, ...parsed } : parsed);
-    });
-    return Array.from(merged.values());
+    if (data.length === 0 && local.length > 0) return local;
+    return data.map(mapDBToProfile);
   } catch {
     return local;
   }
@@ -461,15 +490,8 @@ export async function fetchRemoteLinks(local: LinkItem[]): Promise<LinkItem[]> {
   try {
     const { data, error } = await supabase.from('links').select('*').order('position', { ascending: true });
     if (error || !data) return local;
-
-    const merged = new Map<string, LinkItem>();
-    local.forEach(l => merged.set(l.id, l));
-    data.forEach(r => {
-      const parsed = mapDBToLink(r);
-      const existing = merged.get(parsed.id);
-      merged.set(parsed.id, existing ? { ...existing, ...parsed } : parsed);
-    });
-    return Array.from(merged.values());
+    if (data.length === 0 && local.length > 0) return local;
+    return data.map(mapDBToLink);
   } catch {
     return local;
   }
@@ -480,15 +502,8 @@ export async function fetchRemoteCards(local: NFCCard[]): Promise<NFCCard[]> {
   try {
     const { data, error } = await supabase.from('nfc_cards').select('*');
     if (error || !data) return local;
-
-    const merged = new Map<string, NFCCard>();
-    local.forEach(c => merged.set(c.id, c));
-    data.forEach(r => {
-      const parsed = mapDBToCard(r);
-      const existing = merged.get(parsed.id);
-      merged.set(parsed.id, existing ? { ...existing, ...parsed } : parsed);
-    });
-    return Array.from(merged.values());
+    // When Supabase responds with data, it is the authoritative list (respects deletions)
+    return data.map(mapDBToCard);
   } catch {
     return local;
   }
@@ -499,15 +514,7 @@ export async function fetchRemoteQRCodes(local: QRCodeItem[]): Promise<QRCodeIte
   try {
     const { data, error } = await supabase.from('qr_codes').select('*');
     if (error || !data) return local;
-
-    const merged = new Map<string, QRCodeItem>();
-    local.forEach(q => merged.set(q.id, q));
-    data.forEach(r => {
-      const parsed = mapDBToQR(r);
-      const existing = merged.get(parsed.id);
-      merged.set(parsed.id, existing ? { ...existing, ...parsed } : parsed);
-    });
-    return Array.from(merged.values());
+    return data.map(mapDBToQR);
   } catch {
     return local;
   }
@@ -518,14 +525,7 @@ export async function fetchRemoteAnalytics(local: AnalyticsEvent[]): Promise<Ana
   try {
     const { data, error } = await supabase.from('analytics_events').select('*').order('timestamp', { ascending: false }).limit(500);
     if (error || !data) return local;
-
-    const merged = new Map<string, AnalyticsEvent>();
-    local.forEach(a => merged.set(a.id, a));
-    data.forEach(r => {
-      const parsed = mapDBToAnalytics(r);
-      merged.set(parsed.id, parsed);
-    });
-    return Array.from(merged.values());
+    return data.map(mapDBToAnalytics);
   } catch {
     return local;
   }
@@ -536,15 +536,7 @@ export async function fetchRemoteInvites(local: UserInvite[]): Promise<UserInvit
   try {
     const { data, error } = await supabase.from('user_invites').select('*');
     if (error || !data) return local;
-
-    const merged = new Map<string, UserInvite>();
-    local.forEach(i => merged.set(i.id, i));
-    data.forEach(r => {
-      const parsed = mapDBToInvite(r);
-      const existing = merged.get(parsed.id);
-      merged.set(parsed.id, existing ? { ...existing, ...parsed } : parsed);
-    });
-    return Array.from(merged.values());
+    return data.map(mapDBToInvite);
   } catch {
     return local;
   }
@@ -555,15 +547,7 @@ export async function fetchRemoteNotifications(local: NotificationItem[]): Promi
   try {
     const { data, error } = await supabase.from('notifications').select('*').order('timestamp', { ascending: false }).limit(100);
     if (error || !data) return local;
-
-    const merged = new Map<string, NotificationItem>();
-    local.forEach(n => merged.set(n.id, n));
-    data.forEach(r => {
-      const parsed = mapDBToNotification(r);
-      const existing = merged.get(parsed.id);
-      merged.set(parsed.id, existing ? { ...existing, ...parsed } : parsed);
-    });
-    return Array.from(merged.values());
+    return data.map(mapDBToNotification);
   } catch {
     return local;
   }

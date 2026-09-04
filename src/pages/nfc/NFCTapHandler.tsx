@@ -11,7 +11,7 @@ import { Button } from '../../components/ui/Button';
 export const NFCTapHandler: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { cards, recordCardTap, profiles } = useTapIt();
+  const { allCards, recordCardTap, allProfiles } = useTapIt();
 
   const [status, setStatus] = useState<'resolving' | 'active' | 'unclaimed' | 'disabled' | 'not_found' | 'cooldown'>('resolving');
   const [targetSlug, setTargetSlug] = useState<string>('');
@@ -49,16 +49,21 @@ export const NFCTapHandler: React.FC = () => {
       }
 
       // ── STEP 1: INSTANT LOCAL STORE CHECK (<1ms) ──
-      const localCard = cards.find(c => {
+      const localCard = allCards.find(c => {
         const t = c.cardToken.toLowerCase();
         return t === normalized || t === strippedLower || t === prefixedLower;
       });
 
       if (localCard) {
         if (localCard.status === 'active') {
-          const prof = profiles.find(p => p.id === localCard.profileId) || profiles[0];
-          const slug = prof?.slug || 'profile';
-          const name = prof?.displayName || prof?.name || 'Profile';
+          const prof = allProfiles.find(p => p.id === localCard.profileId);
+          if (!prof) {
+            // Card is active in inventory but has no valid profile (or profile was deleted)
+            if (isMounted) setStatus('unclaimed');
+            return;
+          }
+          const slug = prof.slug || 'profile';
+          const name = prof.displayName || prof.name || 'Profile';
 
           if (!isMounted) return;
           setTargetSlug(slug);
@@ -95,7 +100,7 @@ export const NFCTapHandler: React.FC = () => {
       }
 
       // ── STEP 2: CHECK IF TOKEN IS DIRECT PROFILE SLUG (<1ms) ──
-      const directLocalProfile = profiles.find(p => 
+      const directLocalProfile = allProfiles.find(p => 
         p.slug.toLowerCase() === normalized || 
         p.slug.toLowerCase() === strippedLower
       );
@@ -129,8 +134,12 @@ export const NFCTapHandler: React.FC = () => {
           if (!error && dbCard && isMounted) {
             if (dbCard.status === 'active' && dbCard.profiles) {
               const prof = Array.isArray(dbCard.profiles) ? dbCard.profiles[0] : dbCard.profiles;
-              const slug = prof?.slug || 'profile';
-              const name = prof?.display_name || prof?.name || 'Profile';
+              if (!prof) {
+                setStatus('unclaimed');
+                return;
+              }
+              const slug = prof.slug || 'profile';
+              const name = prof.display_name || prof.name || 'Profile';
 
               setTargetSlug(slug);
               setProfileName(name);
@@ -211,7 +220,7 @@ export const NFCTapHandler: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [token, navigate, profiles, cards, recordCardTap]);
+  }, [token, navigate, allProfiles, allCards, recordCardTap]);
 
   if (status === 'unclaimed') {
     return <UnclaimedCardPage cardToken={token || ''} />;

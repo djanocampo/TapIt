@@ -46,11 +46,6 @@ export const AdminOverview: React.FC = () => {
               Batch Generate Tokens
             </Button>
           </Link>
-          <Link to="/dashboard">
-            <Button variant="secondary" size="sm">
-              User Dashboard
-            </Button>
-          </Link>
         </div>
       </div>
 

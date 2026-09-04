@@ -37,18 +37,18 @@ export const BackendSyncInit: React.FC = () => {
       try {
         const { 
           allUsers, 
-          profiles, 
-          links, 
-          cards, 
+          allProfiles, 
+          allLinks, 
+          allCards, 
           qrCodes, 
-          analyticsEvents, 
+          allAnalyticsEvents, 
           invites, 
           notifications, 
           systemSettings,
           hydrateFromRemote 
         } = storeRef.current;
 
-        // ── PULL (Remote → Local Merge) ──
+        // ── PULL (Remote Authoritative Fetch) ──
         const [
           remoteUsers,
           remoteProfiles,
@@ -61,11 +61,11 @@ export const BackendSyncInit: React.FC = () => {
           remoteSettings
         ] = await Promise.all([
           fetchRemoteUsers(allUsers),
-          fetchRemoteProfiles(profiles),
-          fetchRemoteLinks(links),
-          fetchRemoteCards(cards),
+          fetchRemoteProfiles(allProfiles),
+          fetchRemoteLinks(allLinks),
+          fetchRemoteCards(allCards),
           fetchRemoteQRCodes(qrCodes),
-          fetchRemoteAnalytics(analyticsEvents),
+          fetchRemoteAnalytics(allAnalyticsEvents),
           fetchRemoteInvites(invites),
           fetchRemoteNotifications(notifications),
           fetchRemoteSettings(systemSettings),

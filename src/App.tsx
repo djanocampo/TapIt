@@ -96,11 +96,11 @@ export const App: React.FC = () => {
             <Route path="/:profileSlug" element={<PublicProfilePage />} />
             <Route path="/:username/:profileSlug" element={<PublicProfilePage />} />
 
-            {/* User Dashboard Routes (Protected: User or Admin) */}
+            {/* User Dashboard Routes (Protected: User Only) */}
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['admin', 'user']}>
+                <ProtectedRoute allowedRoles={['user']}>
                   <DashboardLayout />
                 </ProtectedRoute>
               }

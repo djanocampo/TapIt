@@ -87,18 +87,11 @@ export const Navbar: React.FC = () => {
             {isAuthenticated && currentUser ? (
               <>
                 {currentUser.role === 'admin' ? (
-                  <>
-                    <Link to="/admin">
-                      <Button variant="primary" size="sm" className="rounded-full px-3.5 font-bold" leftIcon={<ShieldCheck className="w-4 h-4" />}>
-                        Admin Suite
-                      </Button>
-                    </Link>
-                    <Link to="/dashboard">
-                      <Button variant="secondary" size="sm" className="rounded-full px-3.5 font-bold" leftIcon={<LayoutDashboard className="w-4 h-4" />}>
-                        Dashboard
-                      </Button>
-                    </Link>
-                  </>
+                  <Link to="/admin">
+                    <Button variant="primary" size="sm" className="rounded-full px-4 font-bold" leftIcon={<ShieldCheck className="w-4 h-4" />}>
+                      Admin Suite
+                    </Button>
+                  </Link>
                 ) : (
                   <Link to="/dashboard">
                     <Button variant="glow" size="sm" className="rounded-full px-4 font-bold" leftIcon={<LayoutDashboard className="w-4 h-4" />}>

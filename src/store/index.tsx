@@ -35,7 +35,9 @@ import {
   syncNotificationsToSupabase,
   clearSupabaseNotifications,
   syncSettingsToSupabase,
-  deleteSupabaseRecord
+  deleteSupabaseRecord,
+  deleteSupabaseCard,
+  deleteSupabaseUser
 } from '../services/dualLayerSync';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -127,6 +129,7 @@ interface TapItContextType {
 
   // Admin Actions
   toggleUserStatus: (userId: string) => void;
+  deleteUser: (userId: string) => { success: boolean; message: string };
   updateSystemSettings: (settings: Partial<SystemSettings>) => void;
 
   // Simulator
@@ -576,14 +579,23 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const deleteCard = (id: string) => {
+    let targetCardToken = id;
+    let targetCardId = id;
+
     setCards(prev => {
-      const updated = prev.filter(c => c.id !== id);
-      void syncCardsToSupabase(updated);
-      return updated;
+      const target = prev.find(c => c.id === id || c.cardToken === id);
+      if (target) {
+        targetCardToken = target.cardToken;
+        targetCardId = target.id;
+      }
+      return prev.filter(
+        c => c.id !== id && c.cardToken !== id && c.id !== targetCardId && c.cardToken !== targetCardToken
+      );
     });
-    if (isSupabaseConfigured()) {
-      void supabase.from('nfc_cards').delete().eq('id', id);
-    }
+
+    setInvites(prev => prev.filter(inv => inv.cardToken !== id && inv.cardToken !== targetCardToken));
+
+    void deleteSupabaseCard(targetCardId, targetCardToken);
   };
 
   const toggleCardStatus = (id: string) => {
@@ -679,12 +691,15 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return updated;
     });
 
-    const targetProfile = profiles.find(p => p.id === card.profileId) || profiles[0];
+    const targetProfile = profiles.find(p => p.id === card.profileId);
+    if (!targetProfile) {
+      return { card, status: 'unclaimed' };
+    }
 
     const client = getClientDeviceInfo();
 
     logAnalyticsEvent({
-      profileId: targetProfile ? targetProfile.id : '',
+      profileId: targetProfile.id,
       cardId: card.id,
       eventType: 'nfc_tap',
       trafficSource: 'nfc',
@@ -964,6 +979,29 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
+  const deleteUser = (userId: string): { success: boolean; message: string } => {
+    if (userId === currentUser.id || userId === 'usr_admin_001') {
+      return { success: false, message: 'Primary System Administrator cannot be deleted.' };
+    }
+
+    setAllUsers(prev => prev.filter(u => u.id !== userId));
+
+    const userProfileIds = profiles.filter(p => p.userId === userId).map(p => p.id);
+    setProfiles(prev => prev.filter(p => p.userId !== userId));
+    setLinks(prev => prev.filter(l => !userProfileIds.includes(l.profileId)));
+    setCards(prev =>
+      prev.map(c =>
+        c.userId === userId ? { ...c, userId: undefined, profileId: undefined, status: 'unclaimed' as const } : c
+      )
+    );
+    setInvites(prev => prev.filter(inv => inv.usedByUserId !== userId));
+    setNotifications(prev => prev.filter(n => n.recipientUserId !== userId));
+
+    void deleteSupabaseUser(userId);
+
+    return { success: true, message: 'User account and associated data removed successfully.' };
+  };
+
   const updateSystemSettings = (settings: Partial<SystemSettings>) => {
     setSystemSettings(prev => {
       const updated = { ...prev, ...settings };
@@ -1069,14 +1107,14 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Remote Hydration callback from BackendSyncInit
   const hydrateFromRemote = (payload: RemoteHydrationPayload) => {
-    if (payload.users && payload.users.length > 0) setAllUsers(payload.users);
-    if (payload.profiles && payload.profiles.length > 0) setProfiles(payload.profiles);
-    if (payload.links && payload.links.length > 0) setLinks(payload.links);
-    if (payload.cards && payload.cards.length > 0) setCards(payload.cards);
-    if (payload.qrCodes && payload.qrCodes.length > 0) setQrCodes(payload.qrCodes);
-    if (payload.analytics && payload.analytics.length > 0) setAnalyticsEvents(payload.analytics);
-    if (payload.invites && payload.invites.length > 0) setInvites(payload.invites);
-    if (payload.notifications && payload.notifications.length > 0) setNotifications(payload.notifications);
+    if (payload.users !== undefined && payload.users.length > 0) setAllUsers(payload.users);
+    if (payload.profiles !== undefined && payload.profiles.length > 0) setProfiles(payload.profiles);
+    if (payload.links !== undefined && payload.links.length > 0) setLinks(payload.links);
+    if (payload.cards !== undefined) setCards(payload.cards);
+    if (payload.qrCodes !== undefined) setQrCodes(payload.qrCodes);
+    if (payload.analytics !== undefined) setAnalyticsEvents(payload.analytics);
+    if (payload.invites !== undefined) setInvites(payload.invites);
+    if (payload.notifications !== undefined) setNotifications(payload.notifications);
     if (payload.settings) setSystemSettings(payload.settings);
   };
 
@@ -1230,6 +1268,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         clearAllNotifications,
 
         toggleUserStatus,
+        deleteUser,
         updateSystemSettings,
 
         openSimulator,

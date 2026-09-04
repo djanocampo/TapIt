@@ -21,8 +21,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirectPath || '/login'} replace state={{ from: location }} />;
   }
 
-  // If user role is not permitted (e.g. Djan / User attempting to access /admin)
+  // If user role is not permitted (e.g. Admin accessing /dashboard, or User accessing /admin)
   if (!allowedRoles.includes(currentRole)) {
+    if (currentRole === 'admin') {
+      return <Navigate to="/admin" replace state={{ from: location, unauthorized: true }} />;
+    }
     if (currentRole === 'user') {
       return <Navigate to="/dashboard" replace state={{ from: location, unauthorized: true }} />;
     }

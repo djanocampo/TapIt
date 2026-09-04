@@ -23,6 +23,7 @@
 | **Phase 10** | **Database Indexing Architecture** | Foreign key indexes, token lookups, and composite B-Tree indexes (DATABASE_INDEXING.md) | `[COMPLETE]` |
 | **Phase 11** | **Dual-Layer Sync Engine** | Instant LocalStorage Layer 1 + non-blocking Supabase Layer 2 + O(1) deduplication | `[COMPLETE]` |
 | **Phase 12** | **Clean Auth & 1st User Flow** | Purged demo logins, clean Admin credentials, 1st user registration & binding | `[COMPLETE]` |
+| **Phase 13** | **Role Isolation & Hardware Lifecycle** | Strict Admin/User route separation, universal user data scoping, database deletion & unbinding | `[COMPLETE]` |
 
 ---
 
@@ -35,10 +36,10 @@ TapIt operates with a **Clean Slate Onboarding Architecture**. All pre-seeded du
 * **Password**: `admin123` (or `admin`)
 * **Role**: `admin`
 * **Admin Capabilities**:
-  * Root access to System Admin Suite (`/admin`) and User Dashboard (`/dashboard`).
-  * Hardware NFC Smart Card batch generation & token provisioning.
+  * Exclusive access to System Admin Suite (`/admin`) with strict isolation from user dashboard views.
+  * Hardware NFC Smart Card batch generation, token provisioning, and permanent deletion.
   * User provisioning wizard & temporary invitation link generation (`/invite/:token`).
-  * User account moderation (active/suspended).
+  * User account moderation (active/suspended) and permanent user deletion with hardware unbinding.
   * Global telemetry, analytics, and platform system settings.
 
 ### 👤 Testing Your 1st Personal User Account
@@ -193,6 +194,25 @@ Native Chromium `NDEFReader` hardware flasher:
 
 > [!TIP]
 > For chip pinouts (NTAG213/215/216), antenna locations for Samsung/Pixel/iPhone, local Wi-Fi Chrome flag setup, and Android OS handling, read **[NFC_TAG_WRITING_GUIDE.md](file:///d:/TapIt/NFC_TAG_WRITING_GUIDE.md)**.
+
+---
+
+## 🛡️ Phase 13: Role Isolation, User Scoping & Hardware Lifecycle
+
+### 1. Strict Role Boundary Enforcement
+* **Route Separation**: `/dashboard` routes are strictly restricted to regular users (`allowedRoles={['user']}`). `/admin` is restricted to platform administrators (`allowedRoles={['admin']}`).
+* **Automatic Role Redirection**: Admins attempting to navigate to `/dashboard` are immediately redirected to `/admin`. Users attempting to visit `/admin` are redirected to `/dashboard`.
+* **Zero Cross-Link Bleed**: Admin navigation bars, headers, and sidebars contain no links into user dashboards, maintaining total administrative separation.
+
+### 2. Universal User Data Scoping
+* **User-Scoped State**: When a user logs in, `profiles`, `links`, `cards`, `qrCodes`, `analyticsEvents`, and `notifications` in `useTapIt()` are automatically scoped to `currentUser.id`.
+* **Platform Collections**: Platform-wide data is exposed via `allProfiles`, `allCards`, `allLinks`, `allUsers`, and `allAnalyticsEvents` for the Admin Suite exclusively.
+
+### 3. Database Deletion & Hardware Unbinding
+* **Multi-Key NFC Deletion**: Card deletion purges records by both internal `id` and `card_token` from `nfc_cards` and removes associated rows in `user_invites`.
+* **Authoritative Remote Pull**: Dual-layer sync fetches authoritative database state directly without merging stale local items, permanently eliminating resurrected/ghost records.
+* **Admin User Deletion**: Administrators can permanently delete user accounts from `/admin/users`. Deleting a user automatically cascades to their profiles and custom links, while unbinding their physical NFC cards (`status = 'unclaimed'`, `user_id = null`, `profile_id = null`) so the hardware can be re-provisioned.
+* **Strict Public Resolution**: Removed all default fallback profiles (`profiles[0]`). Deleted or non-existent usernames/slugs cleanly render the 404 "Profile Not Found" screen, and unassigned/deleted NFC tags render the "Unclaimed Card" portal.
 
 ---
 
