@@ -190,9 +190,30 @@ export const UserManagementPage: React.FC = () => {
         { signal: ndefControllerRef.current.signal }
       );
 
-      // Set 3.5s cooldown guard in sessionStorage to prevent immediate auto-read loops
+      // ── POST-WRITE ANTENNA OWNERSHIP ──────────────────────────────────────────
+      // After ndef.write() resolves, Android's OS NFC dispatcher can still see the
+      // newly-written tag and immediately re-read it (bypassing sessionStorage).
+      // Fix: immediately start ndef.scan() so Chrome owns the antenna exclusively
+      // during the 3-second cooldown, blocking any OS-level dispatch.
+      const postWriteController = new AbortController();
+      ndefControllerRef.current = postWriteController; // So cancel button still works
+
+      try {
+        const guardNdef = new NDEFReader();
+        await guardNdef.scan({ signal: postWriteController.signal });
+        // Silently intercept any reads — prevents OS from dispatching them
+        guardNdef.onreading = () => {};
+      } catch {
+        // Scan startup may fail on some configurations — ignore, sessionStorage still helps
+      }
+
+      // Don't reduce the pre-emptive cooldown set during arming — only extend it
       if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('tapit_nfc_cooldown_until', (Date.now() + 3500).toString());
+        const existing = parseInt(sessionStorage.getItem('tapit_nfc_cooldown_until') || '0', 10);
+        const minUntil = Date.now() + 4000;
+        if (minUntil > existing) {
+          sessionStorage.setItem('tapit_nfc_cooldown_until', minUntil.toString());
+        }
       }
 
       setNfcState('success');
@@ -201,7 +222,7 @@ export const UserManagementPage: React.FC = () => {
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       triggerConfetti();
 
-      // Start 3-second pull-away cooldown
+      // 3-second visual cooldown countdown; stop the protective scan when it ends
       setCooldownRemaining(3);
       let cd = 3;
       cooldownTimerRef.current = setInterval(() => {
@@ -209,6 +230,9 @@ export const UserManagementPage: React.FC = () => {
         setCooldownRemaining(cd);
         if (cd <= 0 && cooldownTimerRef.current) {
           clearInterval(cooldownTimerRef.current);
+          // Release antenna ownership — card is now safe to tap normally
+          postWriteController.abort();
+          ndefControllerRef.current = null;
         }
       }, 1000);
 

@@ -110,7 +110,13 @@ export const BackendSyncInit: React.FC = () => {
     document.addEventListener('visibilitychange', handleReconnection);
 
     // ── SUPABASE REALTIME LIVE WEBSOCKET SUBSCRIPTION ──
+    // Also respect the cooldown to prevent registration upsert events from immediately
+    // re-hydrating the store and reverting a card that was just activated.
     const unsubscribe = subscribeToRealtimeChanges(() => {
+      const now = Date.now();
+      if (now - lastSyncTimeRef.current < SYNC_COOLDOWN_MS) {
+        return; // Skip realtime hydration if we synced recently
+      }
       void runPullSync();
     });
 

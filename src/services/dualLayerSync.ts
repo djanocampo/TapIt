@@ -389,6 +389,61 @@ export async function syncCardsToSupabase(cards: NFCCard[]): Promise<void> {
   }
 }
 
+/**
+ * Direct targeted upsert for a single card's binding.
+ * Uses the UNIQUE constraint on card_token for atomic upsert —
+ * works whether the card exists in Supabase or not, with no race conditions.
+ */
+export async function bindCardToUser(
+  cardToken: string,
+  userId: string,
+  profileId: string,
+  cardName: string,
+  material: string
+): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    // First try a targeted UPDATE by card_token (most common path — card was pre-created by createInvite)
+    const { error: updateError, data: updatedRows } = await supabase
+      .from('nfc_cards')
+      .update({
+        user_id: userId,
+        profile_id: profileId,
+        status: 'active',
+        name: cardName,
+        activated_at: new Date().toISOString(),
+      })
+      .ilike('card_token', cardToken)
+      .select('id');
+
+    if (!updateError && Array.isArray(updatedRows) && updatedRows.length > 0) {
+      // Row found and updated successfully
+      return;
+    }
+
+    // Card not in DB yet — insert it directly
+    const { error: insertError } = await supabase.from('nfc_cards').insert({
+      id: `crd_${Date.now()}`,
+      card_token: cardToken.toUpperCase(),
+      user_id: userId,
+      profile_id: profileId,
+      name: cardName,
+      material: material || 'matte-black',
+      status: 'active',
+      taps: 0,
+      unique_tappers: 0,
+      created_at: new Date().toISOString(),
+      activated_at: new Date().toISOString(),
+    });
+
+    if (insertError) {
+      console.warn('[Supabase Direct] bindCardToUser insert error:', insertError.message);
+    }
+  } catch (e) {
+    console.warn('[Supabase Direct] bindCardToUser error:', e);
+  }
+}
+
 export async function syncQRCodesToSupabase(qrCodes: QRCodeItem[]): Promise<void> {
   if (!isSupabaseConfigured() || qrCodes.length === 0) return;
   try {
@@ -502,8 +557,34 @@ export async function fetchRemoteCards(local: NFCCard[]): Promise<NFCCard[]> {
   try {
     const { data, error } = await supabase.from('nfc_cards').select('*');
     if (error || !data) return local;
-    // When Supabase responds with data, it is the authoritative list (respects deletions)
-    return data.map(mapDBToCard);
+    const remote = data.map(mapDBToCard);
+
+    // Merge: If local has a card marked 'active' with a userId but remote still shows it as
+    // 'unclaimed', prefer the local version — it means a registration just completed and the
+    // Supabase write hasn't committed yet. This prevents hydration from reverting bound cards.
+    const localByToken = new Map(local.map(c => [c.cardToken.toLowerCase(), c]));
+    const merged = remote.map(remoteCard => {
+      const localCard = localByToken.get(remoteCard.cardToken.toLowerCase());
+      if (
+        localCard &&
+        localCard.status === 'active' &&
+        localCard.userId &&
+        (remoteCard.status === 'unclaimed' || !remoteCard.userId)
+      ) {
+        return localCard; // Keep local's more up-to-date binding
+      }
+      return remoteCard;
+    });
+
+    // Also include any local-only cards not yet in remote (pending first sync)
+    const remoteTokens = new Set(remote.map(c => c.cardToken.toLowerCase()));
+    for (const localCard of local) {
+      if (!remoteTokens.has(localCard.cardToken.toLowerCase())) {
+        merged.push(localCard);
+      }
+    }
+
+    return merged;
   } catch {
     return local;
   }

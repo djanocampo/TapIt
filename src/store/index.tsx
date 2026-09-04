@@ -37,7 +37,8 @@ import {
   syncSettingsToSupabase,
   deleteSupabaseRecord,
   deleteSupabaseCard,
-  deleteSupabaseUser
+  deleteSupabaseUser,
+  bindCardToUser
 } from '../services/dualLayerSync';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -836,68 +837,82 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       createdAt: new Date().toISOString(),
     };
 
-    // Link pre-bound physical card
-    setCards(prev => {
-      let found = false;
-      const updated = prev.map(c => {
-        if (c.cardToken.toLowerCase() === invite.cardToken.toLowerCase()) {
-          found = true;
-          return {
-            ...c,
-            userId: newUserId,
-            profileId: newProfileId,
-            status: 'active' as const,
-            name: `${data.name.trim()}'s Smart Card`,
-            activatedAt: new Date().toISOString(),
-          };
-        }
-        return c;
-      });
+    // ── RESOLVE CARD SYNCHRONOUSLY before any state updates ──────────────────
+    // Read current cards state directly (closure capture at call time).
+    // This avoids side effects inside React state updaters (which can run twice
+    // in Strict Mode) and ensures we have the real material/id values.
+    const existingCard = cards.find(
+      c => c.cardToken.toLowerCase() === invite.cardToken.toLowerCase()
+    );
 
-      if (!found) {
-        const newCard: NFCCard = {
-          id: `crd_${Date.now()}`,
+    const boundCardName = `${data.name.trim()}'s Smart Card`;
+    const boundCardMaterial = existingCard?.material || invite.material || 'matte-black';
+    const boundCardId = existingCard?.id || `crd_${Date.now()}`;
+
+    const boundCard: NFCCard = existingCard
+      ? {
+          ...existingCard,
+          userId: newUserId,
+          profileId: newProfileId,
+          status: 'active' as const,
+          name: boundCardName,
+          activatedAt: new Date().toISOString(),
+        }
+      : {
+          id: boundCardId,
           cardToken: invite.cardToken,
           userId: newUserId,
           profileId: newProfileId,
-          name: `${data.name.trim()}'s Smart Card`,
-          material: invite.material || 'matte-black',
-          status: 'active',
+          name: boundCardName,
+          material: boundCardMaterial,
+          status: 'active' as const,
           taps: 0,
           uniqueTappers: 0,
           createdAt: new Date().toISOString(),
           activatedAt: new Date().toISOString(),
         };
-        updated.unshift(newCard);
+
+    // ── SUPABASE WRITES — called here in function body, NOT inside state updaters ──
+    // bindCardToUser uses upsert-by-card_token so it's atomic and idempotent.
+    void bindCardToUser(
+      invite.cardToken,
+      newUserId,
+      newProfileId,
+      boundCardName,
+      boundCardMaterial
+    );
+    void syncUsersToSupabase([...allUsers, newUser]);
+    void syncProfilesToSupabase([...profiles, newProfile]);
+    void syncQRCodesToSupabase([...qrCodes, newQR]);
+    void syncInvitesToSupabase(
+      invites.map(inv =>
+        inv.id === invite.id || inv.inviteToken.toLowerCase() === invite.inviteToken.toLowerCase()
+          ? { ...inv, isUsed: true, usedByUserId: newUserId }
+          : inv
+      )
+    );
+
+    // ── LOCAL STATE UPDATES (pure — no side effects) ──────────────────────────
+    setCards(prev => {
+      const hasCard = prev.some(c => c.cardToken.toLowerCase() === invite.cardToken.toLowerCase());
+      if (hasCard) {
+        return prev.map(c =>
+          c.cardToken.toLowerCase() === invite.cardToken.toLowerCase() ? boundCard : c
+        );
       }
-
-      void syncCardsToSupabase(updated);
-      return updated;
+      return [boundCard, ...prev];
     });
 
-    setAllUsers(prev => {
-      const updated = [...prev, newUser];
-      void syncUsersToSupabase(updated);
-      return updated;
-    });
-
-    setProfiles(prev => {
-      const updated = [...prev, newProfile];
-      void syncProfilesToSupabase(updated);
-      return updated;
-    });
-
-    setQrCodes(prev => {
-      const updated = [...prev, newQR];
-      void syncQRCodesToSupabase(updated);
-      return updated;
-    });
-
-    setInvites(prev => {
-      const updated = prev.map(inv => (inv.id === invite.id || inv.inviteToken.toLowerCase() === invite.inviteToken.toLowerCase()) ? { ...inv, isUsed: true, usedByUserId: newUserId } : inv);
-      void syncInvitesToSupabase(updated);
-      return updated;
-    });
+    setAllUsers(prev => [...prev, newUser]);
+    setProfiles(prev => [...prev, newProfile]);
+    setQrCodes(prev => [...prev, newQR]);
+    setInvites(prev =>
+      prev.map(inv =>
+        inv.id === invite.id || inv.inviteToken.toLowerCase() === invite.inviteToken.toLowerCase()
+          ? { ...inv, isUsed: true, usedByUserId: newUserId }
+          : inv
+      )
+    );
 
     login(newUser, 'user');
     setActiveProfileIdState(newProfileId);

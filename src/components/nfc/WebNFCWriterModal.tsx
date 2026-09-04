@@ -252,15 +252,36 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         { signal: abortControllerRef.current.signal }
       );
 
-      // Set 3.5s cooldown guard in sessionStorage to prevent immediate auto-read loop
+      // ── POST-WRITE ANTENNA OWNERSHIP ──────────────────────────────────────────
+      // After ndef.write() resolves, Android's OS NFC dispatcher can still see the
+      // newly-written tag and immediately re-read it (bypassing sessionStorage).
+      // Fix: immediately start ndef.scan() so Chrome owns the antenna exclusively
+      // during the 3-second cooldown, blocking any OS-level dispatch.
+      const postWriteController = new AbortController();
+      abortControllerRef.current = postWriteController; // So reset/cancel still works
+
+      try {
+        const guardNdef = new NDEFReader();
+        await guardNdef.scan({ signal: postWriteController.signal });
+        // Silently intercept any reads — prevents OS from dispatching them
+        guardNdef.onreading = () => {};
+      } catch {
+        // Scan startup may fail on some configurations — ignore, sessionStorage still helps
+      }
+
+      // Don't reduce the pre-emptive cooldown set during arming — only extend it
       if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('tapit_nfc_cooldown_until', (Date.now() + 3500).toString());
+        const existing = parseInt(sessionStorage.getItem('tapit_nfc_cooldown_until') || '0', 10);
+        const minUntil = Date.now() + 4000;
+        if (minUntil > existing) {
+          sessionStorage.setItem('tapit_nfc_cooldown_until', minUntil.toString());
+        }
       }
 
       setStatus('success');
       triggerSuccessFeedback();
 
-      // Start 3-second pull-away cooldown
+      // 3-second visual cooldown countdown; stop the protective scan when it ends
       setCooldownRemaining(3);
       let cd = 3;
       cooldownTimerRef.current = setInterval(() => {
@@ -268,6 +289,9 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         setCooldownRemaining(cd);
         if (cd <= 0 && cooldownTimerRef.current) {
           clearInterval(cooldownTimerRef.current);
+          // Release antenna ownership — card is now safe to tap normally
+          postWriteController.abort();
+          abortControllerRef.current = null;
         }
       }, 1000);
 
