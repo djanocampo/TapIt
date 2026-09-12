@@ -1,0 +1,86 @@
+{
+  "id": "/",
+  "name": "TapIt — Smart NFC Digital Identity",
+  "short_name": "TapIt",
+  "description": "Tap. Connect. Analyze. Create customizable digital identities, connect to smart NFC cards and QR codes, and track real-time visitor analytics.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#040c1a",
+  "theme_color": "#040c1a",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities", "social"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Profiles",
+      "short_name": "Profiles",
+      "description": "Manage and edit your digital profiles",
+      "url": "/dashboard/profiles",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "QR Code Studio",
+      "short_name": "QR Studio",
+      "description": "Generate and customize QR codes",
+      "url": "/dashboard/qr",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "View visitor engagement and tap metrics",
+      "url": "/dashboard/analytics",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
+}

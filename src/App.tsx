@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { TapItProvider } from './store';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { BackendSyncInit } from './components/sync/BackendSyncInit';
+import { PWAInstallPrompt } from './components/pwa/PWAInstallPrompt';
 
 // Layouts
 import { RootLayout } from './layouts/RootLayout';
@@ -142,6 +143,7 @@ export const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
+        <PWAInstallPrompt />
       </BrowserRouter>
     </TapItProvider>
   );
