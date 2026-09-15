@@ -794,9 +794,22 @@ export async function syncSettingsToSupabase(settings: SystemSettings): Promise<
 export async function fetchRemoteUsers(local: User[]): Promise<User[]> {
   if (!isSupabaseConfigured()) return local;
   try {
-    const { data, error } = await supabase.from('users').select('*');
+    // Security Hardening: Never select password_hash into general client-side state
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, username, email, role, avatar, bio, headline, status, created_at, last_login_at');
     if (error || !data) return local;
-    return data.map(mapDBToUser);
+
+    const localUserMap = new Map(local.map(u => [u.id, u]));
+    return data.map((r: any) => {
+      const mapped = mapDBToUser(r);
+      // Retain the authenticated user's own local credential hash without leaking others
+      const localUser = localUserMap.get(mapped.id);
+      if (localUser?.password) {
+        mapped.password = localUser.password;
+      }
+      return mapped;
+    });
   } catch {
     return local;
   }
@@ -868,6 +881,22 @@ export async function fetchRemoteInvites(local: UserInvite[]): Promise<UserInvit
     return data.map(mapDBToInvite);
   } catch {
     return local;
+  }
+}
+
+export async function fetchSingleInviteByToken(token: string): Promise<UserInvite | null> {
+  if (!isSupabaseConfigured() || !token) return null;
+  try {
+    const cleanToken = token.trim();
+    const { data, error } = await supabase
+      .from('user_invites')
+      .select('*')
+      .eq('invite_token', cleanToken)
+      .maybeSingle();
+    if (error || !data) return null;
+    return mapDBToInvite(data);
+  } catch {
+    return null;
   }
 }
 

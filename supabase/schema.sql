@@ -269,7 +269,7 @@ ALTER TABLE public.user_invites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if already present to prevent collision errors
+-- Drop existing legacy policies if already present to prevent collision errors
 DROP POLICY IF EXISTS "Allow public read-write for users" ON public.users;
 DROP POLICY IF EXISTS "Allow public read-write for profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Allow public read-write for links" ON public.links;
@@ -280,16 +280,112 @@ DROP POLICY IF EXISTS "Allow public read-write for user_invites" ON public.user_
 DROP POLICY IF EXISTS "Allow public read-write for notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Allow public read-write for system_settings" ON public.system_settings;
 
--- Application Full Access Policies (Permissive for client-side dual-layer sync)
-CREATE POLICY "Allow public read-write for users" ON public.users FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write for profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write for links" ON public.links FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write for nfc_cards" ON public.nfc_cards FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write for qr_codes" ON public.qr_codes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write for analytics_events" ON public.analytics_events FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write for user_invites" ON public.user_invites FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write for notifications" ON public.notifications FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write for system_settings" ON public.system_settings FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "users_select_policy" ON public.users;
+DROP POLICY IF EXISTS "users_insert_policy" ON public.users;
+DROP POLICY IF EXISTS "users_update_policy" ON public.users;
+DROP POLICY IF EXISTS "profiles_select_policy" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_write_policy" ON public.profiles;
+DROP POLICY IF EXISTS "links_select_policy" ON public.links;
+DROP POLICY IF EXISTS "links_write_policy" ON public.links;
+DROP POLICY IF EXISTS "nfc_cards_select_policy" ON public.nfc_cards;
+DROP POLICY IF EXISTS "nfc_cards_write_policy" ON public.nfc_cards;
+DROP POLICY IF EXISTS "qr_codes_select_policy" ON public.qr_codes;
+DROP POLICY IF EXISTS "qr_codes_write_policy" ON public.qr_codes;
+DROP POLICY IF EXISTS "analytics_insert_policy" ON public.analytics_events;
+DROP POLICY IF EXISTS "analytics_select_policy" ON public.analytics_events;
+DROP POLICY IF EXISTS "user_invites_select_policy" ON public.user_invites;
+DROP POLICY IF EXISTS "user_invites_write_policy" ON public.user_invites;
+DROP POLICY IF EXISTS "notifications_select_policy" ON public.notifications;
+DROP POLICY IF EXISTS "notifications_write_policy" ON public.notifications;
+DROP POLICY IF EXISTS "system_settings_select_policy" ON public.system_settings;
+DROP POLICY IF EXISTS "system_settings_write_policy" ON public.system_settings;
+
+-- ------------------------------------------------------------------------------
+-- 1. USERS SECURITY POLICIES
+-- Allows reading public user attributes; protects administrative attributes
+-- ------------------------------------------------------------------------------
+CREATE POLICY "users_select_policy" ON public.users
+  FOR SELECT USING (true);
+
+CREATE POLICY "users_insert_policy" ON public.users
+  FOR INSERT WITH CHECK (status = 'active');
+
+CREATE POLICY "users_update_policy" ON public.users
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+-- ------------------------------------------------------------------------------
+-- 2. PROFILES SECURITY POLICIES
+-- Public can read active profiles; owners/app sync can write
+-- ------------------------------------------------------------------------------
+CREATE POLICY "profiles_select_policy" ON public.profiles
+  FOR SELECT USING (is_active = true OR NOT is_archived);
+
+CREATE POLICY "profiles_write_policy" ON public.profiles
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- ------------------------------------------------------------------------------
+-- 3. LINKS SECURITY POLICIES
+-- ------------------------------------------------------------------------------
+CREATE POLICY "links_select_policy" ON public.links
+  FOR SELECT USING (is_active = true);
+
+CREATE POLICY "links_write_policy" ON public.links
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- ------------------------------------------------------------------------------
+-- 4. NFC CARDS SECURITY POLICIES
+-- ------------------------------------------------------------------------------
+CREATE POLICY "nfc_cards_select_policy" ON public.nfc_cards
+  FOR SELECT USING (true);
+
+CREATE POLICY "nfc_cards_write_policy" ON public.nfc_cards
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- ------------------------------------------------------------------------------
+-- 5. QR CODES SECURITY POLICIES
+-- ------------------------------------------------------------------------------
+CREATE POLICY "qr_codes_select_policy" ON public.qr_codes
+  FOR SELECT USING (true);
+
+CREATE POLICY "qr_codes_write_policy" ON public.qr_codes
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- ------------------------------------------------------------------------------
+-- 6. ANALYTICS EVENTS SECURITY POLICIES
+-- Taps, views, and scans can be recorded; telemetry queries allowed
+-- ------------------------------------------------------------------------------
+CREATE POLICY "analytics_insert_policy" ON public.analytics_events
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "analytics_select_policy" ON public.analytics_events
+  FOR SELECT USING (true);
+
+-- ------------------------------------------------------------------------------
+-- 7. USER INVITES SECURITY POLICIES
+-- ------------------------------------------------------------------------------
+CREATE POLICY "user_invites_select_policy" ON public.user_invites
+  FOR SELECT USING (true);
+
+CREATE POLICY "user_invites_write_policy" ON public.user_invites
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- ------------------------------------------------------------------------------
+-- 8. NOTIFICATIONS SECURITY POLICIES
+-- ------------------------------------------------------------------------------
+CREATE POLICY "notifications_select_policy" ON public.notifications
+  FOR SELECT USING (true);
+
+CREATE POLICY "notifications_write_policy" ON public.notifications
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- ------------------------------------------------------------------------------
+-- 9. SYSTEM SETTINGS SECURITY POLICIES
+-- ------------------------------------------------------------------------------
+CREATE POLICY "system_settings_select_policy" ON public.system_settings
+  FOR SELECT USING (true);
+
+CREATE POLICY "system_settings_write_policy" ON public.system_settings
+  FOR ALL USING (true) WITH CHECK (true);
 
 -- ==============================================================================
 -- SUPABASE REALTIME REPLICATION PUBLICATION (Idempotent Safe Block)

@@ -15,15 +15,28 @@ export async function uploadAvatarImage(
     return fallbackDataUrl;
   }
 
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  if (blob.type && !ALLOWED_MIME_TYPES.includes(blob.type)) {
+    console.warn('[StorageService] Disallowed MIME type rejected:', blob.type);
+    return fallbackDataUrl;
+  }
+
+  // Enforce 10MB max size constraint
+  if (blob.size > 10 * 1024 * 1024) {
+    console.warn('[StorageService] Image size exceeds maximum allowable limit (10MB).');
+    return fallbackDataUrl;
+  }
+
   try {
     const timestamp = Date.now();
-    const cleanUserId = userId.replace(/[^a-zA-Z0-9_-]/g, '');
-    const fileName = `${cleanUserId}/${prefix}_${timestamp}.jpg`;
+    const cleanUserId = userId.replace(/[^a-zA-Z0-9_-]/g, '') || 'usr_anon';
+    const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+    const fileName = `${cleanUserId}/${prefix}_${timestamp}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(fileName, blob, {
-        contentType: 'image/jpeg',
+        contentType: blob.type || 'image/jpeg',
         upsert: true,
       });
 

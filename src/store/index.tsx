@@ -44,6 +44,7 @@ import {
   upsertSingleQRCode
 } from '../services/dualLayerSync';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { hashPassword, generateSecureToken } from '../utils/crypto';
 
 export interface RemoteHydrationPayload {
   users?: User[];
@@ -121,7 +122,7 @@ interface TapItContextType {
   createInvite: (initialName: string, material: CardMaterial, customCardToken?: string) => { invite: UserInvite; inviteUrl: string };
   getInviteByToken: (inviteToken: string) => UserInvite | undefined;
   completeInviteRegistration: (inviteToken: string, data: { name: string; username: string; email: string; password?: string }) => Promise<{ success: boolean; user?: User; message: string }>;
-  registerUser: (data: { name: string; username: string; email: string; password?: string }) => { success: boolean; user?: User; message: string };
+  registerUser: (data: { name: string; username: string; email: string; password?: string }) => Promise<{ success: boolean; user?: User; message: string }>;
 
   // QR Actions
   updateQRCode: (id: string, updates: Partial<QRCodeItem>) => void;
@@ -206,6 +207,9 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [simulatorCard, setSimulatorCard] = useState<NFCCard | null>(null);
 
+  // Rate-limiting / anti-abuse cooldown ref for analytics and telemetry
+  const telemetryCooldownsRef = React.useRef<Map<string, number>>(new Map());
+
   // Sync to Layer 1 (LocalStorage) - immediate local persistence for zero-latency UI
   useEffect(() => {
     try {
@@ -268,6 +272,13 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const setRole = (role: UserRole) => {
+    // Privilege escalation protection:
+    // Only allow switching to 'admin' if the authenticated user has verified admin role or matches initial admin
+    if (role === 'admin' && isAuthenticated && currentUser.role !== 'admin' && currentUser.id !== INITIAL_ADMIN.id) {
+      console.warn('[Security] Unauthorized role escalation attempt to admin blocked.');
+      return;
+    }
+
     setCurrentRole(role);
     if (role === 'admin') {
       setCurrentUser(INITIAL_ADMIN);
@@ -735,7 +746,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const generateBatchCards = (count: number, material: CardMaterial): NFCCard[] => {
     const newCards: NFCCard[] = [];
     for (let i = 0; i < count; i++) {
-      const cardToken = `TAP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const cardToken = generateSecureToken('TAP', 4).toUpperCase().replace('_', '-');
       newCards.push({
         id: `crd_${Date.now()}_${i}`,
         cardToken,
@@ -834,8 +845,8 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Invite & Provisioning Wizard Actions
   const createInvite = (initialName: string, material: CardMaterial = 'matte-black', customCardToken?: string) => {
     const inviteId = `inv_${Date.now()}`;
-    const inviteToken = `INV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const cardToken = customCardToken?.trim() || `TAP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const inviteToken = generateSecureToken('INV', 4).toUpperCase().replace('_', '-');
+    const cardToken = customCardToken?.trim() || generateSecureToken('TAP', 4).toUpperCase().replace('_', '-');
 
     const existingCard = cards.find(c => c.cardToken.toLowerCase() === cardToken.toLowerCase());
     if (!existingCard) {
@@ -913,12 +924,15 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const newProfileId = `prof_${Date.now()}`;
     const cleanUsername = data.username.toLowerCase().replace(/[^a-z0-9_-]/g, '') || `user${Date.now().toString().slice(-4)}`;
 
+    // Hash user password using Web Crypto API PBKDF2
+    const { hashString } = await hashPassword(data.password || 'password123');
+
     const newUser: User = {
       id: newUserId,
       name: data.name.trim(),
       username: cleanUsername,
       email: data.email.trim().toLowerCase(),
-      password: data.password || 'password123',
+      password: hashString,
       role: 'user',
       avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanUsername}`,
       headline: 'Digital Identity & NFC Smart Card Owner',
@@ -1068,6 +1082,15 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Telemetry & Logs
   const logAnalyticsEvent = (eventData: Omit<AnalyticsEvent, 'id' | 'timestamp'>) => {
+    // Rate-limiting / deduplication: throttle duplicate telemetry events to 1 per 5 seconds per target
+    const throttleKey = `${eventData.eventType}_${eventData.profileId || ''}_${eventData.cardId || ''}_${eventData.linkId || ''}`;
+    const nowMs = Date.now();
+    const lastEventTime = telemetryCooldownsRef.current.get(throttleKey) || 0;
+    if (nowMs - lastEventTime < 5000) {
+      return;
+    }
+    telemetryCooldownsRef.current.set(throttleKey, nowMs);
+
     const newEvent: AnalyticsEvent = {
       ...eventData,
       id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -1197,7 +1220,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // User Registration
-  const registerUser = (data: { name: string; username: string; email: string; password?: string }): { success: boolean; user?: User; message: string } => {
+  const registerUser = async (data: { name: string; username: string; email: string; password?: string }): Promise<{ success: boolean; user?: User; message: string }> => {
     const cleanUsername = data.username.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '');
     const cleanEmail = data.email.toLowerCase().trim();
 
@@ -1212,12 +1235,15 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: false, message: 'An account with this email or username already exists.' };
     }
 
+    // Hash password with salted PBKDF2 Web Crypto API
+    const { hashString } = await hashPassword(data.password || 'password123');
+
     const newUser: User = {
       id: `usr_${Date.now()}`,
       name: data.name.trim() || 'TapIt User',
       username: cleanUsername,
       email: cleanEmail,
-      password: data.password || 'password123',
+      password: hashString,
       role: 'user',
       avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanUsername}`,
       headline: 'TapIt Smart Identity Owner',

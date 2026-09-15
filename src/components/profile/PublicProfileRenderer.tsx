@@ -36,6 +36,7 @@ import { downloadVCard } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { THEME_PRESETS } from '../../data/themes';
 import { ProfileThemeConfig } from '../../types';
+import { sanitizeUrl } from '../../utils/crypto';
 
 interface PublicProfileRendererProps {
   profile: Profile;
@@ -164,7 +165,7 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
           >
             {profile.avatar ? (
               <img
-                src={profile.avatar}
+                src={sanitizeUrl(profile.avatar, '')}
                 alt={profile.displayName || 'Profile'}
                 className="w-full h-full rounded-full object-cover border-2 border-slate-900"
               />
@@ -227,7 +228,7 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
             )}
             {profile.website && (
               <a
-                href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                href={sanitizeUrl(profile.website)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 hover:underline"
@@ -254,14 +255,22 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
             No active links added yet.
           </div>
         ) : (
-          activeLinks.map((link) => (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => onLinkClick && onLinkClick(link)}
-              className={`w-full p-3.5 flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold transition-all duration-200 group hover:scale-[1.02] active:scale-[0.98] ${getButtonShapeClass()}`}
+          activeLinks.map((link) => {
+            const safeHref = sanitizeUrl(link.url);
+            return (
+              <a
+                key={link.id}
+                href={safeHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (safeHref === '#') {
+                    e.preventDefault();
+                    return;
+                  }
+                  onLinkClick && onLinkClick(link);
+                }}
+                className={`w-full p-3.5 flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold transition-all duration-200 group hover:scale-[1.02] active:scale-[0.98] ${getButtonShapeClass()}`}
               style={{
                 backgroundColor: theme.cardBg,
                 border: `1px solid ${theme.cardBorder}`,
@@ -279,40 +288,41 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
               </div>
               <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
             </a>
-          ))
-        )}
+          );
+        })
+      )}
       </div>
 
       {/* Social Media Footer Bar */}
       {profile.socials && Object.values(profile.socials).some(Boolean) && (
         <div className="flex items-center justify-center gap-3 flex-wrap my-3">
           {profile.socials.linkedin && (
-            <a href={profile.socials.linkedin} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
+            <a href={sanitizeUrl(profile.socials.linkedin)} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
               <Linkedin className="w-4 h-4" />
             </a>
           )}
           {profile.socials.github && (
-            <a href={profile.socials.github} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
+            <a href={sanitizeUrl(profile.socials.github)} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
               <Github className="w-4 h-4" />
             </a>
           )}
           {profile.socials.twitter && (
-            <a href={profile.socials.twitter} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
+            <a href={sanitizeUrl(profile.socials.twitter)} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
               <Twitter className="w-4 h-4" />
             </a>
           )}
           {profile.socials.instagram && (
-            <a href={profile.socials.instagram} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
+            <a href={sanitizeUrl(profile.socials.instagram)} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
               <Instagram className="w-4 h-4" />
             </a>
           )}
           {profile.socials.youtube && (
-            <a href={profile.socials.youtube} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
+            <a href={sanitizeUrl(profile.socials.youtube)} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
               <Youtube className="w-4 h-4" />
             </a>
           )}
           {profile.socials.spotify && (
-            <a href={profile.socials.spotify} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
+            <a href={sanitizeUrl(profile.socials.spotify)} target="_blank" rel="noreferrer" className="p-2 rounded-full hover:scale-110 transition" style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}>
               <Music className="w-4 h-4" />
             </a>
           )}

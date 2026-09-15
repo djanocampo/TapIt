@@ -6,6 +6,9 @@ import { Button } from '../../components/ui/Button';
 import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import tapItLogo from '../../assets/tapit-logo.png';
 import { INITIAL_ADMIN } from '../../data/mockData';
+import { verifyPassword, hashPassword } from '../../utils/crypto';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { mapDBToUser } from '../../services/dualLayerSync';
 
 export const LoginPage: React.FC = () => {
   const { login, allUsers, setActiveProfileId, profiles } = useTapIt();
@@ -21,13 +24,14 @@ export const LoginPage: React.FC = () => {
     setErrorMessage('');
     setIsLoading(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const cleanInput = identifier.trim().toLowerCase();
       const cleanPass = password.trim();
 
       // 1. Admin Verification
       if (cleanInput === 'admin' || cleanInput === 'admin@tapit.app') {
-        if (cleanPass === 'admin123' || cleanPass === 'admin' || cleanPass === INITIAL_ADMIN.password) {
+        const isAdminMatch = await verifyPassword(cleanPass, INITIAL_ADMIN.password);
+        if (isAdminMatch) {
           login(INITIAL_ADMIN, 'admin');
           setIsLoading(false);
           navigate('/admin');
@@ -40,25 +44,62 @@ export const LoginPage: React.FC = () => {
       }
 
       // 2. User Verification
-      const matchedUser = allUsers.find(
+      let targetUser = allUsers.find(
         u => u.email.toLowerCase() === cleanInput || u.username.toLowerCase() === cleanInput
       );
+      let passwordToVerify = targetUser?.password;
 
-      if (!matchedUser) {
+      // Authoritative single-user lookup from Supabase if configured
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: remoteRow, error } = await supabase
+            .from('users')
+            .select('*')
+            .or(`email.ilike.${cleanInput},username.ilike.${cleanInput}`)
+            .maybeSingle();
+
+          if (!error && remoteRow) {
+            targetUser = mapDBToUser(remoteRow);
+            passwordToVerify = remoteRow.password_hash;
+          }
+        } catch (e) {
+          console.warn('[Login] Remote user lookup exception:', e);
+        }
+      }
+
+      if (!targetUser) {
         setIsLoading(false);
         setErrorMessage('No account found with this email or username. Please check your credentials or register.');
         return;
       }
 
-      // If user has a password set, verify it
-      if (matchedUser.password && cleanPass !== matchedUser.password && cleanPass !== 'password123') {
-        setIsLoading(false);
-        setErrorMessage('Incorrect password. Please try again.');
-        return;
+      // If user has a password set, verify it securely (no backdoor bypass)
+      if (passwordToVerify) {
+        const isUserMatch = await verifyPassword(cleanPass, passwordToVerify);
+        if (!isUserMatch) {
+          setIsLoading(false);
+          setErrorMessage('Incorrect password. Please try again.');
+          return;
+        }
+
+        // Security Auto-Upgrade: If the password in DB is still plaintext, upgrade it to salted PBKDF2
+        if (!passwordToVerify.startsWith('pbkdf2$')) {
+          void (async () => {
+            try {
+              const { hashString } = await hashPassword(cleanPass);
+              targetUser!.password = hashString;
+              if (isSupabaseConfigured()) {
+                await supabase.from('users').update({ password_hash: hashString }).eq('id', targetUser!.id);
+              }
+            } catch (err) {
+              console.warn('Password hash upgrade warning:', err);
+            }
+          })();
+        }
       }
 
-      login(matchedUser, 'user');
-      const userProfile = profiles.find(p => p.userId === matchedUser.id);
+      login(targetUser, 'user');
+      const userProfile = profiles.find(p => p.userId === targetUser?.id);
       if (userProfile) {
         setActiveProfileId(userProfile.id);
       }

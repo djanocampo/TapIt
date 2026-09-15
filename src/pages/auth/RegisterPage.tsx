@@ -37,20 +37,25 @@ export const RegisterPage: React.FC = () => {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const res = registerUser({
-        name,
-        email,
-        username: cleanUser,
-        password,
-      });
+    setTimeout(async () => {
+      try {
+        const res = await registerUser({
+          name,
+          email,
+          username: cleanUser,
+          password,
+        });
 
-      setIsLoading(false);
-      if (res.success) {
-        triggerConfetti();
-        navigate('/dashboard');
-      } else {
-        setErrorMessage(res.message);
+        setIsLoading(false);
+        if (res.success) {
+          triggerConfetti();
+          navigate('/dashboard');
+        } else {
+          setErrorMessage(res.message);
+        }
+      } catch (err) {
+        setIsLoading(false);
+        setErrorMessage('An unexpected error occurred during registration.');
       }
     }, 400);
   };

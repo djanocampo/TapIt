@@ -21,12 +21,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirectPath || '/login'} replace state={{ from: location }} />;
   }
 
+  // Security: Prevent privilege escalation from client-side localStorage tampering.
+  // Only grant admin access if currentUser genuinely possesses the admin role.
+  const isGenuineAdmin = currentUser.role === 'admin' || currentUser.id === 'usr_admin_001';
+  const verifiedRole: UserRole = (currentRole === 'admin' && isGenuineAdmin) ? 'admin' : 'user';
+
   // If user role is not permitted (e.g. Admin accessing /dashboard, or User accessing /admin)
-  if (!allowedRoles.includes(currentRole)) {
-    if (currentRole === 'admin') {
+  if (!allowedRoles.includes(verifiedRole)) {
+    if (verifiedRole === 'admin') {
       return <Navigate to="/admin" replace state={{ from: location, unauthorized: true }} />;
     }
-    if (currentRole === 'user') {
+    if (verifiedRole === 'user') {
       return <Navigate to="/dashboard" replace state={{ from: location, unauthorized: true }} />;
     }
     return <Navigate to={redirectPath || '/login'} replace state={{ from: location }} />;
