@@ -115,7 +115,7 @@ export const LoginPage: React.FC = () => {
         }
       }
 
-      login(targetUser, 'user');
+      login(targetUser, targetUser.role || 'user');
       const userProfile = profiles.find(p => p.userId === targetUser?.id);
       if (userProfile) {
         setActiveProfileId(userProfile.id);

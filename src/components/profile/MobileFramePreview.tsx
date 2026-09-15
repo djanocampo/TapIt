@@ -17,7 +17,7 @@ export const MobileFramePreview: React.FC<MobileFramePreviewProps> = ({
   onOpenShare,
 }) => {
   return (
-    <div className={`relative mx-auto w-[320px] sm:w-[350px] aspect-[9/19.5] rounded-[48px] p-3.5 bg-slate-950 border-[6px] border-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col ${className}`}>
+    <div className={`relative mx-auto w-[320px] sm:w-[350px] max-w-full aspect-[9/19.5] rounded-[48px] p-3.5 bg-slate-950 border-[6px] border-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col ${className || ''}`}>
       {/* Top Notch / Dynamic Island */}
       <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-30 flex items-center justify-between px-3">
         <div className="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800"></div>
