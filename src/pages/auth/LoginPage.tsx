@@ -75,7 +75,24 @@ export const LoginPage: React.FC = () => {
 
       // If user has a password set, verify it securely (no backdoor bypass)
       if (passwordToVerify) {
-        const isUserMatch = await verifyPassword(cleanPass, passwordToVerify);
+        let isUserMatch = false;
+
+        // 1. If stored as bcrypt ($2a$ or $2b$) from pgcrypto crypt(), verify via Supabase RPC
+        if (passwordToVerify.startsWith('$2') && isSupabaseConfigured()) {
+          try {
+            const { data: rpcRes } = await supabase.rpc('verify_user_password', {
+              identifier: cleanInput,
+              candidate_password: cleanPass,
+            });
+            isUserMatch = Boolean(rpcRes?.success);
+          } catch {
+            isUserMatch = false;
+          }
+        } else {
+          // 2. Standard salted PBKDF2 or legacy verify
+          isUserMatch = await verifyPassword(cleanPass, passwordToVerify);
+        }
+
         if (!isUserMatch) {
           setIsLoading(false);
           setErrorMessage('Incorrect password. Please try again.');

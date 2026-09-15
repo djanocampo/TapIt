@@ -388,6 +388,49 @@ CREATE POLICY "system_settings_write_policy" ON public.system_settings
   FOR ALL USING (true) WITH CHECK (true);
 
 -- ==============================================================================
+-- 10. SECURE CREDENTIAL VERIFICATION RPC (Supports bcrypt $2a$ and legacy hashes)
+-- ==============================================================================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE OR REPLACE FUNCTION public.verify_user_password(
+  identifier TEXT,
+  candidate_password TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  v_user RECORD;
+BEGIN
+  SELECT * INTO v_user
+  FROM public.users
+  WHERE LOWER(email) = LOWER(TRIM(identifier))
+     OR LOWER(username) = LOWER(TRIM(identifier))
+  LIMIT 1;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'message', 'No account found.');
+  END IF;
+
+  -- 1. Verify bcrypt ($2a$ or $2b$) hashes generated via pgcrypto
+  IF v_user.password_hash LIKE '$2%' THEN
+    IF v_user.password_hash = crypt(candidate_password, v_user.password_hash) THEN
+      RETURN jsonb_build_object('success', true);
+    END IF;
+  END IF;
+
+  -- 2. Verify exact plaintext fallback
+  IF v_user.password_hash = candidate_password THEN
+    RETURN jsonb_build_object('success', true);
+  END IF;
+
+  RETURN jsonb_build_object('success', false);
+END;
+$$;
+
+-- ==============================================================================
 -- SUPABASE REALTIME REPLICATION PUBLICATION (Idempotent Safe Block)
 -- Enables live multi-device syncing via websocket postgres_changes listeners
 -- ==============================================================================

@@ -110,10 +110,19 @@ export function sanitizeUrl(url: string | undefined | null, fallback: string = '
   const lower = trimmed.toLowerCase();
   if (
     lower.startsWith('javascript:') ||
-    lower.startsWith('data:') ||
     lower.startsWith('vbscript:') ||
     lower.includes('script:')
   ) {
+    return fallback;
+  }
+
+  // Allow safe inline image data URLs (e.g. base64 avatars)
+  if (lower.startsWith('data:image/')) {
+    return trimmed;
+  }
+
+  // Block any other data: schemes (such as data:text/html)
+  if (lower.startsWith('data:')) {
     return fallback;
   }
 
