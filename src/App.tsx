@@ -81,6 +81,7 @@ export const App: React.FC = () => {
               <Route path="/INV-:token" element={<InviteRegistrationPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             </Route>
 
             {/* NFC Hardware Interceptor & Card Routes */}

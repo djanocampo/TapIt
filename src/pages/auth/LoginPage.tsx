@@ -182,7 +182,7 @@ export const LoginPage: React.FC = () => {
                 />
                 <span>Remember me</span>
               </label>
-              <Link to="/register" className="text-cyan-400 text-xs hover:underline">
+              <Link to="/forgot-password" className="text-cyan-400 text-xs hover:underline">
                 Forgot password?
               </Link>
             </div>

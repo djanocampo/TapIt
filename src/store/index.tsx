@@ -10,7 +10,8 @@ import {
   NotificationItem, 
   SystemSettings, 
   CardMaterial, 
-  UserInvite 
+  UserInvite,
+  PasswordResetToken
 } from '../types';
 import { 
   INITIAL_ADMIN, 
@@ -41,10 +42,14 @@ import {
   bindCardToUser,
   upsertSingleUser,
   upsertSingleProfile,
-  upsertSingleQRCode
+  upsertSingleQRCode,
+  syncSinglePasswordResetToSupabase,
+  updateSupabaseUserPassword,
+  mapDBToUser,
+  mapDBToPasswordReset
 } from '../services/dualLayerSync';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { hashPassword, generateSecureToken } from '../utils/crypto';
+import { hashPassword, verifyPassword, generateSecureToken } from '../utils/crypto';
 
 export interface RemoteHydrationPayload {
   users?: User[];
@@ -124,6 +129,13 @@ interface TapItContextType {
   completeInviteRegistration: (inviteToken: string, data: { name: string; username: string; email: string; password?: string }) => Promise<{ success: boolean; user?: User; message: string }>;
   registerUser: (data: { name: string; username: string; email: string; password?: string }) => Promise<{ success: boolean; user?: User; message: string }>;
 
+  // Password Reset Actions
+  passwordResets: PasswordResetToken[];
+  requestPasswordReset: (identifier: string) => Promise<{ success: boolean; message: string; resetUrl?: string; token?: string }>;
+  verifyResetToken: (token: string) => Promise<{ valid: boolean; message?: string; email?: string; userId?: string }>;
+  resetPasswordWithToken: (token: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
+  updateUserPassword: (userId: string, currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
+
   // QR Actions
   updateQRCode: (id: string, updates: Partial<QRCodeItem>) => void;
   recordQRScan: (profileId: string) => void;
@@ -202,6 +214,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => loadStoredData('systemSettings', INITIAL_SYSTEM_SETTINGS));
   const [allUsers, setAllUsers] = useState<User[]>(() => loadStoredData('allUsers', ADMIN_USERS_LIST));
   const [invites, setInvites] = useState<UserInvite[]>(() => loadStoredData('invites', []));
+  const [passwordResets, setPasswordResets] = useState<PasswordResetToken[]>(() => loadStoredData('passwordResets', []));
 
   // Simulator modal state
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
@@ -224,10 +237,11 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem(`${STORAGE_KEY}_systemSettings`, JSON.stringify(systemSettings));
       localStorage.setItem(`${STORAGE_KEY}_allUsers`, JSON.stringify(allUsers));
       localStorage.setItem(`${STORAGE_KEY}_invites`, JSON.stringify(invites));
+      localStorage.setItem(`${STORAGE_KEY}_passwordResets`, JSON.stringify(passwordResets));
     } catch (e) {
       console.warn('Storage sync error:', e);
     }
-  }, [currentRole, activeProfileId, profiles, links, cards, qrCodes, analyticsEvents, notifications, systemSettings, allUsers, invites]);
+  }, [currentRole, activeProfileId, profiles, links, cards, qrCodes, analyticsEvents, notifications, systemSettings, allUsers, invites, passwordResets]);
 
   // Auth & Session
   const login = (user: User, role: UserRole) => {
@@ -1305,6 +1319,220 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return { success: true, user: newUser, message: 'Account registered successfully!' };
   };
 
+  // ----------------------------------------------------------------------------
+  // Password Reset Operations
+  // ----------------------------------------------------------------------------
+  const requestPasswordReset = async (
+    identifier: string
+  ): Promise<{ success: boolean; message: string; resetUrl?: string; token?: string }> => {
+    const clean = identifier.toLowerCase().trim();
+    if (!clean) {
+      return { success: false, message: 'Please enter your account email address or username.' };
+    }
+
+    // 1. Check local state
+    let targetUser = allUsers.find(
+      u => u.email.toLowerCase() === clean || u.username.toLowerCase() === clean
+    );
+
+    // 2. Authoritative check in Supabase if configured
+    if (!targetUser && isSupabaseConfigured()) {
+      try {
+        const { data: remoteRow, error } = await supabase
+          .from('users')
+          .select('*')
+          .or(`email.ilike.${clean},username.ilike.${clean}`)
+          .maybeSingle();
+
+        if (!error && remoteRow) {
+          targetUser = mapDBToUser(remoteRow);
+        }
+      } catch (err) {
+        console.warn('[PasswordReset] Remote user lookup note:', err);
+      }
+    }
+
+    if (!targetUser) {
+      return {
+        success: false,
+        message: 'No account found matching this email or username. Please check your spelling or create a new account.'
+      };
+    }
+
+    const token = generateSecureToken('rst', 16);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour validity
+    const newReset: PasswordResetToken = {
+      id: `pr_${Date.now()}`,
+      token,
+      userId: targetUser.id,
+      email: targetUser.email,
+      expiresAt,
+      used: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    setPasswordResets(prev => [newReset, ...prev.filter(r => r.token !== token)]);
+    void syncSinglePasswordResetToSupabase(newReset);
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    const resetUrl = `${origin}/reset-password?token=${token}`;
+
+    return {
+      success: true,
+      message: 'Password reset link generated successfully.',
+      resetUrl,
+      token,
+    };
+  };
+
+  const verifyResetToken = async (
+    token: string
+  ): Promise<{ valid: boolean; message?: string; email?: string; userId?: string }> => {
+    if (!token || !token.trim()) {
+      return { valid: false, message: 'No reset token provided in the URL.' };
+    }
+    const cleanToken = token.trim();
+
+    // 1. Search in local state
+    let record = passwordResets.find(r => r.token === cleanToken);
+
+    // 2. If not found locally and Supabase configured, check remote
+    if (!record && isSupabaseConfigured()) {
+      try {
+        const { data: remoteRow, error } = await supabase
+          .from('password_resets')
+          .select('*')
+          .eq('token', cleanToken)
+          .maybeSingle();
+
+        if (!error && remoteRow) {
+          record = mapDBToPasswordReset(remoteRow);
+        }
+      } catch (err) {
+        console.warn('[PasswordReset] Remote token lookup note:', err);
+      }
+    }
+
+    if (!record) {
+      return { valid: false, message: 'This password reset link is invalid or has expired.' };
+    }
+
+    if (record.used) {
+      return { valid: false, message: 'This password reset link has already been used. Please request a new one.' };
+    }
+
+    if (new Date(record.expiresAt).getTime() < Date.now()) {
+      return { valid: false, message: 'This password reset link has expired. Please request a new one.' };
+    }
+
+    return {
+      valid: true,
+      email: record.email,
+      userId: record.userId,
+    };
+  };
+
+  const resetPasswordWithToken = async (
+    token: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const verification = await verifyResetToken(token);
+    if (!verification.valid || !verification.userId) {
+      return { success: false, message: verification.message || 'Invalid or expired reset token.' };
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, message: 'Password must be at least 6 characters long.' };
+    }
+
+    const { hashString } = await hashPassword(newPassword);
+    const cleanToken = token.trim();
+
+    // Mark token as used
+    setPasswordResets(prev =>
+      prev.map(r => (r.token === cleanToken ? { ...r, used: true } : r))
+    );
+    void syncSinglePasswordResetToSupabase({
+      id: `pr_${cleanToken}`,
+      token: cleanToken,
+      userId: verification.userId,
+      email: verification.email || '',
+      expiresAt: new Date().toISOString(),
+      used: true,
+      createdAt: new Date().toISOString(),
+    });
+
+    // Update user password in allUsers
+    setAllUsers(prev =>
+      prev.map(u => (u.id === verification.userId ? { ...u, password: hashString } : u))
+    );
+
+    // If currently logged in user matches, update session password
+    if (currentUser && currentUser.id === verification.userId) {
+      setCurrentUser(prev => ({ ...prev, password: hashString }));
+    }
+
+    // Update in Supabase
+    void updateSupabaseUserPassword(verification.userId, hashString);
+
+    return { success: true, message: 'Your password has been successfully updated.' };
+  };
+
+  const updateUserPassword = async (
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> => {
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, message: 'New password must be at least 6 characters long.' };
+    }
+
+    let targetUser = allUsers.find(u => u.id === userId);
+    if (!targetUser && currentUser.id === userId) {
+      targetUser = currentUser;
+    }
+
+    if (!targetUser) {
+      return { success: false, message: 'User account not found.' };
+    }
+
+    // If user has existing password, verify it
+    if (targetUser.password) {
+      let isMatch = false;
+      if (targetUser.password.startsWith('$2') && isSupabaseConfigured()) {
+        try {
+          const { data: rpcRes } = await supabase.rpc('verify_user_password', {
+            identifier: targetUser.username,
+            candidate_password: currentPassword,
+          });
+          isMatch = Boolean(rpcRes?.success);
+        } catch {
+          isMatch = false;
+        }
+      } else {
+        isMatch = await verifyPassword(currentPassword, targetUser.password);
+      }
+
+      if (!isMatch) {
+        return { success: false, message: 'Incorrect current password. Please check your credentials.' };
+      }
+    }
+
+    const { hashString } = await hashPassword(newPassword);
+
+    setAllUsers(prev =>
+      prev.map(u => (u.id === userId ? { ...u, password: hashString } : u))
+    );
+
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(prev => ({ ...prev, password: hashString }));
+    }
+
+    void updateSupabaseUserPassword(userId, hashString);
+
+    return { success: true, message: 'Password updated successfully.' };
+  };
+
   // Remote Hydration callback from BackendSyncInit
   const hydrateFromRemote = (payload: RemoteHydrationPayload) => {
     if (payload.users !== undefined && payload.users.length > 0) setAllUsers(payload.users);
@@ -1476,6 +1704,12 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         getInviteByToken,
         completeInviteRegistration,
         registerUser,
+
+        passwordResets,
+        requestPasswordReset,
+        verifyResetToken,
+        resetPasswordWithToken,
+        updateUserPassword,
 
         updateQRCode,
         recordQRScan,

@@ -20,7 +20,9 @@ import {
   LogOut,
   HardDrive,
   Trash2,
-  RotateCw
+  RotateCw,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 
@@ -29,6 +31,7 @@ export const SettingsPage: React.FC = () => {
   const { 
     currentUser, 
     updateCurrentUser,
+    updateUserPassword,
     resetAllData, 
     clearLocalStorageCache, 
     reloadFromStorage, 
@@ -46,6 +49,9 @@ export const SettingsPage: React.FC = () => {
 
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
+  const [passLoading, setPassLoading] = useState(false);
+  const [passSuccess, setPassSuccess] = useState('');
+  const [passError, setPassError] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
 
@@ -254,6 +260,20 @@ export const SettingsPage: React.FC = () => {
           Security & Password
         </h3>
 
+        {passSuccess && (
+          <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{passSuccess}</span>
+          </div>
+        )}
+
+        {passError && (
+          <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{passError}</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Current Password"
@@ -265,7 +285,7 @@ export const SettingsPage: React.FC = () => {
           <Input
             label="New Password"
             type="password"
-            placeholder="New Password"
+            placeholder="New Password (min 6 chars)"
             value={newPass}
             onChange={(e) => setNewPass(e.target.value)}
           />
@@ -275,10 +295,41 @@ export const SettingsPage: React.FC = () => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => {
-              alert('Password updated successfully.');
-              setCurrentPass('');
-              setNewPass('');
+            isLoading={passLoading}
+            onClick={async () => {
+              setPassError('');
+              setPassSuccess('');
+
+              if (!currentPass.trim()) {
+                setPassError('Please enter your current password.');
+                return;
+              }
+              if (!newPass.trim() || newPass.length < 6) {
+                setPassError('New password must be at least 6 characters long.');
+                return;
+              }
+              if (currentPass === newPass) {
+                setPassError('New password must be different from your current password.');
+                return;
+              }
+
+              setPassLoading(true);
+              try {
+                const res = await updateUserPassword(currentUser.id, currentPass, newPass);
+                setPassLoading(false);
+                if (res.success) {
+                  setPassSuccess(res.message);
+                  setCurrentPass('');
+                  setNewPass('');
+                  triggerConfetti();
+                  setTimeout(() => setPassSuccess(''), 5000);
+                } else {
+                  setPassError(res.message);
+                }
+              } catch {
+                setPassLoading(false);
+                setPassError('An unexpected error occurred while updating your password.');
+              }
             }}
           >
             Update Password

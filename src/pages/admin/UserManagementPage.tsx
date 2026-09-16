@@ -33,15 +33,21 @@ import {
   HandMetal,
   RotateCw,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  KeyRound
 } from 'lucide-react';
 import { formatRelativeTime, triggerConfetti } from '../../lib/utils';
 
 export const UserManagementPage: React.FC = () => {
-  const { allUsers, toggleUserStatus, createInvite, deleteUser } = useTapIt();
+  const { allUsers, toggleUserStatus, createInvite, deleteUser, requestPasswordReset } = useTapIt();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+
+  // Password Reset Link Modal State
+  const [resetUser, setResetUser] = useState<User | null>(null);
+  const [resetUrl, setResetUrl] = useState('');
+  const [isResetCopied, setIsResetCopied] = useState(false);
 
   // Wizard Modal State
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -418,6 +424,22 @@ export const UserManagementPage: React.FC = () => {
                       >
                         {user.status === 'active' ? 'Suspend' : 'Reactivate'}
                       </Button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const res = await requestPasswordReset(user.email);
+                          if (res.success && res.resetUrl) {
+                            setResetUser(user);
+                            setResetUrl(res.resetUrl);
+                            setIsResetCopied(false);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/25 text-cyan-400 border border-cyan-500/20 hover:border-cyan-500/40 transition shadow-sm"
+                        title="Generate Password Reset Link"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                      </button>
 
                       {user.role !== 'admin' && user.id !== 'usr_admin_001' && (
                         <button
@@ -837,6 +859,88 @@ export const UserManagementPage: React.FC = () => {
                 }}
               >
                 Confirm Delete User
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* =========================================================
+          ADMIN PASSWORD RESET LINK MODAL
+         ========================================================= */}
+      <Modal
+        isOpen={Boolean(resetUser && resetUrl)}
+        onClose={() => {
+          setResetUser(null);
+          setResetUrl('');
+        }}
+        title="Password Reset Link Generated"
+        description={`Secure one-time recovery token created for ${resetUser?.name || 'User'}`}
+        maxWidth="md"
+      >
+        {resetUser && (
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 text-xs text-cyan-300 space-y-1">
+              <p className="font-bold text-white flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                <span>Single-Use Reset Token (Valid for 1 hour)</span>
+              </p>
+              <p className="text-slate-300 text-[11px]">
+                Target account: <strong className="text-white">{resetUser.name}</strong> ({resetUser.email} / @{resetUser.username})
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Secure Reset Link:
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={resetUrl}
+                  className="flex-1 bg-[#050c18] border border-cyan-500/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-cyan-300 focus:outline-none select-all"
+                />
+                <Button
+                  variant="glow"
+                  size="md"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(resetUrl);
+                      setIsResetCopied(true);
+                      setTimeout(() => setIsResetCopied(false), 2500);
+                    } catch {
+                      setIsResetCopied(true);
+                      setTimeout(() => setIsResetCopied(false), 2500);
+                    }
+                  }}
+                  leftIcon={isResetCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                >
+                  {isResetCopied ? 'Copied!' : 'Copy Link'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
+              <a
+                href={resetUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+              >
+                <span>Open Reset Page</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setResetUser(null);
+                  setResetUrl('');
+                }}
+              >
+                Close
               </Button>
             </div>
           </div>

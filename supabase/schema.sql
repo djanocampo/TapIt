@@ -204,6 +204,20 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ------------------------------------------------------------------------------
+-- 10. PASSWORD RESETS & ACCOUNT RECOVERY
+-- Time-limited cryptographic tokens for secure user password resets
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.password_resets (
+  id TEXT PRIMARY KEY,
+  token TEXT UNIQUE NOT NULL,
+  user_id TEXT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- DATABASE INDEXING SPECIFICATION (DATABASE_INDEXING.md COMPLIANCE)
 -- ==============================================================================
@@ -221,6 +235,7 @@ CREATE INDEX IF NOT EXISTS idx_analytics_card_id ON public.analytics_events(card
 CREATE INDEX IF NOT EXISTS idx_analytics_link_id ON public.analytics_events(link_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON public.notifications(recipient_user_id);
 CREATE INDEX IF NOT EXISTS idx_user_invites_used_by ON public.user_invites(used_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_password_resets_user_id ON public.password_resets(user_id);
 
 -- ------------------------------------------------------------------------------
 -- B. UNIQUE & HIGH-CARDINALITY ROUTING LOOKUPS
@@ -231,6 +246,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_slug ON public.profiles(slug);
 CREATE INDEX IF NOT EXISTS idx_nfc_cards_token ON public.nfc_cards(card_token);
 CREATE INDEX IF NOT EXISTS idx_qr_codes_token ON public.qr_codes(token);
 CREATE INDEX IF NOT EXISTS idx_user_invites_token ON public.user_invites(invite_token);
+CREATE INDEX IF NOT EXISTS idx_password_resets_token ON public.password_resets(token);
 
 -- ------------------------------------------------------------------------------
 -- C. COMPOSITE B-TREE INDEXES (Equality first, Range / Sort second)
@@ -478,6 +494,11 @@ BEGIN
 
   BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.system_settings;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.password_resets;
   EXCEPTION WHEN duplicate_object THEN NULL;
   END;
 END $$;

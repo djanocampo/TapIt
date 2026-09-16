@@ -9,7 +9,8 @@ import {
   AnalyticsEvent, 
   UserInvite, 
   NotificationItem, 
-  SystemSettings 
+  SystemSettings,
+  PasswordResetToken 
 } from '../types';
 import { THEME_PRESETS } from '../data/themes';
 
@@ -942,5 +943,59 @@ export function subscribeToRealtimeChanges(onDataChange: () => void): () => void
   } catch (err) {
     console.warn('[Supabase Realtime] Channel subscription warning:', err);
     return () => {};
+  }
+}
+
+// ------------------------------------------------------------------------------
+// PASSWORD RESET SYNC HELPERS (Non-blocking Layer 2 persistence)
+// ------------------------------------------------------------------------------
+export const mapPasswordResetToDB = (pr: PasswordResetToken) => ({
+  id: pr.id,
+  token: pr.token,
+  user_id: pr.userId,
+  email: pr.email,
+  expires_at: pr.expiresAt,
+  used: pr.used,
+  created_at: pr.createdAt,
+});
+
+export const mapDBToPasswordReset = (r: any): PasswordResetToken => ({
+  id: r.id,
+  token: r.token,
+  userId: r.user_id,
+  email: r.email,
+  expiresAt: r.expires_at,
+  used: Boolean(r.used),
+  createdAt: r.created_at,
+});
+
+export async function syncSinglePasswordResetToSupabase(resetToken: PasswordResetToken): Promise<boolean> {
+  if (!isSupabaseConfigured()) return true;
+  try {
+    const row = mapPasswordResetToDB(resetToken);
+    const { error } = await supabase.from('password_resets').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.warn('[Supabase Sync] password_resets note:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[Supabase Sync] password_resets network note:', err);
+    return false;
+  }
+}
+
+export async function updateSupabaseUserPassword(userId: string, passwordHash: string): Promise<boolean> {
+  if (!isSupabaseConfigured()) return true;
+  try {
+    const { error } = await supabase.from('users').update({ password_hash: passwordHash }).eq('id', userId);
+    if (error) {
+      console.error('[Supabase Sync] Failed to update user password in users table:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[Supabase Sync] Network error updating user password:', err);
+    return false;
   }
 }

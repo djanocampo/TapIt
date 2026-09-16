@@ -26,6 +26,16 @@ export interface UserInvite {
   usedByUserId?: string;
 }
 
+export interface PasswordResetToken {
+  id: string;
+  token: string;
+  userId: string;
+  email: string;
+  expiresAt: string;
+  used: boolean;
+  createdAt: string;
+}
+
 export type ThemeStyle = 
   | 'minimal-dark'
   | 'cyberpunk-neon'
