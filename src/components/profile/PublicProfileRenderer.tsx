@@ -32,6 +32,7 @@ import {
   LogIn
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTapIt } from '../../store';
 import { downloadVCard } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { THEME_PRESETS } from '../../data/themes';
@@ -86,6 +87,39 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
   const activeLinks = links
     .filter((l) => l.profileId === profile.id && l.isActive)
     .sort((a, b) => a.position - b.position);
+
+  const { allProfiles, allUsers } = useTapIt();
+
+  // Dynamically resolve user djanocampo's personal profile URL
+  const djanPersonalUrl = React.useMemo(() => {
+    // 1. Search for user djanocampo in allUsers
+    const djanUser = allUsers.find(
+      (u) => u.username?.toLowerCase() === 'djanocampo'
+    );
+    if (djanUser) {
+      const userProfs = allProfiles.filter((p) => p.userId === djanUser.id);
+      const personalProf = userProfs.find(
+        (p) =>
+          p.name?.toLowerCase() === 'personal' ||
+          p.name?.toLowerCase().includes('personal') ||
+          p.slug?.toLowerCase().includes('personal')
+      );
+      if (personalProf) return `/@${personalProf.slug}`;
+      const activeOrFirst = userProfs.find((p) => p.isActive) || userProfs[0];
+      if (activeOrFirst) return `/@${activeOrFirst.slug}`;
+    }
+
+    // 2. Direct slug or name match in allProfiles
+    const directProf = allProfiles.find(
+      (p) =>
+        p.slug?.toLowerCase() === 'djanocampo' ||
+        (p.name?.toLowerCase() === 'personal' && p.slug?.toLowerCase().includes('djano'))
+    );
+    if (directProf) return `/@${directProf.slug}`;
+
+    // 3. Fallback direct route that connects to djanocampo's personal profile
+    return '/@djanocampo';
+  }, [allProfiles, allUsers]);
 
   // Dynamic button shape classes
   const getButtonShapeClass = () => {
@@ -329,9 +363,10 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
         </div>
       )}
 
-      {/* User Log in Button */}
+      {/* User Actions: Log in & Get your own TapIt */}
       {!isEmbed && (
-        <div className="mt-5 w-full">
+        <div className="mt-5 w-full space-y-2.5">
+          {/* User Log in Button */}
           <Link
             to="/login"
             className={`w-full py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-bold transition duration-200 border ${getButtonShapeClass()} hover:opacity-90 active:scale-[0.99] shadow-sm`}
@@ -343,6 +378,20 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
           >
             <LogIn className="w-3.5 h-3.5" style={{ color: theme.accentColor }} />
             <span>User Log in</span>
+          </Link>
+
+          {/* Get your own TapIt Button */}
+          <Link
+            to={djanPersonalUrl}
+            className={`w-full py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-bold transition duration-200 border ${getButtonShapeClass()} hover:opacity-90 active:scale-[0.99] shadow-sm`}
+            style={{
+              backgroundColor: theme.accentColor ? `${theme.accentColor}18` : 'rgba(6, 182, 212, 0.15)',
+              borderColor: theme.accentColor ? `${theme.accentColor}55` : 'rgba(6, 182, 212, 0.35)',
+              color: theme.textColor || '#ffffff',
+            }}
+          >
+            <Sparkles className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#06b6d4' }} />
+            <span>Get your own TapIt</span>
           </Link>
         </div>
       )}

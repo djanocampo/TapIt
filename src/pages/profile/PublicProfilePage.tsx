@@ -16,13 +16,15 @@ export const PublicProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const source = searchParams.get('src') || 'direct';
 
-  const { allProfiles, allLinks, recordLinkClick, logAnalyticsEvent } = useTapIt();
+  const { allProfiles, allUsers, allLinks, recordLinkClick, logAnalyticsEvent } = useTapIt();
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [remoteProfile, setRemoteProfile] = useState<Profile | null>(null);
   const [remoteLinks, setRemoteLinks] = useState<LinkItem[] | null>(null);
   const [isSearchingRemote, setIsSearchingRemote] = useState(false);
 
-  // Normalize username query (remove @ if present)
+  // Normalize route parameters
+  const userParam = (username || '').replace(/^@/, '').toLowerCase().trim();
+  const slugParam = (profileSlug || '').replace(/^@/, '').toLowerCase().trim();
   const rawIdentifier = (profileSlug || username || '').trim();
   const cleanUsername = rawIdentifier.replace(/^@/, '').toLowerCase();
 
@@ -35,31 +37,137 @@ export const PublicProfilePage: React.FC = () => {
     }
   }, [cleanUsername, rawIdentifier, navigate]);
 
-  // Match profile strictly by slug or id from allProfiles
-  const localMatch = cleanUsername
-    ? allProfiles.find(
+  // Match profile locally from store
+  const localMatch = React.useMemo(() => {
+    if (!cleanUsername) return null;
+
+    // 1. If both username and profileSlug are provided (e.g. /djanocampo/personal)
+    if (userParam && slugParam && userParam !== slugParam) {
+      const user = allUsers.find((u) => u.username.toLowerCase() === userParam);
+      if (user) {
+        const userProfs = allProfiles.filter((p) => p.userId === user.id);
+        const match = userProfs.find(
+          (p) =>
+            p.slug.toLowerCase() === slugParam ||
+            p.name.toLowerCase() === slugParam ||
+            p.name.toLowerCase().includes(slugParam)
+        );
+        if (match) return match;
+      }
+    }
+
+    // 2. Direct slug or ID match
+    const bySlug = allProfiles.find(
+      (p) =>
+        p.slug.toLowerCase() === cleanUsername ||
+        p.id.toLowerCase() === cleanUsername
+    );
+    if (bySlug) return bySlug;
+
+    // 3. Fallback: If cleanUsername is a user's username, pick their personal or active profile
+    const user = allUsers.find((u) => u.username.toLowerCase() === cleanUsername);
+    if (user) {
+      const userProfs = allProfiles.filter((p) => p.userId === user.id);
+      const personalProf = userProfs.find(
         (p) =>
-          p.slug.toLowerCase() === cleanUsername ||
-          p.id.toLowerCase() === cleanUsername
-      )
-    : null;
+          p.name.toLowerCase() === 'personal' ||
+          p.name.toLowerCase().includes('personal') ||
+          p.slug.toLowerCase().includes('personal')
+      );
+      if (personalProf) return personalProf;
+      return userProfs.find((p) => p.isActive) || userProfs[0] || null;
+    }
+
+    return null;
+  }, [cleanUsername, userParam, slugParam, allProfiles, allUsers]);
+
+  const localMatchRef = React.useRef(localMatch);
+  localMatchRef.current = localMatch;
 
   // Query Supabase database directly for authoritative remote data
   useEffect(() => {
     let isMounted = true;
+    // Clear previous profile data immediately to avoid stale state flicker on route transitions
+    setRemoteProfile(null);
+    setRemoteLinks(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     if (cleanUsername && isSupabaseConfigured()) {
-      if (!localMatch) setIsSearchingRemote(true);
+      if (!localMatchRef.current) setIsSearchingRemote(true);
       (async () => {
         try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .or(`slug.ilike.${cleanUsername},id.eq.${cleanUsername}`)
-            .limit(1)
-            .maybeSingle();
+          let foundProfileRow: any = null;
 
-          if (!error && data && isMounted) {
-            const parsed = mapDBToProfile(data);
+          // 1. If both user and profile slug are provided (e.g. /djanocampo/personal)
+          if (userParam && slugParam && userParam !== slugParam) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('id')
+              .ilike('username', userParam)
+              .maybeSingle();
+
+            if (userData?.id) {
+              const { data: userProfs } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('user_id', userData.id);
+
+              if (userProfs && userProfs.length > 0) {
+                foundProfileRow =
+                  userProfs.find(
+                    (p: any) =>
+                      p.slug?.toLowerCase() === slugParam ||
+                      p.name?.toLowerCase() === slugParam ||
+                      p.name?.toLowerCase().includes(slugParam)
+                  ) || null;
+              }
+            }
+          }
+
+          // 2. Direct lookup by slug or id
+          if (!foundProfileRow) {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .or(`slug.ilike.${cleanUsername},id.eq.${cleanUsername}`)
+              .limit(1)
+              .maybeSingle();
+
+            if (!error && data) {
+              foundProfileRow = data;
+            }
+          }
+
+          // 3. Fallback: Check if cleanUsername is a user's username
+          if (!foundProfileRow) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('id')
+              .ilike('username', cleanUsername)
+              .maybeSingle();
+
+            if (userData?.id) {
+              const { data: userProfs } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('user_id', userData.id);
+
+              if (userProfs && userProfs.length > 0) {
+                foundProfileRow =
+                  userProfs.find(
+                    (p: any) =>
+                      p.name?.toLowerCase() === 'personal' ||
+                      p.name?.toLowerCase().includes('personal') ||
+                      p.slug?.toLowerCase().includes('personal')
+                  ) ||
+                  userProfs.find((p: any) => p.is_active) ||
+                  userProfs[0];
+              }
+            }
+          }
+
+          if (foundProfileRow && isMounted) {
+            const parsed = mapDBToProfile(foundProfileRow);
             setRemoteProfile(parsed);
 
             const { data: linksData } = await supabase
@@ -84,7 +192,7 @@ export const PublicProfilePage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [cleanUsername]);
+  }, [cleanUsername, userParam, slugParam]);
 
   // Always prioritize whichever record (local live store vs remote fetch) has the latest updatedAt timestamp
   const targetProfile = (localMatch && remoteProfile)
