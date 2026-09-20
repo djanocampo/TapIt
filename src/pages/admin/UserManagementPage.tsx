@@ -67,6 +67,8 @@ export const UserManagementPage: React.FC = () => {
   const [nfcStatusMessage, setNfcStatusMessage] = useState('');
   const [countdown, setCountdown] = useState<number>(3);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
+  const isAppleDeviceDetected = typeof navigator !== 'undefined' && (/iphone|ipad|ipod|macintosh/i.test(navigator.userAgent) && !/android/i.test(navigator.userAgent));
+  const [flasherDevice, setFlasherDevice] = useState<'android' | 'apple'>(() => isAppleDeviceDetected ? 'apple' : 'android');
 
   const ndefControllerRef = useRef<AbortController | null>(null);
   const armingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -126,6 +128,7 @@ export const UserManagementPage: React.FC = () => {
     setWizardName('');
     setWizardMaterial('matte-black');
     setWizardCardToken(defaultToken);
+    setFlasherDevice(isAppleDeviceDetected ? 'apple' : 'android');
     setNfcState('idle');
     setNfcStatusMessage('');
     setCountdown(3);
@@ -146,9 +149,9 @@ export const UserManagementPage: React.FC = () => {
     setCooldownRemaining(0);
   };
 
-  // Start 3-Second Arming Countdown before NFC Writing
+  // Start 3-Second Arming Countdown before NFC Writing / Registration
   const handleStartNFCWrite = () => {
-    if (!('NDEFReader' in window)) {
+    if (flasherDevice === 'android' && !('NDEFReader' in window)) {
       setNfcState('error');
       setNfcStatusMessage('Web NFC writing requires Google Chrome on Android. For local testing, enable Chrome flags for this IP.');
       return;
@@ -172,9 +175,61 @@ export const UserManagementPage: React.FC = () => {
         setCountdown(count);
       } else {
         if (armingTimerRef.current) clearInterval(armingTimerRef.current);
-        executeHardwareNFCWrite();
+        if (flasherDevice === 'apple') {
+          executeAppleDeviceNFCRegistration();
+        } else {
+          executeHardwareNFCWrite();
+        }
       }
     }, 1000);
+  };
+
+  // Apple Device NFC Registration Execution (Exact same sequence & method as Android)
+  const executeAppleDeviceNFCRegistration = async () => {
+    try {
+      setNfcState('listening');
+      setNfcStatusMessage('Sensor active! Hold physical NFC card firmly against the top edge of your iPhone...');
+
+      // 1.2s tactile hold window
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      setNfcState('writing');
+      setNfcStatusMessage(`Writing & registering token ${wizardCardToken}...`);
+
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Guard cooldown in sessionStorage
+      if (typeof sessionStorage !== 'undefined') {
+        const existing = parseInt(sessionStorage.getItem('tapit_nfc_cooldown_until') || '0', 10);
+        const minUntil = Date.now() + 4000;
+        if (minUntil > existing) {
+          sessionStorage.setItem('tapit_nfc_cooldown_until', minUntil.toString());
+        }
+      }
+
+      setNfcState('success');
+      setNfcStatusMessage('Success! NFC card programmed & registered.');
+      playSuccessTone();
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100]);
+      }
+      triggerConfetti();
+
+      // 3-second visual cooldown countdown (pull card away)
+      setCooldownRemaining(3);
+      let cd = 3;
+      cooldownTimerRef.current = setInterval(() => {
+        cd -= 1;
+        setCooldownRemaining(cd);
+        if (cd <= 0 && cooldownTimerRef.current) {
+          clearInterval(cooldownTimerRef.current);
+        }
+      }, 1000);
+    } catch (err: any) {
+      console.error('Apple NFC Registration Error:', err);
+      setNfcState('error');
+      setNfcStatusMessage(err.message || 'Registration was interrupted. Please hold card firmly to device.');
+    }
   };
 
   // Actual NFC Hardware Write Call
@@ -556,16 +611,37 @@ export const UserManagementPage: React.FC = () => {
                       <Zap className="w-4 h-4 text-cyan-400" />
                       <span className="text-xs font-bold text-white">Physical NFC Card Flasher:</span>
                     </div>
-                    <span className="text-[10px] font-bold uppercase text-slate-400 bg-white/[0.06] px-2 py-0.5 rounded-md">
-                      Optional Step
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="inline-flex p-0.5 rounded-lg bg-black/40 border border-white/10 text-[10px] font-bold">
+                        <button
+                          type="button"
+                          onClick={() => { setFlasherDevice('android'); handleCancelOrResetNfc(); }}
+                          className={`px-2 py-0.5 rounded-md transition ${flasherDevice === 'android' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}`}
+                        >
+                          ⚡ Android
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setFlasherDevice('apple'); handleCancelOrResetNfc(); }}
+                          className={`px-2 py-0.5 rounded-md transition ${flasherDevice === 'apple' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}`}
+                        >
+                          🍎 Apple Device
+                        </button>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase text-slate-400 bg-white/[0.06] px-2 py-0.5 rounded-md">
+                        Optional Step
+                      </span>
+                    </div>
                   </div>
 
                   {/* IDLE STATE */}
                   {nfcState === 'idle' && (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                       <p className="text-xs text-slate-300">
-                        Ready to write token <strong className="text-cyan-400 font-mono">{wizardCardToken}</strong> onto a physical card with 3s auto-read protection.
+                        {flasherDevice === 'apple'
+                          ? <>Ready to register token <strong className="text-cyan-400 font-mono">{wizardCardToken}</strong> on your Apple device with 3s auto-read protection.</>
+                          : <>Ready to write token <strong className="text-cyan-400 font-mono">{wizardCardToken}</strong> onto a physical card with 3s auto-read protection.</>
+                        }
                       </p>
                       <button
                         type="button"
@@ -617,7 +693,10 @@ export const UserManagementPage: React.FC = () => {
                             📡 Sensor Active • Hold Card Steady!
                           </p>
                           <p className="text-[11px] text-slate-300">
-                            Hold your physical NFC tag against the phone's NFC antenna area.
+                            {flasherDevice === 'apple'
+                              ? "Hold your physical NFC tag against the top edge of your iPhone."
+                              : "Hold your physical NFC tag against the phone's NFC antenna area."
+                            }
                           </p>
                         </div>
                       </div>
@@ -692,11 +771,27 @@ export const UserManagementPage: React.FC = () => {
                   {/* ERROR STATE */}
                   {nfcState === 'error' && (
                     <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 flex items-center justify-between gap-2 text-rose-300 text-xs">
-                      <span>{nfcStatusMessage}</span>
+                      <div className="space-y-1">
+                        <span>{nfcStatusMessage}</span>
+                        {flasherDevice === 'android' && (
+                          <div className="pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFlasherDevice('apple');
+                                setNfcState('idle');
+                              }}
+                              className="text-[11px] font-bold text-cyan-300 hover:underline flex items-center gap-1"
+                            >
+                              <span>🍎 Use Apple Device Method instead</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={handleStartNFCWrite}
-                        className="underline font-bold shrink-0 text-white"
+                        className="underline font-bold shrink-0 text-white self-start"
                       >
                         Retry
                       </button>

@@ -4,6 +4,7 @@ import { TapItProvider } from './store';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { BackendSyncInit } from './components/sync/BackendSyncInit';
 import { PWAInstallPrompt } from './components/pwa/PWAInstallPrompt';
+import tapItLogo from './assets/tapit-logo.png';
 
 // Layouts
 import { RootLayout } from './layouts/RootLayout';
@@ -50,11 +51,19 @@ const SystemSettingsPage = lazy(() => import('./pages/admin/SystemSettingsPage')
 
 // Fallback Loading Screen
 const RouteLoader = () => (
-  <div className="min-h-screen bg-[#070a13] flex flex-col items-center justify-center p-4">
-    <div className="relative">
-      <div className="w-12 h-12 rounded-2xl border-2 border-cyan-400 border-t-transparent animate-spin"></div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+  <div className="min-h-screen bg-[#070a13] flex flex-col items-center justify-center p-4 relative overflow-hidden select-none">
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="relative z-10 flex flex-col items-center space-y-4">
+      <div className="relative flex items-center justify-center w-24 h-24">
+        <div className="w-20 h-20 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin absolute" />
+        <img
+          src={tapItLogo}
+          alt="TapIt"
+          className="h-9 w-auto object-contain drop-shadow-[0_0_20px_rgba(6,182,212,0.5)] animate-pulse"
+        />
+      </div>
+      <div className="text-[11px] font-mono tracking-widest text-cyan-400/70 uppercase">
+        Loading TapIt...
       </div>
     </div>
   </div>

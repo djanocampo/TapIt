@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Radio, CreditCard, Sparkles, CheckCircle2, ArrowRight, Layers, Smartphone, Zap } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
+import tapItLogo from '../../assets/tapit-logo.png';
 
 interface UnclaimedCardPageProps {
   cardToken: string;
@@ -55,6 +56,10 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
         {/* STEP 1: Welcome / Unclaimed Prompt */}
         {step === 'welcome' && (
           <div className="text-center space-y-6">
+            <div className="flex justify-center pb-1">
+              <img src={tapItLogo} alt="TapIt" className="h-8 w-auto object-contain drop-shadow-[0_2px_12px_rgba(245,158,11,0.3)]" />
+            </div>
+
             <div className="w-16 h-16 rounded-3xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-2xl">
               <CreditCard className="w-8 h-8" />
             </div>

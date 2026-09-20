@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { ShieldAlert, Radio, ArrowLeft, Lock, Smartphone } from 'lucide-react';
 import { useTapIt } from '../../store';
+import tapItLogo from '../../assets/tapit-logo.png';
 
 interface DisabledCardPageProps {
   cardToken: string;
@@ -15,6 +16,10 @@ export const DisabledCardPage: React.FC<DisabledCardPageProps> = ({ cardToken })
   return (
     <div className="min-h-screen bg-[#070a13] flex items-center justify-center p-4 py-16 text-center">
       <div className="w-full max-w-md bg-[#0d1322] border border-rose-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="flex justify-center pb-1">
+          <img src={tapItLogo} alt="TapIt" className="h-8 w-auto object-contain drop-shadow-[0_2px_12px_rgba(244,63,94,0.3)]" />
+        </div>
+
         <div className="w-16 h-16 rounded-3xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto shadow-2xl">
           <ShieldAlert className="w-8 h-8" />
         </div>

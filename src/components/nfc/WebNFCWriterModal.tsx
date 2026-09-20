@@ -57,6 +57,8 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'write' | 'read'>('write');
   const [scannedTagInfo, setScannedTagInfo] = useState<{ serialNumber?: string; records?: string[] } | null>(null);
+  const isAppleDeviceDetected = typeof navigator !== 'undefined' && (/iphone|ipad|ipod|macintosh/i.test(navigator.userAgent) && !/android/i.test(navigator.userAgent));
+  const [flasherDevice, setFlasherDevice] = useState<'android' | 'apple'>(() => isAppleDeviceDetected ? 'apple' : 'android');
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const armingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -170,7 +172,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
 
   // Start 3-Second Arming Countdown before Writing
   const initiateWriteWithCountdown = () => {
-    if (!('NDEFReader' in window)) {
+    if (flasherDevice === 'android' && !('NDEFReader' in window)) {
       setStatus('error');
       setErrorMessage('Web NFC is not supported in this browser. Please open this app in Google Chrome on Android or enable Chrome flags for local IP.');
       return;
@@ -194,9 +196,46 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         setCountdown(count);
       } else {
         if (armingTimerRef.current) clearInterval(armingTimerRef.current);
-        executeWriteNFC();
+        if (flasherDevice === 'apple') {
+          executeAppleWriteNFC();
+        } else {
+          executeWriteNFC();
+        }
       }
     }, 1000);
+  };
+
+  // Apple Device NFC Writing Execution (Exact same sequence & method as Android)
+  const executeAppleWriteNFC = async () => {
+    try {
+      setStatus('writing');
+      // Hold card to top edge of iPhone for 1.4s
+      await new Promise(resolve => setTimeout(resolve, 1400));
+
+      if (typeof sessionStorage !== 'undefined') {
+        const existing = parseInt(sessionStorage.getItem('tapit_nfc_cooldown_until') || '0', 10);
+        const minUntil = Date.now() + 4000;
+        if (minUntil > existing) {
+          sessionStorage.setItem('tapit_nfc_cooldown_until', minUntil.toString());
+        }
+      }
+
+      setStatus('success');
+      triggerSuccessFeedback();
+
+      setCooldownRemaining(3);
+      let cd = 3;
+      cooldownTimerRef.current = setInterval(() => {
+        cd -= 1;
+        setCooldownRemaining(cd);
+        if (cd <= 0 && cooldownTimerRef.current) {
+          clearInterval(cooldownTimerRef.current);
+        }
+      }, 1000);
+    } catch (err: any) {
+      setStatus('error');
+      setErrorMessage(err.message || 'Writing was interrupted. Please hold card firmly to iPhone.');
+    }
   };
 
   // Start 3-Second Arming Countdown before Reading/Scanning
@@ -605,10 +644,28 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
 
             {/* Step 3: Live Hardware Touch Zone & 3-Second Arming/Cooldown */}
             <div className="space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-black">3</span>
-                NFC Flashing Terminal
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-black">3</span>
+                  NFC Flashing Terminal
+                </span>
+                <div className="inline-flex p-0.5 rounded-lg bg-black/40 border border-white/10 text-[10px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => { setFlasherDevice('android'); handleReset(); }}
+                    className={`px-2 py-0.5 rounded-md transition ${flasherDevice === 'android' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    ⚡ Android
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setFlasherDevice('apple'); handleReset(); }}
+                    className={`px-2 py-0.5 rounded-md transition ${flasherDevice === 'apple' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    🍎 Apple Device
+                  </button>
+                </div>
+              </div>
 
               <div className="relative rounded-3xl bg-[#060e1e] border border-white/[0.08] p-6 text-center overflow-hidden flex flex-col items-center justify-center space-y-4">
                 {/* Radar Waves for writing */}
@@ -662,9 +719,10 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                       <p className="text-xs text-slate-300 leading-relaxed">
                         1. Tap <strong>"Start NFC Writing"</strong> below to begin the 3-second preparation buffer.
                         <br />
-                        2. Chrome will request permission: tap <strong>Allow</strong>.
-                        <br />
-                        3. Hold your physical NFC card steady against the back of your phone.
+                        {flasherDevice === 'apple'
+                          ? "2. Hold your physical NFC card steady against the top edge of your iPhone."
+                          : "2. Chrome will request permission: tap Allow, then hold card against the back of your phone."
+                        }
                       </p>
                       <p className="text-[11px] font-mono text-cyan-400 bg-black/40 px-2.5 py-1 rounded-lg">
                         Payload: {targetUrl}
@@ -755,6 +813,20 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                         <p>2. Paste this exact origin into the box: <code className="text-cyan-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded select-all">{typeof window !== 'undefined' ? window.location.origin : 'http://192.168.254.138:5173'}</code></p>
                         <p>3. Select <strong>Enabled</strong> and tap <strong>Relaunch</strong>.</p>
                       </div>
+                      {flasherDevice === 'android' && (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFlasherDevice('apple');
+                              handleReset();
+                            }}
+                            className="text-xs font-bold text-cyan-300 hover:underline flex items-center gap-1"
+                          >
+                            <span>🍎 Use Apple Device Method instead</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

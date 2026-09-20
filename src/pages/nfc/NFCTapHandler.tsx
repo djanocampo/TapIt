@@ -6,7 +6,9 @@ import { getClientDeviceInfo } from '../../lib/utils';
 import { Radio, HandMetal, ArrowRight, LayoutDashboard } from 'lucide-react';
 import { UnclaimedCardPage } from './UnclaimedCardPage';
 import { DisabledCardPage } from './DisabledCardPage';
+import { NFCTapLoadingScreen } from '../../components/nfc/NFCTapLoadingScreen';
 import { Button } from '../../components/ui/Button';
+import tapItLogo from '../../assets/tapit-logo.png';
 
 export const NFCTapHandler: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -119,8 +121,10 @@ export const NFCTapHandler: React.FC = () => {
                 }, 1000);
                 return;
               } else {
-                // INSTANT REDIRECT AS SOON AS DB RETURNS
-                navigate(`/@${slug}?src=nfc`, { replace: true });
+                // Smooth transition floor so the contactless animation renders elegantly
+                setTimeout(() => {
+                  if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+                }, 350);
                 return;
               }
             } else if (dbCard.status === 'disabled' || dbCard.status === 'suspended') {
@@ -141,7 +145,9 @@ export const NFCTapHandler: React.FC = () => {
             .maybeSingle();
 
           if (remoteProf && isMounted) {
-            navigate(`/@${remoteProf.slug}?src=nfc`, { replace: true });
+            setTimeout(() => {
+              if (isMounted) navigate(`/@${remoteProf.slug}?src=nfc`, { replace: true });
+            }, 350);
             return;
           }
         } catch (err) {
@@ -184,7 +190,9 @@ export const NFCTapHandler: React.FC = () => {
             }, 1000);
             return;
           } else {
-            navigate(`/@${slug}?src=nfc`, { replace: true });
+            setTimeout(() => {
+              if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+            }, 350);
             return;
           }
         } else if (localCard.status === 'unclaimed') {
@@ -203,7 +211,9 @@ export const NFCTapHandler: React.FC = () => {
       );
       if (directLocalProfile) {
         if (!isMounted) return;
-        navigate(`/@${directLocalProfile.slug}?src=nfc`, { replace: true });
+        setTimeout(() => {
+          if (isMounted) navigate(`/@${directLocalProfile.slug}?src=nfc`, { replace: true });
+        }, 350);
         return;
       }
 
@@ -236,6 +246,10 @@ export const NFCTapHandler: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#070a13] flex flex-col items-center justify-center p-4 text-center">
         <div className="w-full max-w-md bg-[#0d1322] border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+          <div className="flex justify-center pb-1">
+            <img src={tapItLogo} alt="TapIt" className="h-8 w-auto object-contain drop-shadow-[0_2px_12px_rgba(245,158,11,0.3)]" />
+          </div>
+
           <div className="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-300 border-2 border-amber-400 flex items-center justify-center mx-auto shadow-lg shadow-amber-400/20 animate-pulse">
             <HandMetal className="w-8 h-8" />
           </div>
@@ -283,34 +297,14 @@ export const NFCTapHandler: React.FC = () => {
     );
   }
 
-  // ── CLEAN HIGH-SPEED LOADING STATE (NO RAW TOKEN DISPLAYED) ──
+  // ── BRANDED HIGH-SPEED NFC LOADING STATE (WITH TAPIT LOGO) ──
   return (
-    <div className="min-h-screen bg-[#070a13] flex flex-col items-center justify-center p-4 text-center">
-      <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-3xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.25)]">
-          <Radio className="w-9 h-9 animate-pulse" />
-        </div>
-        <div className="absolute inset-0 rounded-3xl border-2 border-cyan-400/40 animate-ping pointer-events-none" />
-      </div>
-
-      <div className="space-y-2 max-w-sm">
-        <span className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-wider px-3 py-1 bg-cyan-950/50 border border-cyan-500/30 rounded-full inline-block">
-          Smart NFC Card Detected
-        </span>
-        <h2 className="text-xl sm:text-2xl font-black text-white font-display">
-          Connecting to TapIt Profile...
-        </h2>
-        {profileName ? (
-          <p className="text-sm font-bold text-cyan-300">
-            {profileName} (@{targetSlug})
-          </p>
-        ) : (
-          <p className="text-xs text-slate-400">
-            Fast digital identity resolution in progress
-          </p>
-        )}
-      </div>
-    </div>
+    <NFCTapLoadingScreen
+      statusText="Connecting to TapIt Profile..."
+      subText="Instant digital identity handshake in progress"
+      profileName={profileName}
+      profileSlug={targetSlug}
+    />
   );
 };
 

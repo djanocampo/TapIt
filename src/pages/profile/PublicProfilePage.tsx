@@ -5,6 +5,8 @@ import { PublicProfileRenderer } from '../../components/profile/PublicProfileRen
 import { ShareProfileModal } from '../../components/profile/ShareProfileModal';
 import { Radio } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { NFCTapLoadingScreen } from '../../components/nfc/NFCTapLoadingScreen';
+import tapItLogo from '../../assets/tapit-logo.png';
 
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { mapDBToProfile, mapDBToLink } from '../../services/dualLayerSync';
@@ -221,15 +223,24 @@ export const PublicProfilePage: React.FC = () => {
 
   if (isSearchingRemote) {
     return (
-      <div className="min-h-screen bg-[#070a13] flex flex-col items-center justify-center p-4">
-        <div className="w-10 h-10 rounded-2xl border-2 border-cyan-400 border-t-transparent animate-spin"></div>
-      </div>
+      <NFCTapLoadingScreen
+        statusText="Loading TapIt Profile..."
+        subText="Syncing dynamic profile links & credentials..."
+        profileSlug={cleanUsername}
+      />
     );
   }
 
   if (!targetProfile) {
     return (
       <div className="min-h-screen bg-[#070a13] flex flex-col items-center justify-center p-4 text-center">
+        <div className="mb-4">
+          <img
+            src={tapItLogo}
+            alt="TapIt"
+            className="h-10 w-auto object-contain opacity-70 mx-auto"
+          />
+        </div>
         <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center text-slate-500 mb-4 shadow-xl">
           <Radio className="w-8 h-8 text-cyan-400 opacity-60" />
         </div>
