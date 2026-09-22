@@ -168,7 +168,7 @@ export const QRCodeStudioPage: React.FC = () => {
         maxWidth="2xl"
       >
         <div className="space-y-6">
-          <div className="p-6 bg-white text-slate-900 rounded-2xl shadow-inner grid grid-cols-2 gap-4 print:p-0 print:border-none">
+          <div className="p-4 sm:p-6 bg-white text-slate-900 rounded-2xl shadow-inner grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 print:grid-cols-2 print:p-0 print:border-none">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}

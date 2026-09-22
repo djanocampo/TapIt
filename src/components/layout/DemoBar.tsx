@@ -7,7 +7,7 @@ export const DemoBar: React.FC = () => {
   const { currentRole, openSimulator, resetAllData, activeProfile, currentUser } = useTapIt();
 
   return (
-    <aside aria-label="Demo Bar" className="bg-[#050a17] border-b border-cyan-500/20 text-xs px-3 sm:px-6 py-2 sticky top-0 z-50 flex flex-wrap items-center justify-between gap-2 shadow-lg shadow-black/40">
+    <aside aria-label="Demo Bar" className="bg-[#050a17] border-b border-cyan-500/20 text-xs px-3 sm:px-6 py-2 sticky top-0 z-40 flex flex-wrap items-center justify-between gap-2 shadow-lg shadow-black/40">
       {/* Left: Active User & Tag */}
       <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
         <div className="flex items-center gap-1.5 font-bold tracking-wide uppercase text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-1 rounded-full text-[10px]">

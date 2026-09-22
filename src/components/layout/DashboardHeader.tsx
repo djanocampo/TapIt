@@ -112,7 +112,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl glass-dropdown shadow-2xl p-4 z-50 border border-slate-700">
+            <div className="absolute right-0 mt-2 w-[min(calc(100vw-2rem),24rem)] rounded-2xl glass-dropdown shadow-2xl p-4 z-50 border border-slate-700">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">Live Notifications</h4>

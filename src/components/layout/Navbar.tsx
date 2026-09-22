@@ -48,7 +48,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#040c1a]/85 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
+    <header className="sticky top-0 z-40 bg-[#040c1a]/85 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-15 sm:h-20">
           {/* Left Brand Logo */}

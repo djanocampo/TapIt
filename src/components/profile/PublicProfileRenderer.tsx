@@ -45,6 +45,7 @@ interface PublicProfileRendererProps {
   onLinkClick?: (link: LinkItem) => void;
   onOpenShare?: () => void;
   isEmbed?: boolean;
+  hideActions?: boolean;
 }
 
 // Icon helper map
@@ -79,6 +80,7 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
   onLinkClick,
   onOpenShare,
   isEmbed = false,
+  hideActions = false,
 }) => {
   const rawTheme = profile?.theme;
   const theme: ProfileThemeConfig = typeof rawTheme === 'string'
@@ -90,35 +92,51 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
 
   const { allProfiles, allUsers } = useTapIt();
 
-  // Dynamically resolve user djanocampo's personal profile URL
-  const djanPersonalUrl = React.useMemo(() => {
-    // 1. Search for user djanocampo in allUsers
+  // Dynamically resolve user djanocampo's business profile URL
+  const djanBusinessUrl = React.useMemo(() => {
+    // 1. Search for user djanocampo or djan in allUsers
     const djanUser = allUsers.find(
-      (u) => u.username?.toLowerCase() === 'djanocampo'
+      (u) =>
+        u.username?.toLowerCase() === 'djanocampo' ||
+        u.username?.toLowerCase() === 'djan' ||
+        u.name?.toLowerCase().includes('djan')
     );
+
     if (djanUser) {
       const userProfs = allProfiles.filter((p) => p.userId === djanUser.id);
-      const personalProf = userProfs.find(
+      const businessProf = userProfs.find(
         (p) =>
-          p.name?.toLowerCase() === 'personal' ||
-          p.name?.toLowerCase().includes('personal') ||
-          p.slug?.toLowerCase().includes('personal')
+          p.name?.toLowerCase() === 'business' ||
+          p.name?.toLowerCase().includes('business') ||
+          p.slug?.toLowerCase().includes('business') ||
+          p.name?.toLowerCase().includes('corp') ||
+          p.slug?.toLowerCase().includes('corp') ||
+          p.name?.toLowerCase().includes('company') ||
+          p.slug?.toLowerCase().includes('company')
       );
-      if (personalProf) return `/@${personalProf.slug}`;
+      if (businessProf) return `/@${businessProf.slug}`;
+
       const activeOrFirst = userProfs.find((p) => p.isActive) || userProfs[0];
-      if (activeOrFirst) return `/@${activeOrFirst.slug}`;
+      if (activeOrFirst && (activeOrFirst.slug?.includes('business') || activeOrFirst.name?.toLowerCase().includes('business'))) {
+        return `/@${activeOrFirst.slug}`;
+      }
+      return `/@${djanUser.username}/business`;
     }
 
     // 2. Direct slug or name match in allProfiles
     const directProf = allProfiles.find(
       (p) =>
-        p.slug?.toLowerCase() === 'djanocampo' ||
-        (p.name?.toLowerCase() === 'personal' && p.slug?.toLowerCase().includes('djano'))
+        (p.slug?.toLowerCase().includes('djan') || p.name?.toLowerCase().includes('djan')) &&
+        (p.slug?.toLowerCase().includes('business') || p.name?.toLowerCase().includes('business'))
+    ) || allProfiles.find(
+      (p) =>
+        p.slug?.toLowerCase() === 'djanocampo-business' ||
+        p.slug?.toLowerCase() === 'djan-business'
     );
     if (directProf) return `/@${directProf.slug}`;
 
-    // 3. Fallback direct route that connects to djanocampo's personal profile
-    return '/@djanocampo';
+    // 3. Fallback direct route that connects to djanocampo's business profile
+    return '/@djanocampo/business';
   }, [allProfiles, allUsers]);
 
   // Dynamic button shape classes
@@ -363,12 +381,15 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
         </div>
       )}
 
-      {/* User Actions: Log in & Get your own TapIt */}
-      {!isEmbed && (
+      {/* User Actions: Log in & Get your own Tapit Card */}
+      {!hideActions && (
         <div className="mt-5 w-full space-y-2.5">
           {/* User Log in Button */}
           <Link
             to="/login"
+            onClick={(e) => {
+              if (isEmbed) e.preventDefault();
+            }}
             className={`w-full py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-bold transition duration-200 border ${getButtonShapeClass()} hover:opacity-90 active:scale-[0.99] shadow-sm`}
             style={{
               backgroundColor: theme.badgeBg || 'rgba(6, 182, 212, 0.15)',
@@ -380,9 +401,12 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
             <span>User Log in</span>
           </Link>
 
-          {/* Get your own TapIt Button */}
+          {/* Get your own Tapit Card Button */}
           <Link
-            to={djanPersonalUrl}
+            to={djanBusinessUrl}
+            onClick={(e) => {
+              if (isEmbed) e.preventDefault();
+            }}
             className={`w-full py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-bold transition duration-200 border ${getButtonShapeClass()} hover:opacity-90 active:scale-[0.99] shadow-sm`}
             style={{
               backgroundColor: theme.accentColor ? `${theme.accentColor}18` : 'rgba(6, 182, 212, 0.15)',
@@ -391,7 +415,7 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
             }}
           >
             <Sparkles className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#06b6d4' }} />
-            <span>Get your own TapIt</span>
+            <span>Get your own Tapit Card</span>
           </Link>
         </div>
       )}

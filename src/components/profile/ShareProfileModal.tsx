@@ -74,7 +74,7 @@ export const ShareProfileModal: React.FC<ShareProfileModalProps> = ({
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           <Button
             variant="secondary"
             size="md"

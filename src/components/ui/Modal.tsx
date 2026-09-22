@@ -11,6 +11,8 @@ export interface ModalProps {
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
   showCloseButton?: boolean;
+  className?: string;
+  bodyClassName?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -21,6 +23,8 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'lg',
   showCloseButton = true,
+  className,
+  bodyClassName,
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -49,7 +53,7 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-hidden">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -66,21 +70,22 @@ export const Modal: React.FC<ModalProps> = ({
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className={cn(
-              'relative w-full rounded-2xl bg-[#0d1322] border border-slate-700/80 shadow-2xl overflow-hidden z-10 my-8',
-              maxWidths[maxWidth]
+              'relative w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col rounded-3xl bg-[#0d1322] border border-slate-700/80 shadow-2xl overflow-hidden z-10 my-auto',
+              maxWidths[maxWidth],
+              className
             )}
           >
             {/* Header */}
             {(title || showCloseButton) && (
-              <div className="flex items-start justify-between p-5 sm:p-6 border-b border-slate-800">
+              <div className="flex items-start justify-between p-4 sm:p-6 border-b border-slate-800 shrink-0 bg-[#0d1322]/95 backdrop-blur-md z-10">
                 <div>
-                  {title && <h3 className="text-lg font-bold text-slate-100">{title}</h3>}
+                  {title && <h3 className="text-base sm:text-lg font-bold text-slate-100">{title}</h3>}
                   {description && <p className="text-xs text-slate-400 mt-1">{description}</p>}
                 </div>
                 {showCloseButton && (
                   <button
                     onClick={onClose}
-                    className="rounded-lg p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors -mr-1 -mt-1"
+                    className="rounded-xl p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors -mr-1 -mt-1"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -89,7 +94,9 @@ export const Modal: React.FC<ModalProps> = ({
             )}
 
             {/* Body */}
-            <div className="p-5 sm:p-6">{children}</div>
+            <div className={cn('p-4 sm:p-6 overflow-y-auto overscroll-contain flex-1', bodyClassName)}>
+              {children}
+            </div>
           </motion.div>
         </div>
       )}

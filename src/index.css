@@ -147,6 +147,10 @@
   .animate-bubble-float-5 {
     animation: bubbleFloat 5.5s ease-in-out infinite 1.8s;
   }
+
+  .safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @keyframes spin360Continuous {

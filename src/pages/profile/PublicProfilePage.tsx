@@ -43,7 +43,7 @@ export const PublicProfilePage: React.FC = () => {
   const localMatch = React.useMemo(() => {
     if (!cleanUsername) return null;
 
-    // 1. If both username and profileSlug are provided (e.g. /djanocampo/personal)
+    // 1. If both username and profileSlug are provided (e.g. /djanocampo/business)
     if (userParam && slugParam && userParam !== slugParam) {
       const user = allUsers.find((u) => u.username.toLowerCase() === userParam);
       if (user) {
@@ -55,6 +55,7 @@ export const PublicProfilePage: React.FC = () => {
             p.name.toLowerCase().includes(slugParam)
         );
         if (match) return match;
+        return userProfs.find((p) => p.isActive) || userProfs[0] || null;
       }
     }
 
@@ -121,7 +122,9 @@ export const PublicProfilePage: React.FC = () => {
                       p.slug?.toLowerCase() === slugParam ||
                       p.name?.toLowerCase() === slugParam ||
                       p.name?.toLowerCase().includes(slugParam)
-                  ) || null;
+                  ) ||
+                  userProfs.find((p: any) => p.is_active) ||
+                  userProfs[0];
               }
             }
           }

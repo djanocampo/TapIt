@@ -830,12 +830,12 @@ export const UserManagementPage: React.FC = () => {
               <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                 Temporary User Registration Link:
               </label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value={generatedInviteUrl}
-                  className="flex-1 bg-[#050c18] border border-cyan-500/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-cyan-300 focus:outline-none select-all"
+                  className="flex-1 min-w-0 bg-[#050c18] border border-cyan-500/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-cyan-300 focus:outline-none select-all truncate"
                 />
                 <Button
                   variant="glow"
@@ -989,12 +989,12 @@ export const UserManagementPage: React.FC = () => {
               <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                 Secure Reset Link:
               </label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value={resetUrl}
-                  className="flex-1 bg-[#050c18] border border-cyan-500/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-cyan-300 focus:outline-none select-all"
+                  className="flex-1 min-w-0 bg-[#050c18] border border-cyan-500/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-cyan-300 focus:outline-none select-all truncate"
                 />
                 <Button
                   variant="glow"
