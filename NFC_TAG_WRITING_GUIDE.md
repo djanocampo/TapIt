@@ -123,8 +123,11 @@ Direct in-app NFC programming is executed via [WebNFCWriterModal.tsx](file:///d:
 #### Step 2: Configure Target Card & Link Format
 * Choose which card token to write from your registered cards.
 * Select your preferred mode:
-  * **Dynamic Token Link** *(Recommended)*: `https://tapit.app/t/8xK29mQ`
-  * **Direct Profile Link**: `https://tapit.app/@username`
+  * **Mode 1: Dynamic Token Link** *(Recommended)*: `https://tapit.app/t/8xK29mQ` (Cloud-reassignable, tap analytics, ~28 bytes).
+  * **Mode 2: Direct Profile Link**: `https://tapit.app/@username` (Permanent profile URL).
+  * **Mode 3: Custom External Link**: Any arbitrary URL (`https://instagram.com/yourhandle`, portfolio, Google Maps, WhatsApp, etc.).
+    * **Live Byte Meter**: Warns if the link exceeds standard NTAG213 capacity (~132 bytes).
+    * **1-Click Auto-Shorten**: Compresses long links down to ~18–20 bytes via high-availability shorteners (`da.gd` / `clck.ru`) to guarantee 100% write compatibility on any tag.
 
 #### Step 3: Start Sensor Listening
 * Tap the primary button: **"Start NFC Writing"**.
@@ -148,16 +151,23 @@ Direct in-app NFC programming is executed via [WebNFCWriterModal.tsx](file:///d:
 
 ---
 
-## 5. Link Format Modes: Dynamic Token vs. Direct Profile
+## 5. Link Format Modes: Dynamic Token vs. Direct Profile vs. Custom External
 
-| Feature Comparison | Dynamic Token Link (`/t/:token`) | Direct Profile Link (`/@username`) |
-|---|:---:|:---:|
-| **URL Example** | `https://tapit.app/t/8xK29mQ` | `https://tapit.app/@djan` |
-| **Cloud Profile Reassignment** | **Yes** (Instant 1-click update) | No (Requires physical re-flash) |
-| **Instant Kill Switch / Lock** | **Yes** (Protects lost cards) | No (Link remains permanent) |
-| **Hardware Tap Analytics** | **Yes** (Logs device, OS, time) | Partial (Only general page views) |
-| **Offline Direct Access** | Requires DNS/Cloud resolution | Direct slug navigation |
-| **Recommended For** | Smart Cards, Keyfobs, Badges | Printed QR Codes, Static Posters |
+| Feature Comparison | Dynamic Token (`/t/:token`) | Direct Profile (`/@username`) | Custom External Link (`https://...`) |
+|---|:---:|:---:|:---:|
+| **URL Example** | `https://tapit.app/t/8xK29mQ` | `https://tapit.app/@djan` | `https://instagram.com/djan` or `https://da.gd/xyz` |
+| **Cloud Profile Reassignment** | **Yes** (Instant 1-click update) | No (Requires physical re-flash) | No (Requires physical re-flash) |
+| **Instant Kill Switch / Lock** | **Yes** (Protects lost cards) | No (Link remains permanent) | No (Direct link on tag) |
+| **Hardware Tap Analytics** | **Yes** (Logs device, OS, time) | Partial (Only general page views) | No (Direct third-party navigation) |
+| **Bypasses TapIt Platform** | No (Routed through TapIt) | No (Opens TapIt Profile) | **Yes** (Direct third-party site or app) |
+| **URL Auto-Shortening** | Not needed (~28 bytes) | Not needed (~24 bytes) | **Yes** (Built-in 1-click `da.gd` / `clck.ru`) |
+| **Offline Direct Access** | Requires DNS/Cloud resolution | Direct slug navigation | Direct external domain navigation |
+| **Recommended For** | Smart Cards, Keyfobs, Badges | Printed QR Codes, Static Posters | Direct social links, forms, review links |
+
+### Hardware Byte Constraints & Auto-Shortener
+* **NTAG213 Tags**: Hold 144 bytes total (**~132 bytes usable memory for NDEF URLs**).
+* If an external URL exceeds 132 bytes (such as a Google Maps pin or Google Form with tracking parameters), the modal highlights an amber byte counter warning.
+* Clicking **"Auto-Shorten (Fit All Tags)"** compresses the URL to **~18–21 bytes**, safely fitting onto any standard NTAG213 tag. An **"Undo Shortening"** button allows restoring the full URL at any time before flashing.
 
 ---
 

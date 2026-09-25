@@ -24,6 +24,8 @@
 | **Phase 11** | **Dual-Layer Sync Engine** | Instant LocalStorage Layer 1 + non-blocking Supabase Layer 2 + O(1) deduplication | `[COMPLETE]` |
 | **Phase 12** | **Clean Auth & 1st User Flow** | Purged demo logins, clean Admin credentials, 1st user registration & binding | `[COMPLETE]` |
 | **Phase 13** | **Role Isolation & Hardware Lifecycle** | Strict Admin/User route separation, universal user data scoping, database deletion & unbinding | `[COMPLETE]` |
+| **Phase 14** | **Cryptographic Security & Password Recovery** | Native PBKDF2 (100k SHA-256 iterations), single-use 1-hr reset tokens, forgot/reset password flows | `[COMPLETE]` |
+| **Phase 15** | **Advanced Web NFC Hardware Suite & Auto-Shortener** | 3 Link modes (dynamic/direct/external), live byte capacity meter, high-availability URL auto-shortening | `[COMPLETE]` |
 
 ---
 
@@ -88,6 +90,7 @@ TapIt follows a **Third Normal Form (3NF) Relational Architecture** in PostgreSQ
 | **`public.qr_codes`** | `id` (TEXT) | `profile_id` ➔ `profiles(id)` `ON DELETE CASCADE` | `token` (UNIQUE), `fg_color`, `bg_color`, `include_logo`, `scans`, `last_scanned_at`. |
 | **`public.analytics_events`** | `id` (TEXT) | `profile_id` ➔ `profiles(id)` `ON DELETE CASCADE`, `card_id` ➔ `nfc_cards(id)`, `link_id` ➔ `links(id)` | `event_type` (`profile_view`, `nfc_tap`, `qr_scan`, `link_click`), `traffic_source`, `device_type`, `browser`, `os`, `country`, `city`, `timestamp`. |
 | **`public.user_invites`** | `id` (TEXT) | `used_by_user_id` ➔ `users(id)` | `invite_token` (UNIQUE), `initial_name`, `card_token`, `material`, `is_used`, `created_at`. |
+| **`public.password_resets`** | `id` (TEXT) | `user_id` ➔ `users(id)` `ON DELETE CASCADE` | `token` (UNIQUE), `email`, `expires_at`, `used` (BOOLEAN), `created_at`. Indexed by `token` and `user_id`. |
 | **`public.notifications`** | `id` (TEXT) | `recipient_user_id` ➔ `users(id)` `ON DELETE CASCADE` | `title`, `message`, `type` (`info`, `success`, `warning`, `tap`), `read`, `link`, `timestamp`. |
 | **`public.system_settings`** | `id` (TEXT) | — | `platform_name`, `maintenance_mode`, `allow_public_registrations`, `enforce_nfc_verification`, `max_profiles_per_user`, `default_theme`, `supported_platforms` (JSONB). |
 
@@ -216,6 +219,63 @@ Native Chromium `NDEFReader` hardware flasher:
 
 ---
 
+## 🔑 Phase 14: Cryptographic Security & Password Recovery Architecture
+
+TapIt implements a zero-dependency, enterprise-grade cryptographic security architecture powered by the browser's native **Web Crypto API** (`src/utils/crypto.ts`) and synchronized with Supabase:
+
+### 1. Salted PBKDF2 Password Hashing
+* **Algorithm**: PBKDF2 (Password-Based Key Derivation Function 2) utilizing **SHA-256**.
+* **Iteration Count**: **100,000 rounds** (NIST and OWASP compliant).
+* **Cryptographic Salt**: 16-byte cryptographically secure random salt generated via `crypto.getRandomValues()`.
+* **Hash Serialization Format**: `pbkdf2$<iterations>$<saltHex>$<hashHex>`.
+* **Constant-Time Verification**: Custom constant-time string comparison (`timingSafeEqual`) eliminates side-channel timing attack vectors during authentication.
+
+### 2. Single-Use Password Reset Engine
+* **Token Specification**: Cryptographically secure 16-byte random tokens prefixed with `rst_` (e.g., `rst_a1b2c3d4e5f67890`).
+* **Validity Window**: Tokens automatically expire after **1 hour** (`expiresAt = Date.now() + 3,600,000`).
+* **Single-Use Enforcement**: Tokens are marked `used: true` immediately upon password update and synchronized across Layer 1 (LocalStorage) and Layer 2 (PostgreSQL `password_resets` table).
+* **Routes & User Experience**:
+  * [`/forgot-password`](http://localhost:5173/forgot-password): Account identifier lookup (email/username), single-use recovery link generation, and 1-click URL copying.
+  * [`/reset-password`](http://localhost:5173/reset-password): Live security token verification, real-time match indicators, password strength requirements (min 6 characters), celebratory confetti on update, and immediate redirect to `/login`.
+
+---
+
+## 📡 Phase 15: Advanced Web NFC Hardware Writing Suite & Auto-Shortener
+
+TapIt provides an in-app hardware flashing terminal ([`WebNFCWriterModal.tsx`](file:///d:/TapIt/src/components/nfc/WebNFCWriterModal.tsx)) compliant with the W3C Web NFC specification (`NDEFReader`):
+
+### 1. Three Link Provisioning Modes
+1. **Mode 1: Dynamic Cloud Token (`/t/:token`)** *(Recommended)*:
+   * Writes a compact token URL (`https://tapit.app/t/TAP-8K9M`, ~28 bytes).
+   * Decoupled from physical chip: target profile persona, links, and contact info can be updated anytime from the cloud without rewriting the card.
+   * Enables hardware tap analytics (device, OS, browser, geolocation).
+2. **Mode 2: Direct Profile Link (`/@username`)**:
+   * Writes the user's permanent profile slug directly to the chip (`https://tapit.app/@djan`).
+3. **Mode 3: Custom External Link (Direct NDEF URI Record)**:
+   * Writes any arbitrary external URL (portfolio, Instagram, LinkedIn, Google Maps, WhatsApp, Google Form, etc.) directly into the card.
+   * Scanned phones immediately bypass TapIt and navigate straight to the destination website in their native browser or application.
+
+### 2. Hardware Memory Protection & 1-Click URL Auto-Shortener
+* **NFC Chip Byte Constraints**:
+  * **NTAG213**: 144 bytes user memory (**~132 bytes usable for NDEF URLs**).
+  * **NTAG215**: 504 bytes user memory (**~492 bytes usable**).
+  * **NTAG216**: 888 bytes user memory (**~872 bytes usable**).
+* **Live Byte Capacity Meter**: Real-time `TextEncoder` byte calculation displaying green badges (`✓ Fits all NTAG tags`) or amber alerts (`⚠️ Exceeds NTAG213 limit`).
+* **Multi-Provider URL Auto-Shortener**:
+  * High-availability, wildcard CORS-enabled shortening pipeline:
+    1. Primary: **`da.gd`**
+    2. Secondary: **`clck.ru`**
+    3. Tertiary: **`is.gd`** (simple format)
+    4. Quaternary: **`v.gd`** (simple format)
+  * Compresses long URLs (e.g., 200+ byte Google Maps or Google Forms links) down to **~18–21 bytes**, guaranteeing 100% write compatibility on any NTAG213 tag.
+  * Includes 1-click **Undo Shortening** to restore the original URL.
+
+### 3. Anti-Collision Sensor Buffers
+* **3-Second Arming Delay**: Visual countdown buffer before activating the phone's NFC antenna, preventing accidental auto-reads while positioning the card.
+* **Exclusive Antenna Cooldown Guard**: Post-write 3-second temporary antenna lock, stopping Android's OS NFC dispatcher from immediately re-reading the newly flashed tag.
+
+---
+
 ## 📁 Repository Structure
 
 ```
@@ -250,7 +310,7 @@ TapIt/
 │   │   └── RootLayout.tsx         # Public marketing layout
 │   ├── pages/
 │   │   ├── admin/                 # Overview, Users, Profiles, Cards, Analytics, Settings
-│   │   ├── auth/                  # LoginPage, RegisterPage, InviteRegistrationPage
+│   │   ├── auth/                  # LoginPage, RegisterPage, InviteRegistrationPage, ForgotPasswordPage, ResetPasswordPage
 │   │   ├── dashboard/             # Overview, Profiles, Editor, Links, Cards, QRStudio, Analytics, Settings
 │   │   ├── nfc/                   # NFCTapHandler, UnclaimedCardPage, DisabledCardPage
 │   │   ├── profile/               # PublicProfilePage
@@ -261,6 +321,9 @@ TapIt/
 │   │   └── index.tsx              # Central state store with localStorage & dual-layer sync
 │   ├── types/
 │   │   └── index.ts               # TypeScript data models
+│   ├── utils/
+│   │   ├── crypto.ts              # Salted PBKDF2 hashing, secure tokens & XSS sanitization
+│   │   └── cropImage.ts           # Canvas image crop utility
 │   ├── App.tsx                    # Routes & sync orchestrator mount
 │   ├── main.tsx                   # React root entry point
 │   └── index.css                  # Tailwind styles and keyframe animations
@@ -295,4 +358,4 @@ npm run preview
 
 ---
 
-*Documentation Version: 4.0.0 | Last Updated: September 2026 | Built for TapIt Smart Identity Platform.*
+*Documentation Version: 5.0.0 | Last Updated: September 2026 | Built for TapIt Smart Identity Platform.*

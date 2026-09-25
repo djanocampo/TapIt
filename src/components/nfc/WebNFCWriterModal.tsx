@@ -23,7 +23,9 @@ import {
   Globe,
   Timer,
   HandMetal,
-  Hourglass
+  Hourglass,
+  Link2,
+  RotateCcw
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 
@@ -53,7 +55,11 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   const [countdown, setCountdown] = useState<number>(3);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState('');
-  const [writeType, setWriteType] = useState<'dynamic' | 'direct'>('dynamic');
+  const [writeType, setWriteType] = useState<'dynamic' | 'direct' | 'external'>('dynamic');
+  const [customExternalUrl, setCustomExternalUrl] = useState<string>('https://');
+  const [isShortening, setIsShortening] = useState(false);
+  const [shortenerError, setShortenerError] = useState('');
+  const [originalLongUrl, setOriginalLongUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'write' | 'read'>('write');
   const [scannedTagInfo, setScannedTagInfo] = useState<{ serialNumber?: string; records?: string[] } | null>(null);
@@ -88,7 +94,18 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   const cleanHost = (customHost || defaultOrigin).replace(/\/+$/, '');
   const dynamicUrl = `${cleanHost}/t/${currentToken}`;
   const directUrl = activeProfile ? `${cleanHost}/@${activeProfile.slug}` : `${cleanHost}/@djan`;
-  const targetUrl = writeType === 'dynamic' ? dynamicUrl : directUrl;
+  const cleanExternal = customExternalUrl.trim();
+  const formattedExternalUrl = cleanExternal.startsWith('http://') || cleanExternal.startsWith('https://')
+    ? cleanExternal
+    : (cleanExternal ? `https://${cleanExternal}` : 'https://');
+  const targetUrl = writeType === 'dynamic' 
+    ? dynamicUrl 
+    : writeType === 'direct' 
+    ? directUrl 
+    : formattedExternalUrl;
+
+  const externalByteLength = new TextEncoder().encode(formattedExternalUrl).length;
+  const isNtag213Safe = externalByteLength <= 132;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -146,6 +163,92 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
     setCustomToken(newToken);
   };
 
+  // Auto-shorten long URL for Option 2 (Mode 3 only)
+  const handleAutoShorten = async () => {
+    const raw = customExternalUrl.trim();
+    if (!raw || raw === 'https://' || raw === 'http://') {
+      setShortenerError('Please enter a valid external link before shortening.');
+      return;
+    }
+
+    const fullUrl = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+    setIsShortening(true);
+    setShortenerError('');
+
+    try {
+      let shortLink = '';
+
+      // 1. Primary: da.gd (Fast, reliable, wildcard CORS)
+      try {
+        const res = await fetch(`https://da.gd/s?url=${encodeURIComponent(fullUrl)}`);
+        if (res.ok) {
+          const txt = (await res.text()).trim();
+          if (txt.startsWith('http://') || txt.startsWith('https://')) {
+            shortLink = txt;
+          }
+        }
+      } catch (e) {
+        console.warn('[Shortener] da.gd note:', e);
+      }
+
+      // 2. Secondary: clck.ru (High-availability Yandex shortener, wildcard CORS)
+      if (!shortLink) {
+        try {
+          const res = await fetch(`https://clck.ru/--?url=${encodeURIComponent(fullUrl)}`);
+          if (res.ok) {
+            const txt = (await res.text()).trim();
+            if (txt.startsWith('http://') || txt.startsWith('https://')) {
+              shortLink = txt;
+            }
+          }
+        } catch (e) {
+          console.warn('[Shortener] clck.ru note:', e);
+        }
+      }
+
+      // 3. Tertiary: is.gd with format=simple
+      if (!shortLink) {
+        try {
+          const res = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(fullUrl)}`);
+          if (res.ok) {
+            const txt = (await res.text()).trim();
+            if (txt.startsWith('http://') || txt.startsWith('https://')) {
+              shortLink = txt;
+            }
+          }
+        } catch (e) {
+          console.warn('[Shortener] is.gd note:', e);
+        }
+      }
+
+      // 4. Quaternary: v.gd with format=simple
+      if (!shortLink) {
+        try {
+          const res = await fetch(`https://v.gd/create.php?format=simple&url=${encodeURIComponent(fullUrl)}`);
+          if (res.ok) {
+            const txt = (await res.text()).trim();
+            if (txt.startsWith('http://') || txt.startsWith('https://')) {
+              shortLink = txt;
+            }
+          }
+        } catch (e) {
+          console.warn('[Shortener] v.gd note:', e);
+        }
+      }
+
+      if (!shortLink) {
+        throw new Error('Unable to shorten URL. All shortening providers were unreachable. Please verify your internet connection or use a shorter link.');
+      }
+
+      setOriginalLongUrl(fullUrl);
+      setCustomExternalUrl(shortLink);
+    } catch (err: any) {
+      setShortenerError(err.message || 'Failed to auto-shorten link.');
+    } finally {
+      setIsShortening(false);
+    }
+  };
+
   // Audio & Haptic Feedback helper
   const triggerSuccessFeedback = () => {
     triggerConfetti();
@@ -172,6 +275,15 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
 
   // Start 3-Second Arming Countdown before Writing
   const initiateWriteWithCountdown = () => {
+    if (writeType === 'external') {
+      const clean = customExternalUrl.trim();
+      if (!clean || clean === 'https://' || clean === 'http://') {
+        setStatus('error');
+        setErrorMessage('Please enter a valid destination external URL (e.g. https://instagram.com/yourname or https://yourwebsite.com).');
+        return;
+      }
+    }
+
     if (flasherDevice === 'android' && !('NDEFReader' in window)) {
       setStatus('error');
       setErrorMessage('Web NFC is not supported in this browser. Please open this app in Google Chrome on Android or enable Chrome flags for local IP.');
@@ -580,12 +692,12 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
             </div>
 
             {/* Step 2: Target URL Selector */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-black">2</span>
                 Choose Link Mode
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Option A: Dynamic Token */}
                 <button
                   type="button"
@@ -599,7 +711,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                      Dynamic Token (Recommended)
+                      Dynamic Token
                     </span>
                     {writeType === 'dynamic' && (
                       <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
@@ -639,7 +751,158 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                     {directUrl}
                   </p>
                 </button>
+
+                {/* Option C: Custom External Link */}
+                <button
+                  type="button"
+                  onClick={() => setWriteType('external')}
+                  className={`p-3.5 rounded-2xl border text-left transition ${
+                    writeType === 'external'
+                      ? 'border-cyan-400 bg-cyan-950/40 shadow-glow-cyan'
+                      : 'border-white/[0.08] bg-[#071124]/70 hover:border-white/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Link2 className="w-3.5 h-3.5 text-cyan-400" />
+                      Custom External Link
+                    </span>
+                    {writeType === 'external' && (
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-normal">
+                    Writes any website, portfolio, social media, or custom URL directly to the chip.
+                  </p>
+                  <p className="text-[10px] font-mono text-cyan-300 mt-2 truncate bg-black/40 px-2 py-1 rounded">
+                    {formattedExternalUrl}
+                  </p>
+                </button>
               </div>
+
+              {/* Option C: External URL Input Panel */}
+              {writeType === 'external' && (
+                <div className="p-4 rounded-2xl bg-[#050b18] border border-cyan-500/40 space-y-3 animate-fadeIn shadow-lg shadow-cyan-950/30">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] uppercase font-bold text-cyan-400 flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-cyan-400" />
+                      Destination External URL
+                    </label>
+                    <span className="text-[10px] text-slate-400">Direct NDEF URI Record</span>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="url"
+                      value={customExternalUrl}
+                      onChange={(e) => {
+                        setCustomExternalUrl(e.target.value);
+                        if (shortenerError) setShortenerError('');
+                      }}
+                      placeholder="https://instagram.com/yourname or https://yourwebsite.com"
+                      className="w-full bg-[#081224] border border-cyan-500/30 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-xs text-cyan-200 font-mono focus:outline-none placeholder:text-slate-600 transition shadow-inner"
+                    />
+                  </div>
+
+                  {/* Byte length indicator & Auto-Shorten Action */}
+                  <div className="flex items-center justify-between flex-wrap gap-2 pt-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold transition flex items-center gap-1 ${
+                        isNtag213Safe
+                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      }`}>
+                        <span>{externalByteLength} bytes</span>
+                        <span>•</span>
+                        <span>{isNtag213Safe ? 'Fits NTAG213 / 215 / 216' : 'Exceeds standard NTAG213 (~132B)'}</span>
+                      </span>
+
+                      {originalLongUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomExternalUrl(originalLongUrl);
+                            setOriginalLongUrl(null);
+                          }}
+                          className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1 transition"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Undo Shortening</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isShortening || externalByteLength < 18}
+                      onClick={handleAutoShorten}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-cyan-500/20 to-sky-500/20 hover:from-cyan-500/30 hover:to-sky-500/30 text-cyan-300 border border-cyan-500/40 text-[11px] font-bold transition disabled:opacity-50 disabled:pointer-events-none shadow-sm"
+                    >
+                      {isShortening ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                          <span>Shortening...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-3 h-3 text-cyan-400" />
+                          <span>Auto-Shorten (Fit All Tags)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {shortenerError && (
+                    <div className="p-2.5 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-[11px] flex items-center gap-2">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      <span>{shortenerError}</span>
+                    </div>
+                  )}
+
+                  {!isNtag213Safe && (
+                    <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-[11px] flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="leading-tight space-y-0.5">
+                        <strong className="block font-bold">URL may be too long for standard tags!</strong>
+                        <span>
+                          Standard NTAG213 chips only have ~132 bytes of usable memory. Click <strong>"Auto-Shorten"</strong> above to compress this URL to ~20 bytes so it fits without errors.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preset quick format helpers */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="text-[10px] text-slate-400">Quick format:</span>
+                    {[
+                      { label: 'Instagram', prefix: 'https://instagram.com/' },
+                      { label: 'LinkedIn', prefix: 'https://linkedin.com/in/' },
+                      { label: 'WhatsApp', prefix: 'https://wa.me/' },
+                      { label: 'Website', prefix: 'https://' },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => {
+                          if (customExternalUrl.startsWith(item.prefix)) return;
+                          setCustomExternalUrl(item.prefix);
+                          setOriginalLongUrl(null);
+                        }}
+                        className="text-[10px] px-2 py-0.5 rounded-md bg-[#081426] hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-300 border border-white/[0.08] transition"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-start gap-2 text-[11px] text-slate-400 bg-cyan-950/20 p-2.5 rounded-xl border border-cyan-500/20">
+                    <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>
+                      When any phone (iPhone or Android) taps this card, it will bypass TapIt and navigate straight to this external link in their browser or native app.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Step 3: Live Hardware Touch Zone & 3-Second Arming/Cooldown */}
@@ -785,15 +1048,22 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                       <div className="p-3 rounded-xl bg-black/50 border border-emerald-500/40 text-left space-y-1.5 text-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400">Written Record:</span>
-                          <span className="font-mono font-bold text-cyan-300">{targetUrl}</span>
+                          <span className="font-mono font-bold text-cyan-300 truncate max-w-[220px]">{targetUrl}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-400">Assigned Profile:</span>
-                          <span className="font-bold text-white">@{activeProfile.slug} ({activeProfile.displayName})</span>
+                          <span className="text-slate-400">
+                            {writeType === 'external' ? 'Destination Type:' : 'Assigned Profile:'}
+                          </span>
+                          <span className="font-bold text-white">
+                            {writeType === 'external' ? 'Direct External Website' : `@${activeProfile.slug} (${activeProfile.displayName})`}
+                          </span>
                         </div>
                       </div>
                       <p className="text-xs text-slate-300">
-                        🎉 Success! You may now remove your card. When tapped in everyday use, it will forward instantly to your profile.
+                        {writeType === 'external'
+                          ? '🎉 Success! You may now remove your card. When tapped in everyday use, it will open your external link directly.'
+                          : '🎉 Success! You may now remove your card. When tapped in everyday use, it will forward instantly to your profile.'
+                        }
                       </p>
                     </div>
                   )}
