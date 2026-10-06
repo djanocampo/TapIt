@@ -40,6 +40,7 @@ const QRCodeStudioPage = lazy(() => import('./pages/dashboard/QRCodeStudioPage')
 const AnalyticsPage = lazy(() => import('./pages/dashboard/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const AppearancePage = lazy(() => import('./pages/dashboard/AppearancePage').then(m => ({ default: m.AppearancePage })));
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const FAQPage = lazy(() => import('./pages/dashboard/FAQPage').then(m => ({ default: m.FAQPage })));
 
 // Admin Suite Pages (Code-split)
 const AdminOverview = lazy(() => import('./pages/admin/AdminOverview').then(m => ({ default: m.AdminOverview })));
@@ -130,6 +131,8 @@ export const App: React.FC = () => {
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="appearance" element={<AppearancePage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="faq" element={<FAQPage />} />
+              <Route path="help" element={<Navigate to="/dashboard/faq" replace />} />
             </Route>
 
             {/* Administrator Suite Routes (Protected: Admin Only) */}

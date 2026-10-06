@@ -15,6 +15,7 @@ import {
   Shield,
   Layers,
   Sparkles,
+  HelpCircle,
   LogOut
 } from 'lucide-react';
 
@@ -40,6 +41,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCloseMobil
     { label: 'Deep Telemetry', path: '/dashboard/analytics', icon: BarChart3 },
     { label: 'Appearance & Themes', path: '/dashboard/appearance', icon: Sparkles },
     { label: 'Account Settings', path: '/dashboard/settings', icon: Settings },
+    { label: 'How-To & FAQ', path: '/dashboard/faq', icon: HelpCircle },
   ];
 
   const handleSelectProfile = (id: string) => {

@@ -20,7 +20,8 @@ import {
   ExternalLink,
   ChevronRight,
   Shield,
-  Sparkles
+  Sparkles,
+  HelpCircle
 } from 'lucide-react';
 
 interface MobileBottomNavProps {
@@ -226,6 +227,26 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
                       <div>
                         <p className="text-xs font-bold text-white">Account Settings</p>
                         <p className="text-[10px] text-slate-400">Profile credentials & security</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate('/dashboard/faq')}
+                    className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#0a1428] hover:bg-[#0f1d38] border border-cyan-500/20 text-slate-200 transition text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <HelpCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                          How-To & FAQ
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">Guide</span>
+                        </p>
+                        <p className="text-[10px] text-slate-400">Step-by-step playbook & questions</p>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-500" />
