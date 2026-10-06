@@ -355,7 +355,7 @@ export const ProfileEditorPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => {
@@ -384,7 +384,7 @@ export const ProfileEditorPage: React.FC = () => {
 
           <Link to={`/@${targetProfile.slug}`} target="_blank">
             <Button variant="secondary" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5" />}>
-              Open Public Profile
+              <span className="hidden xs:inline">Open </span>Public
             </Button>
           </Link>
 
@@ -395,7 +395,7 @@ export const ProfileEditorPage: React.FC = () => {
             disabled={isSaving}
             leftIcon={isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : isSaved ? <Check className="w-4 h-4 text-slate-950" /> : <Sparkles className="w-4 h-4 text-slate-950" />}
           >
-            {isSaving ? 'Saving...' : isSaved ? 'Changes Saved!' : 'Save Profile'}
+            {isSaving ? 'Saving...' : isSaved ? 'Saved!' : 'Save Profile'}
           </Button>
         </div>
       </div>
@@ -915,7 +915,7 @@ export const ProfileEditorPage: React.FC = () => {
             <select
               value={linkCategory}
               onChange={(e) => setLinkCategory(e.target.value as LinkCategory)}
-              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-xs font-semibold text-white focus:border-cyan-400 focus:outline-none"
+              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-base sm:text-xs font-semibold text-white focus:border-cyan-400 focus:outline-none"
             >
               <option value="social">Social Media</option>
               <option value="portfolio">Portfolio</option>

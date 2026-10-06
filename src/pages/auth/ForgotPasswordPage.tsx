@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Mail, ArrowLeft, CheckCircle2, ArrowRight, Copy, Check, AlertCircle, ShieldCheck, ExternalLink } from 'lucide-react';
 import tapItLogo from '../../assets/tapit-logo.png';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const ForgotPasswordPage: React.FC = () => {
   const { requestPasswordReset } = useTapIt();
@@ -56,22 +57,26 @@ export const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#040c1a] flex items-center justify-center p-4 py-16 relative selection:bg-cyan-500 selection:text-black">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none" />
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-bits-midnight bits-hero-mesh flex items-center justify-center p-3.5 sm:p-4 py-8 sm:py-16 relative selection:bg-bits-cyan selection:text-bits-midnight">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[32rem] h-[32rem] bg-bits-azure/20 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6 backdrop-blur-2xl">
+      <div className="w-full max-w-md bg-bits-navy/90 border border-bits-vapor/20 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-card-bits relative z-10 space-y-6 backdrop-blur-2xl">
         {/* Brand */}
         <div className="text-center space-y-2 flex flex-col items-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-2 group">
             <img
               src={tapItLogo}
               alt="TapIt"
-              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-[0_4px_16px_rgba(56,189,248,0.25)]"
             />
           </Link>
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3.5 py-1 rounded-full shadow-glow-cyan">
+            <BitsInfinityEmblem size={14} />
+            <span>Sovereign Security Recovery</span>
+          </div>
           <h2 className="text-2xl font-bold text-white font-display">Reset Your Password</h2>
           <p className="text-xs text-slate-300">
-            Enter your email address or username and we'll generate your secure password recovery link.
+            Enter your email address or username and we'll generate your secure cryptographic recovery token.
           </p>
         </div>
 

@@ -37,6 +37,7 @@ export interface PasswordResetToken {
 }
 
 export type ThemeStyle = 
+  | 'bits-enterprise'
   | 'minimal-dark'
   | 'cyberpunk-neon'
   | 'obsidian-gold'

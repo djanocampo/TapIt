@@ -15,9 +15,13 @@ export const DemoBar: React.FC = () => {
           <span>Interactive Demo</span>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-xs font-semibold text-slate-200">
-          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Logged in as: <strong className="text-white">{currentUser.name}</strong> (Administrator)</span>
+        <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold text-slate-200 min-w-0">
+          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+          <span className="truncate max-w-[140px] xs:max-w-none">
+            <span className="hidden sm:inline">Logged in as: </span>
+            <strong className="text-white">{currentUser.name}</strong>
+            <span className="hidden xs:inline"> (Admin)</span>
+          </span>
         </div>
       </div>
 

@@ -36,14 +36,14 @@ export const AdminLayout: React.FC = () => {
   const pageInfo = getPageInfo();
 
   return (
-    <div className="min-h-screen bg-[#040c1a] text-slate-100 selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen min-h-[100dvh] bg-[#040c1a] text-slate-100 selection:bg-cyan-500 selection:text-black overflow-x-hidden w-full max-w-full">
       {/* Desktop Persistent Fixed Sidebar (Pinned to Viewport - Does not scroll with page) */}
       <div className="hidden md:block fixed inset-y-0 left-0 w-64 z-40">
         <AdminSidebar />
       </div>
 
       {/* Main Workspace Area (Offset by sidebar width on desktop) */}
-      <div className="md:pl-64 flex flex-col min-h-screen min-w-0 bg-[#070a13]">
+      <div className="md:pl-64 flex flex-col min-h-screen min-h-[100dvh] min-w-0 max-w-full bg-[#070a13] overflow-x-hidden">
         {/* Header */}
         <header className="bg-[#050a17]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 lg:px-8 py-3.5 sticky top-0 z-30 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -71,8 +71,8 @@ export const AdminLayout: React.FC = () => {
           </div>
         </header>
 
-        {/* Scrollable Content with padding-bottom for mobile bottom nav */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+        {/* Scrollable Content with padding-bottom for mobile bottom nav and safe area */}
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-8 min-w-0 max-w-full">
           <Outlet />
         </main>
       </div>

@@ -17,6 +17,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const QRCodeStudioPage: React.FC = () => {
   const { profiles, activeProfile, setActiveProfileId, qrCodes, recordQRScan } = useTapIt();
@@ -24,8 +25,8 @@ export const QRCodeStudioPage: React.FC = () => {
   const [selectedProfileId, setSelectedProfileId] = useState(activeProfile.id);
   const currentProf = profiles.find((p) => p.id === selectedProfileId) || activeProfile;
 
-  const [qrColor, setQrColor] = useState(currentProf.theme.accentColor || '#06b6d4');
-  const [qrBg, setQrBg] = useState('#090d16');
+  const [qrColor, setQrColor] = useState(currentProf.theme.accentColor || '#38bdf8');
+  const [qrBg, setQrBg] = useState('#060c1c');
   const [cardTitle, setCardTitle] = useState(currentProf.displayName);
   const [cardSubtitle, setCardSubtitle] = useState(currentProf.headline);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -41,6 +42,10 @@ export const QRCodeStudioPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3 py-0.5 rounded-full mb-1">
+            <BitsInfinityEmblem size={12} />
+            <span>High-Density Dynamic Matrix</span>
+          </div>
           <h2 className="text-xl sm:text-2xl font-bold text-white font-display">QR Code Studio</h2>
           <p className="text-xs sm:text-sm text-slate-400">
             Generate, customize, and print high-resolution QR codes linked to your TapIt profiles.
@@ -71,7 +76,7 @@ export const QRCodeStudioPage: React.FC = () => {
       {/* Editor & Studio Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Settings & Customization */}
-        <div className="lg:col-span-7 bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="lg:col-span-7 bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-6 sm:p-8 shadow-card-bits space-y-6 backdrop-blur-xl">
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">
               Select Profile:
@@ -86,16 +91,16 @@ export const QRCodeStudioPage: React.FC = () => {
                       setSelectedProfileId(p.id);
                       setCardTitle(p.displayName);
                       setCardSubtitle(p.headline);
-                      setQrColor(p.theme.accentColor || '#06b6d4');
+                      setQrColor(p.theme.accentColor || '#38bdf8');
                     }}
                     className={`p-3 rounded-xl border text-left transition ${
                       isSelected
-                        ? 'border-cyan-400 bg-cyan-950/50 text-white shadow-glow-cyan'
-                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                        ? 'border-bits-cyan bg-bits-azure/30 text-white shadow-glow-cyan'
+                        : 'border-bits-vapor/10 bg-bits-midnight/60 text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <span className="text-xs font-bold block truncate">{p.name}</span>
-                    <span className="text-[10px] text-cyan-400 font-mono">@{p.slug}</span>
+                    <span className="text-[10px] text-bits-cyan font-mono">@{p.slug}</span>
                   </button>
                 );
               })}
@@ -122,19 +127,19 @@ export const QRCodeStudioPage: React.FC = () => {
             </label>
             <div className="flex items-center gap-3 flex-wrap">
               {[
-                { label: 'Cyan', color: '#06b6d4' },
-                { label: 'Purple', color: '#8b5cf6' },
+                { label: 'Cyan Sky', color: '#38bdf8' },
+                { label: 'Electric Blue', color: '#2563eb' },
+                { label: 'Royal Azure', color: '#124294' },
+                { label: 'Sunrise Amber', color: '#f59e0b' },
                 { label: 'Emerald', color: '#10b981' },
-                { label: 'Amber', color: '#f59e0b' },
-                { label: 'Rose', color: '#f43f5e' },
-                { label: 'White', color: '#ffffff' },
+                { label: 'Pure White', color: '#ffffff' },
               ].map((c) => (
                 <button
                   key={c.label}
                   type="button"
                   onClick={() => setQrColor(c.color)}
                   className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition ${
-                    qrColor === c.color ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-80 hover:opacity-100'
+                    qrColor === c.color ? 'border-white scale-110 shadow-glow-cyan' : 'border-transparent opacity-80 hover:opacity-100'
                   }`}
                   style={{ backgroundColor: c.color }}
                 >

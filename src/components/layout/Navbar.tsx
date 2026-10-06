@@ -20,6 +20,8 @@ import {
 
 import tapItLogo from '../../assets/tapit-logo.png';
 
+import { BitsInfinityEmblem } from '../common/BitsBrandElements';
+
 export const Navbar: React.FC = () => {
   const { currentRole, currentUser, isAuthenticated, logout } = useTapIt();
   const location = useLocation();
@@ -28,12 +30,14 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { label: 'Home', href: '#home', path: '/' },
+    { label: 'Platform Features', href: '/features', path: '/features', isRoute: true },
+    { label: 'How It Works', href: '/how-it-works', path: '/how-it-works', isRoute: true },
     { label: 'About Us', href: '#about', path: '/#about' },
   ];
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = (href: string, isRoute?: boolean) => {
     setMobileMenuOpen(false);
-    if (location.pathname === '/') {
+    if (!isRoute && location.pathname === '/') {
       const element = document.querySelector(href);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
@@ -48,21 +52,39 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#040c1a]/85 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
+    <header className="sticky top-0 z-40 bg-[#060c1c]/90 backdrop-blur-2xl border-b border-[#1b2d55]/80 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-15 sm:h-20">
-          {/* Left Brand Logo */}
-          <Link to="/" className="flex items-center gap-2 group py-2">
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Left Brand Logo & BITS Submark */}
+          <Link to="/" className="flex items-center gap-3 group py-2">
             <img
               src={tapItLogo}
               alt="TapIt"
-              className="h-11 sm:h-12 lg:h-[75px] w-auto object-contain group-hover:scale-105 transition-transform duration-200"
+              className="h-10 sm:h-12 lg:h-[65px] w-auto object-contain group-hover:scale-105 transition-transform duration-200"
             />
+            <div className="hidden lg:flex flex-col border-l border-[#1b2d55] pl-3 py-0.5">
+              <span className="text-[10px] font-mono tracking-widest text-[#38BDF8] uppercase font-bold flex items-center gap-1.5">
+                <BitsInfinityEmblem size={12} />
+                <span>BITS Tap™ Core</span>
+              </span>
+              <span className="text-[9px] text-slate-400 font-medium">Boundless IT Solutions</span>
+            </div>
           </Link>
 
           {/* Center Floating Glass Pill Menu */}
-          <nav className="hidden md:flex items-center gap-1 bg-[#0b162c]/70 border border-white/10 rounded-full px-2 py-1.5 backdrop-blur-xl shadow-2xl">
+          <nav className="hidden md:flex items-center gap-1 bg-[#0a142c]/90 border border-[#1b2d55] rounded-full px-3 py-1.5 backdrop-blur-xl shadow-xl shadow-black/40">
             {navLinks.map((link) => {
+              if (link.isRoute) {
+                return (
+                  <Link
+                    key={link.label}
+                    to={link.path}
+                    className="text-xs lg:text-sm font-medium px-4 py-1.5 rounded-full transition-all duration-200 text-slate-300 hover:text-white hover:bg-[#124294]/30"
+                  >
+                    {link.label}
+                  </Link>
+                );
+              }
               return (
                 <a
                   key={link.label}
@@ -70,10 +92,10 @@ export const Navbar: React.FC = () => {
                   onClick={(e) => {
                     if (location.pathname === '/') {
                       e.preventDefault();
-                      handleNavClick(link.href);
+                      handleNavClick(link.href, false);
                     }
                   }}
-                  className="text-xs lg:text-sm font-medium px-4 py-1.5 rounded-full transition-all duration-200 text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                  className="text-xs lg:text-sm font-medium px-4 py-1.5 rounded-full transition-all duration-200 text-slate-300 hover:text-white hover:bg-[#124294]/30"
                 >
                   {link.label}
                 </a>
@@ -102,7 +124,7 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="p-2 rounded-full text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-500/30 transition"
+                  className="p-2 rounded-full text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-500/30 transition cursor-pointer"
                   title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
@@ -117,7 +139,7 @@ export const Navbar: React.FC = () => {
                   Log In
                 </Link>
                 <Link to="/login">
-                  <Button variant="glow" size="sm" className="rounded-full px-4 font-bold">
+                  <Button variant="glow" size="sm" className="rounded-full px-5 font-bold">
                     Get Started
                   </Button>
                 </Link>
@@ -129,7 +151,7 @@ export const Navbar: React.FC = () => {
           <div className="flex md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2.5 rounded-full text-slate-300 hover:text-white bg-slate-900/80 border border-slate-800 focus:outline-none"
+              className="p-2.5 rounded-full text-slate-300 hover:text-white bg-[#0a142c] border border-[#1b2d55] focus:outline-none cursor-pointer"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -139,9 +161,21 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#070e1c] border-b border-slate-800/80 px-4 pt-3 pb-6 space-y-3">
+        <div className="md:hidden bg-[#0a142c] border-b border-[#1b2d55] px-4 pt-3 pb-6 space-y-3 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain touch-pan-y">
           <div className="space-y-1">
             {navLinks.map((link) => {
+              if (link.isRoute) {
+                return (
+                  <Link
+                    key={link.label}
+                    to={link.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-[#124294]/30 hover:text-white"
+                  >
+                    {link.label}
+                  </Link>
+                );
+              }
               return (
                 <a
                   key={link.label}
@@ -150,16 +184,16 @@ export const Navbar: React.FC = () => {
                     if (location.pathname === '/') {
                       e.preventDefault();
                     }
-                    handleNavClick(link.href);
+                    handleNavClick(link.href, false);
                   }}
-                  className="block px-4 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800/80"
+                  className="block px-4 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-[#124294]/30 hover:text-white"
                 >
                   {link.label}
                 </a>
               );
             })}
           </div>
-          <div className="pt-3 border-t border-slate-800/80 flex flex-col gap-2">
+          <div className="pt-3 border-t border-[#1b2d55] flex flex-col gap-2">
             {isAuthenticated && currentUser ? (
               <>
                 <Link to={currentUser.role === 'admin' ? '/admin' : '/dashboard'} onClick={() => setMobileMenuOpen(false)}>

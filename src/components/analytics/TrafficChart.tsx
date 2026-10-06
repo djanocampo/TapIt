@@ -59,22 +59,22 @@ export const TrafficChart: React.FC<TrafficChartProps> = ({ events, cards: custo
   };
 
   return (
-    <div className="bg-[#0d1322] border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="bg-[#0a142c] border border-[#1b2d55] rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
       {/* Header with period toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-white font-display">Traffic & Engagement Over Time</h3>
-          <p className="text-xs text-slate-400">Comparing total profile views, physical NFC taps, and QR scans</p>
+          <p className="text-xs text-slate-300">Comparing total profile views, physical NFC taps, and QR scans</p>
         </div>
 
-        <div className="flex items-center p-1 bg-slate-900 border border-slate-800 rounded-xl">
+        <div className="flex items-center p-1 bg-[#081329] border border-[#1b2d55] rounded-xl">
           {(['daily', 'weekly', 'monthly'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg capitalize transition ${
+              className={`px-3 py-1 text-xs font-semibold rounded-lg capitalize transition cursor-pointer ${
                 period === p
-                  ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                  ? 'bg-gradient-to-r from-[#2563EB] to-[#124294] text-white shadow-sm border border-[#38BDF8]/30 font-bold'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -85,40 +85,40 @@ export const TrafficChart: React.FC<TrafficChartProps> = ({ events, cards: custo
       </div>
 
       {/* Chart Canvas */}
-      <div className="h-64 sm:h-72 w-full pt-2">
+      <div className="h-64 sm:h-72 w-full min-w-0 pt-2">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={getData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.0} />
+                <stop offset="5%" stopColor="#2563EB" stopOpacity={0.45} />
+                <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
               </linearGradient>
               <linearGradient id="colorTaps" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
-                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
+                <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.55} />
+                <stop offset="95%" stopColor="#38BDF8" stopOpacity={0.0} />
               </linearGradient>
               <linearGradient id="colorQr" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-            <XAxis dataKey="time" stroke="#64748b" fontSize={11} tickLine={false} />
-            <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1b2d55" vertical={false} />
+            <XAxis dataKey="time" stroke="#94a3b8" fontSize={11} tickLine={false} />
+            <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#070a13',
-                borderColor: '#334155',
+                backgroundColor: '#0a142c',
+                borderColor: '#1b2d55',
                 borderRadius: '12px',
                 fontSize: '12px',
                 color: '#fff',
-                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)',
+                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.6)',
               }}
             />
             <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-            <Area type="monotone" dataKey="views" name="Profile Views" stroke="#8b5cf6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorViews)" />
-            <Area type="monotone" dataKey="taps" name="NFC Taps" stroke="#06b6d4" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTaps)" />
-            <Area type="monotone" dataKey="qr" name="QR Scans" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorQr)" />
+            <Area type="monotone" dataKey="views" name="Profile Views" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#colorViews)" />
+            <Area type="monotone" dataKey="taps" name="NFC Taps" stroke="#38BDF8" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTaps)" />
+            <Area type="monotone" dataKey="qr" name="QR Scans" stroke="#F59E0B" strokeWidth={2} fillOpacity={1} fill="url(#colorQr)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>

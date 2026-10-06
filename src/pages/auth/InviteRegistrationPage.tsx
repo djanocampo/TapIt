@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 import tapItLogo from '../../assets/tapit-logo.png';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const InviteRegistrationPage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -158,10 +159,10 @@ export const InviteRegistrationPage: React.FC = () => {
   // Loading indicator while checking token
   if (isResolving) {
     return (
-      <div className="min-h-screen bg-[#040c1a] flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-12 h-12 rounded-2xl border-2 border-cyan-400 border-t-transparent animate-spin mb-4"></div>
-        <p className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-          Verifying Invitation Token...
+      <div className="min-h-screen bg-bits-midnight bits-hero-mesh flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-12 h-12 rounded-2xl border-2 border-bits-cyan border-t-transparent animate-spin mb-4 shadow-glow-cyan"></div>
+        <p className="text-xs font-bold uppercase tracking-widest text-bits-cyan font-mono">
+          Resolving BITS Tap™ Identity Provision...
         </p>
       </div>
     );
@@ -170,15 +171,15 @@ export const InviteRegistrationPage: React.FC = () => {
   // If invite token is not found
   if (!resolvedInvite) {
     return (
-      <div className="min-h-screen bg-[#040c1a] flex items-center justify-center p-4 py-16 text-center">
-        <div className="max-w-md w-full bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-8 space-y-6 shadow-2xl backdrop-blur-2xl">
-          <div className="w-16 h-16 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-300 flex items-center justify-center mx-auto shadow-lg">
+      <div className="min-h-screen bg-bits-midnight bits-hero-mesh flex items-center justify-center p-4 py-16 text-center">
+        <div className="max-w-md w-full bg-bits-navy/90 border border-bits-vapor/20 rounded-3xl p-8 space-y-6 shadow-2xl backdrop-blur-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-400/40 text-rose-300 flex items-center justify-center mx-auto shadow-lg">
             <AlertCircle className="w-8 h-8" />
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-white font-display">Invitation Not Found</h2>
             <p className="text-xs sm:text-sm text-slate-300">
-              Token <strong className="font-mono text-cyan-300">{cleanToken || 'N/A'}</strong> is either expired, invalid, or has already been completed.
+              Token <strong className="font-mono text-bits-cyan">{cleanToken || 'N/A'}</strong> is either expired, invalid, or has already been completed.
             </p>
           </div>
           <div className="space-y-3 pt-2">
@@ -200,9 +201,9 @@ export const InviteRegistrationPage: React.FC = () => {
 
   if (resolvedInvite.isUsed) {
     return (
-      <div className="min-h-screen bg-[#040c1a] flex items-center justify-center p-4 py-16 text-center">
-        <div className="max-w-md w-full bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-8 space-y-6 shadow-2xl backdrop-blur-2xl">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center mx-auto shadow-lg">
+      <div className="min-h-screen bg-bits-midnight bits-hero-mesh flex items-center justify-center p-4 py-16 text-center">
+        <div className="max-w-md w-full bg-bits-navy/90 border border-bits-vapor/20 rounded-3xl p-8 space-y-6 shadow-2xl backdrop-blur-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
             <CheckCircle2 className="w-8 h-8" />
           </div>
           <div className="space-y-2">
@@ -222,22 +223,22 @@ export const InviteRegistrationPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#040c1a] flex items-center justify-center p-4 py-16 relative selection:bg-cyan-500 selection:text-black">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none" />
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-bits-midnight bits-hero-mesh flex items-center justify-center p-3.5 sm:p-4 py-8 sm:py-16 relative selection:bg-bits-cyan selection:text-bits-midnight">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[34rem] h-[34rem] bg-bits-azure/20 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="w-full max-w-lg bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6 backdrop-blur-2xl">
+      <div className="w-full max-w-lg bg-bits-navy/90 border border-bits-vapor/20 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-card-bits relative z-10 space-y-6 backdrop-blur-2xl">
         {/* Header Branding */}
         <div className="text-center space-y-2 flex flex-col items-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-2 group">
             <img
               src={tapItLogo}
               alt="TapIt"
-              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-[0_4px_16px_rgba(56,189,248,0.25)]"
             />
           </Link>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-400/40 px-3 py-1 rounded-full shadow-glow-cyan">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>VIP Account Activation Invitation</span>
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3.5 py-1 rounded-full shadow-glow-cyan">
+            <BitsInfinityEmblem size={14} />
+            <span>BITS Tap™ Hardware Provision</span>
           </div>
           <h2 className="text-2xl font-bold text-white font-display">Welcome to TapIt</h2>
           <p className="text-xs text-slate-300 max-w-sm">
@@ -246,13 +247,13 @@ export const InviteRegistrationPage: React.FC = () => {
         </div>
 
         {/* Bound NFC Card Badge */}
-        <div className="p-4 rounded-2xl bg-[#050c18] border border-cyan-500/30 flex items-center justify-between gap-3 shadow-inner">
+        <div className="p-4 rounded-2xl bg-bits-midnight/80 border border-bits-horizon/40 flex items-center justify-between gap-3 shadow-inner">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
+            <div className="p-2.5 rounded-xl bg-bits-azure/30 text-bits-cyan border border-bits-cyan/30">
               <Radio className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider block">
+              <span className="text-[11px] font-bold text-bits-cyan uppercase tracking-wider block">
                 Pre-Bound Physical NFC Tag:
               </span>
               <p className="text-xs font-mono font-bold text-white">
@@ -260,7 +261,7 @@ export const InviteRegistrationPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-black/40 px-2 py-1 rounded-lg border border-white/10">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-black/40 px-2 py-1 rounded-lg border border-bits-vapor/10">
             {resolvedInvite.material}
           </span>
         </div>

@@ -260,14 +260,14 @@ export const PublicProfilePage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center p-3 sm:p-6 transition-colors"
+      className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden flex flex-col items-center justify-center p-0 sm:p-6 transition-colors"
       style={{
         backgroundColor: targetProfile.theme.bgColor,
         backgroundImage: targetProfile.theme.bgGradient,
       }}
     >
       {/* Main Public Profile Content */}
-      <div className="w-full max-w-md flex-1 flex items-center justify-center">
+      <div className="w-full max-w-md flex-1 flex items-center justify-center min-w-0">
         <PublicProfileRenderer
           profile={targetProfile}
           links={activeLinks}

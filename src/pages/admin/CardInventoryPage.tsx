@@ -21,6 +21,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { formatNumber, triggerConfetti } from '../../lib/utils';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const CardInventoryPage: React.FC = () => {
   const { allCards, allProfiles, allUsers, generateBatchCards, toggleCardStatus, updateCard, deleteCard } = useTapIt();
@@ -82,25 +83,26 @@ export const CardInventoryPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#081224]/90 border border-white/[0.08] shadow-xl backdrop-blur-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-bits-navy/90 border border-bits-vapor/15 shadow-card-bits backdrop-blur-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-2.5 py-0.5 rounded-full">
+              <BitsInfinityEmblem size={12} />
+              <span>{allCards.length} Provisioned Hardware Units</span>
+            </div>
             <h2 className="text-lg sm:text-xl font-bold text-white font-display">NFC Hardware Inventory</h2>
-            <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-              {allCards.length} Total Registered Cards
-            </span>
           </div>
           <p className="text-xs text-slate-400">
             Admin tool: Provision, batch generate, and program physical NFC hardware tokens using Web NFC.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
           <Button
             variant="glow"
             size="md"
             onClick={() => handleOpenWriter()}
-            leftIcon={<Zap className="w-4 h-4" />}
+            leftIcon={<Zap className="w-4 h-4 text-bits-cyan" />}
           >
             Web NFC Flasher & Inspector
           </Button>
@@ -117,7 +119,7 @@ export const CardInventoryPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-4 sm:p-6 shadow-card-bits flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
         <div className="w-full sm:w-80">
           <Input
             placeholder="Search by token, card name, user..."
@@ -131,7 +133,7 @@ export const CardInventoryPage: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:outline-none"
+            className="w-full sm:w-auto bg-bits-midnight border border-bits-horizon/40 text-base sm:text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:border-bits-cyan focus:outline-none"
           >
             <option value="all">All Statuses ({allCards.length})</option>
             <option value="active">Active</option>
@@ -142,11 +144,11 @@ export const CardInventoryPage: React.FC = () => {
       </div>
 
       {/* Cards Table with Exact User-Requested Headers */}
-      <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl shadow-xl overflow-hidden backdrop-blur-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl shadow-card-bits overflow-hidden backdrop-blur-xl">
+        <div className="overflow-x-auto touch-pan-x">
+          <table className="w-full min-w-[620px] text-left text-xs">
             <thead>
-              <tr className="border-b border-white/[0.08] bg-[#040813] text-slate-400 uppercase tracking-wider font-semibold">
+              <tr className="border-b border-bits-vapor/10 bg-bits-midnight/80 text-slate-400 uppercase tracking-wider font-semibold">
                 <th className="py-3.5 px-4 font-medium">Hardware Token</th>
                 <th className="py-3.5 px-4 font-medium">User</th>
                 <th className="py-3.5 px-4 font-medium">Assigned Profile</th>
@@ -363,7 +365,7 @@ export const CardInventoryPage: React.FC = () => {
             <select
               value={batchCount}
               onChange={(e) => setBatchCount(Number(e.target.value))}
-              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
+              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-base sm:text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
             >
               <option value={5}>5 NFC Card Tokens</option>
               <option value={10}>10 NFC Card Tokens</option>
@@ -379,7 +381,7 @@ export const CardInventoryPage: React.FC = () => {
             <select
               value={batchMaterial}
               onChange={(e) => setBatchMaterial(e.target.value as CardMaterial)}
-              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
+              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-base sm:text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
             >
               <option value="matte-black">Matte Black NFC Card</option>
               <option value="white-ceramic">White Ceramic Card</option>

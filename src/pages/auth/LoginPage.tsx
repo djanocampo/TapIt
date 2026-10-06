@@ -10,6 +10,8 @@ import { verifyPassword, hashPassword } from '../../utils/crypto';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { mapDBToUser } from '../../services/dualLayerSync';
 
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
+
 export const LoginPage: React.FC = () => {
   const { login, allUsers, setActiveProfileId, profiles } = useTapIt();
   const navigate = useNavigate();
@@ -126,10 +128,11 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#040c1a] flex items-center justify-center p-4 py-16 relative selection:bg-cyan-500 selection:text-black">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none" />
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-[#060c1c] flex items-center justify-center p-3.5 sm:p-4 py-8 sm:py-16 relative selection:bg-[#38BDF8] selection:text-slate-950">
+      <div className="absolute inset-0 bits-hero-mesh pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#124294]/25 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6 backdrop-blur-2xl">
+      <div className="w-full max-w-md bits-glass rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl relative z-10 space-y-6">
         {/* Brand */}
         <div className="text-center space-y-2 flex flex-col items-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-2 group">
@@ -139,8 +142,12 @@ export const LoginPage: React.FC = () => {
               className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
             />
           </Link>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#124294]/30 border border-[#38BDF8]/40 text-[#38BDF8] text-[11px] font-mono">
+            <BitsInfinityEmblem size={12} />
+            <span>BITS SOVEREIGN AUTHENTICATION</span>
+          </div>
           <h2 className="text-2xl font-bold text-white font-display">Sign In to TapIt</h2>
-          <p className="text-xs text-slate-300">Enter your account credentials to access your smart identity portal</p>
+          <p className="text-xs text-slate-300">Enter your credentials to access your smart identity portal</p>
         </div>
 
         {errorMessage && (
@@ -158,7 +165,7 @@ export const LoginPage: React.FC = () => {
             placeholder="Email or Username"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            leftIcon={<Mail className="w-4 h-4" />}
+            leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
             required
           />
 
@@ -169,7 +176,7 @@ export const LoginPage: React.FC = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              leftIcon={<Lock className="w-4 h-4" />}
+              leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
               required
             />
             <div className="flex items-center justify-between text-xs pt-1">
@@ -178,11 +185,11 @@ export const LoginPage: React.FC = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400"
+                  className="rounded border-[#1b2d55] bg-[#081329] text-[#2563EB] focus:ring-[#38BDF8]"
                 />
                 <span>Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-cyan-400 text-xs hover:underline">
+              <Link to="/forgot-password" className="text-[#38BDF8] text-xs hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -193,7 +200,7 @@ export const LoginPage: React.FC = () => {
             variant="glow"
             size="lg"
             isLoading={isLoading}
-            className="w-full justify-center mt-2"
+            className="w-full justify-center mt-2 rounded-xl"
             rightIcon={<ArrowRight className="w-4 h-4" />}
           >
             Sign In
@@ -201,10 +208,10 @@ export const LoginPage: React.FC = () => {
         </form>
 
         {/* Footer link */}
-        <div className="text-center text-xs text-slate-400 space-y-1 border-t border-white/[0.08] pt-4">
+        <div className="text-center text-xs text-slate-400 space-y-1 border-t border-[#1b2d55] pt-4">
           <p>
             Don&apos;t have an account?{' '}
-            <Link to="/register" className="text-cyan-400 font-bold hover:underline">
+            <Link to="/register" className="text-[#38BDF8] font-bold hover:underline">
               Create Your 1st Account
             </Link>
           </p>

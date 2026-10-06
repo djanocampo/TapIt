@@ -84,8 +84,8 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
 }) => {
   const rawTheme = profile?.theme;
   const theme: ProfileThemeConfig = typeof rawTheme === 'string'
-    ? (THEME_PRESETS[rawTheme] || THEME_PRESETS['cyberpunk-neon'])
-    : { ...(THEME_PRESETS[rawTheme?.id] || THEME_PRESETS['cyberpunk-neon']), ...(rawTheme || {}) };
+    ? (THEME_PRESETS[rawTheme] || THEME_PRESETS['bits-enterprise'] || THEME_PRESETS['minimal-dark'])
+    : { ...(THEME_PRESETS[rawTheme?.id] || THEME_PRESETS['bits-enterprise'] || THEME_PRESETS['minimal-dark']), ...(rawTheme || {}) };
   const activeLinks = links
     .filter((l) => l.profileId === profile.id && l.isActive)
     .sort((a, b) => a.position - b.position);
@@ -187,8 +187,8 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
         backgroundImage: theme.bgGradient,
         color: theme.textColor,
       }}
-      className={`min-h-full w-full flex flex-col items-center justify-between p-4 sm:p-6 transition-all duration-300 ${getFontClass()} ${
-        isEmbed ? 'py-6 px-3' : 'py-10 max-w-md mx-auto rounded-3xl shadow-2xl border border-white/10'
+      className={`min-h-full min-h-[100dvh] w-full max-w-full flex flex-col items-center justify-between transition-all duration-300 ${getFontClass()} ${
+        isEmbed ? 'py-6 px-3' : 'pt-[max(1.25rem,env(safe-area-inset-top,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))] px-4 sm:px-6 max-w-md mx-auto sm:rounded-3xl sm:shadow-2xl sm:border sm:border-white/10'
       }`}
     >
       {/* Top Header Bar */}
@@ -329,14 +329,14 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
                 color: theme.textColor,
               }}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div
                   className="p-2 rounded-lg shrink-0 transition-colors group-hover:scale-110"
                   style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}
                 >
                   {renderIcon(link.icon)}
                 </div>
-                <span className="truncate">{link.title}</span>
+                <span className="truncate block font-medium">{link.title}</span>
               </div>
               <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
             </a>
@@ -426,14 +426,14 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
           href="/"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wider uppercase opacity-75 hover:opacity-100 transition"
+          className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wider uppercase opacity-80 hover:opacity-100 transition"
           style={{ color: theme.subtextColor }}
         >
           <Radio className="w-3 h-3" style={{ color: theme.accentColor }} />
           <span>Powered by TapIt</span>
         </a>
-        <span className="text-[9px] opacity-50" style={{ color: theme.subtextColor }}>
-          Smart NFC Digital Business Card
+        <span className="text-[9px] opacity-60 tracking-wider font-mono uppercase" style={{ color: theme.subtextColor }}>
+          BITS Tap™ Contactless Infrastructure
         </span>
       </div>
     </div>

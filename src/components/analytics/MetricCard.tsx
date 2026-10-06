@@ -8,7 +8,7 @@ interface MetricCardProps {
   change?: number;
   changePeriod?: string;
   icon: LucideIcon;
-  variant?: 'cyan' | 'purple' | 'emerald' | 'amber';
+  variant?: 'cyan' | 'purple' | 'emerald' | 'amber' | 'azure' | 'electric';
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -22,14 +22,16 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   const isPositive = change !== undefined && change >= 0;
 
   const variantStyles = {
-    cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/25 shadow-glow-cyan',
+    cyan: 'bg-[#38BDF8]/15 text-[#38BDF8] border-[#38BDF8]/30 shadow-glow-cyan',
+    azure: 'bg-[#124294]/25 text-[#38BDF8] border-[#124294]/40 shadow-glow-azure',
+    electric: 'bg-[#2563EB]/20 text-[#60A5FA] border-[#2563EB]/40 shadow-glow-blue',
     purple: 'bg-purple-500/10 text-purple-400 border-purple-500/25 shadow-glow-purple',
     emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-glow-emerald',
-    amber: 'bg-amber-500/10 text-amber-400 border-amber-500/25',
+    amber: 'bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/35 shadow-glow-amber',
   };
 
   return (
-    <div className="bg-[#0d1322] border border-slate-800/90 rounded-2xl p-5 shadow-xl hover:border-slate-700/80 transition-all duration-200 group">
+    <div className="bg-[#0a142c] border border-[#1b2d55] rounded-2xl p-5 shadow-xl hover:border-[#38BDF8]/50 hover:shadow-glow-cyan/50 transition-all duration-200 group">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</span>
         <div className={`p-2.5 rounded-xl border ${variantStyles[variant]} transition-transform group-hover:scale-110`}>

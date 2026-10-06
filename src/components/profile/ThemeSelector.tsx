@@ -10,14 +10,14 @@ interface ThemeSelectorProps {
 }
 
 const ACCENT_PALETTE = [
-  { name: 'Cyan Neon', hex: '#06b6d4' },
-  { name: 'Electric Sky', hex: '#38bdf8' },
+  { name: 'BITS Cyan Glow', hex: '#38bdf8' },
+  { name: 'BITS Electric Blue', hex: '#2563eb' },
+  { name: 'BITS Royal Azure', hex: '#124294' },
+  { name: 'BITS Sunrise Amber', hex: '#f59e0b' },
   { name: 'Cyber Purple', hex: '#a855f7' },
   { name: 'Royal Indigo', hex: '#6366f1' },
   { name: 'Rose Pink', hex: '#f43f5e' },
-  { name: 'Amber Gold', hex: '#fbbf24' },
   { name: 'Emerald Glow', hex: '#10b981' },
-  { name: 'Sunset Orange', hex: '#f97316' },
   { name: 'Pure White', hex: '#ffffff' },
   { name: 'Slate Gray', hex: '#94a3b8' },
 ];
@@ -28,7 +28,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   onUpdateStyleOptions,
 }) => {
   const safeTheme: ProfileThemeConfig = {
-    ...(THEME_PRESETS[currentTheme?.id] || THEME_PRESETS['cyberpunk-neon']),
+    ...(THEME_PRESETS[currentTheme?.id] || THEME_PRESETS['bits-enterprise'] || THEME_PRESETS['minimal-dark']),
     ...(currentTheme || {}),
   };
 

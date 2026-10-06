@@ -50,7 +50,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   return (
-    <header className="bg-[#050a17]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 lg:px-8 py-3 sm:py-4 sticky top-0 z-30 flex items-center justify-between gap-4">
+    <header className="bg-[#060c1c]/90 backdrop-blur-md border-b border-[#1b2d55] px-4 sm:px-6 lg:px-8 py-3 sm:py-4 sticky top-0 z-30 flex items-center justify-between gap-4">
       {/* Left: Title & Breadcrumb */}
       <div className="flex items-center gap-3">
         <div>
@@ -68,9 +68,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           type="button"
           onClick={() => setIsCacheModalOpen(true)}
           title="Inspect / Clear Local Storage Cache"
-          className="hidden sm:flex items-center gap-1.5 bg-[#081326] border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02]"
+          className="hidden sm:flex items-center gap-1.5 bg-[#0a142c] border border-[#1b2d55] hover:border-[#38BDF8] text-[#38BDF8] text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02] cursor-pointer"
         >
-          <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
+          <HardDrive className="w-3.5 h-3.5 text-[#38BDF8]" />
           <span className="font-mono text-[11px] font-bold">{approxKb} KB</span>
         </button>
 
@@ -78,11 +78,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <Link
           to={`/@${activeProfile.slug}`}
           target="_blank"
-          className="flex items-center gap-1.5 bg-cyan-950/40 border border-cyan-500/30 hover:border-cyan-500/60 text-cyan-300 text-xs px-3 py-2 rounded-xl transition font-medium shadow-sm"
+          className="flex items-center gap-1.5 bg-[#124294]/30 border border-[#1B55C6]/60 hover:border-[#38BDF8]/60 text-[#E0F2FE] text-xs px-3 py-2 rounded-xl transition font-medium shadow-sm"
         >
-          <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+          <Smartphone className="w-3.5 h-3.5 text-[#38BDF8]" />
           <span className="hidden sm:inline">tapit.app/@{activeProfile.slug}</span>
-          <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+          <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
         </Link>
 
         {/* Share Profile Button */}
@@ -91,7 +91,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             variant="secondary"
             size="sm"
             onClick={onOpenShareModal}
-            leftIcon={<Share2 className="w-3.5 h-3.5" />}
+            leftIcon={<Share2 className="w-3.5 h-3.5 text-[#38BDF8]" />}
           >
             <span className="hidden sm:inline">Share</span>
           </Button>
@@ -101,30 +101,30 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
+            className="relative p-2 rounded-xl bg-[#0a142c] border border-[#1b2d55] text-slate-300 hover:text-white hover:border-[#38BDF8]/40 transition cursor-pointer"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-500 text-slate-950 rounded-full text-[10px] font-extrabold flex items-center justify-center animate-bounce">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#2563EB] text-white rounded-full text-[10px] font-extrabold flex items-center justify-center shadow-glow-blue animate-bounce">
                 {unreadCount}
               </span>
             )}
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-[min(calc(100vw-2rem),24rem)] rounded-2xl glass-dropdown shadow-2xl p-4 z-50 border border-slate-700">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+            <div className="absolute right-0 mt-2 w-[min(calc(100vw-2rem),24rem)] rounded-2xl glass-dropdown shadow-2xl p-4 z-50 border border-[#1b2d55]">
+              <div className="flex items-center justify-between pb-3 border-b border-[#1b2d55] mb-3">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Live Notifications</h4>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Live Telemetry Feed</h4>
                   {unreadCount > 0 && (
-                    <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-semibold">
+                    <span className="text-[10px] bg-[#2563EB]/25 text-[#38BDF8] border border-[#38BDF8]/30 px-1.5 py-0.5 rounded-full font-semibold">
                       {unreadCount} new
                     </span>
                   )}
                 </div>
                 <button
                   onClick={clearAllNotifications}
-                  className="text-[11px] text-slate-400 hover:text-slate-200"
+                  className="text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer"
                 >
                   Clear all
                 </button>

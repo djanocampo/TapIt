@@ -71,7 +71,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
   return (
     <>
       {/* FIXED BOTTOM NAVIGATION BAR (MOBILE ONLY) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#050c18]/95 backdrop-blur-2xl border-t border-white/[0.1] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.8)] px-2 py-1.5 safe-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#060c1c]/95 backdrop-blur-2xl border-t border-[#1b2d55] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.8)] px-2 py-1.5 safe-bottom">
         <div className="grid grid-cols-5 items-center gap-1">
           {currentTabs.map((tab) => {
             const Icon = tab.icon;
@@ -83,12 +83,12 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
                 to={tab.path}
                 className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-200 ${
                   active
-                    ? 'text-cyan-300 font-bold bg-cyan-950/50 border border-cyan-500/30 shadow-sm'
+                    ? 'text-[#38BDF8] font-bold bg-[#124294]/35 border border-[#38BDF8]/40 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 font-medium'
                 }`}
               >
-                <Icon className={`w-5 h-5 mb-0.5 ${active ? 'text-cyan-400 scale-110' : ''}`} />
-                <span className="text-[10px] tracking-tight truncate max-w-[55px] text-center">
+                <Icon className={`w-5 h-5 mb-0.5 ${active ? 'text-[#38BDF8] scale-110' : ''}`} />
+                <span className="text-[10px] tracking-tight truncate max-w-[55px] text-center font-medium">
                   {tab.label}
                 </span>
               </Link>
@@ -99,14 +99,14 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
           <button
             type="button"
             onClick={() => setIsMoreOpen(true)}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-200 ${
+            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-200 cursor-pointer ${
               isMoreOpen
-                ? 'text-cyan-300 font-bold bg-cyan-950/50 border border-cyan-500/30'
+                ? 'text-[#38BDF8] font-bold bg-[#124294]/35 border border-[#38BDF8]/40'
                 : 'text-slate-400 hover:text-slate-200 font-medium'
             }`}
           >
-            <MoreHorizontal className={`w-5 h-5 mb-0.5 ${isMoreOpen ? 'text-cyan-400' : ''}`} />
-            <span className="text-[10px] tracking-tight truncate max-w-[55px] text-center">
+            <MoreHorizontal className={`w-5 h-5 mb-0.5 ${isMoreOpen ? 'text-[#38BDF8]' : ''}`} />
+            <span className="text-[10px] tracking-tight truncate max-w-[55px] text-center font-medium">
               More
             </span>
           </button>
@@ -123,19 +123,22 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
           />
 
           {/* Bottom Sheet Modal */}
-          <div className="relative z-10 w-full max-h-[85vh] bg-[#070e1c] border-t border-white/[0.12] rounded-t-[32px] p-6 shadow-2xl flex flex-col space-y-5 overflow-y-auto safe-bottom animate-in slide-in-from-bottom duration-300">
+          <div className="relative z-10 w-full max-h-[85dvh] bg-[#0a142c] border-t border-[#1b2d55] rounded-t-[32px] p-5 sm:p-6 shadow-2xl flex flex-col space-y-5 overflow-y-auto pb-[max(2rem,env(safe-area-inset-bottom,0px))] animate-in slide-in-from-bottom duration-300 touch-pan-y">
+            {/* Visual Grab Handle for Bottom Sheet */}
+            <div className="w-10 h-1 rounded-full bg-slate-600/80 mx-auto -mt-1" />
+
             {/* Top Handle & Close Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
+            <div className="flex items-center justify-between pb-2 border-b border-[#1b2d55]">
               <div className="flex items-center gap-3">
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-10 h-10 rounded-xl object-cover border border-cyan-500/40"
+                  className="w-10 h-10 rounded-xl object-cover border border-[#38BDF8]/40"
                 />
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
                     {currentUser.name}
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30 uppercase">
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#124294]/40 text-[#38BDF8] border border-[#38BDF8]/30 uppercase">
                       {currentUser.role}
                     </span>
                   </h3>

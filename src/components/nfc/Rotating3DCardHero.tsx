@@ -70,9 +70,9 @@ export const Rotating3DCardHero: React.FC = () => {
                 <button
                   key={variant.id}
                   onClick={() => setActiveVariantIndex(idx)}
-                  className={`group relative text-left p-2 sm:p-2.5 rounded-2xl border transition-all duration-300 backdrop-blur-xl ${isSelected
-                    ? 'bg-[#0b172e]/95 border-cyan-400/80 shadow-lg shadow-cyan-500/20 scale-105'
-                    : 'bg-[#071124]/60 border-white/10 hover:border-white/20 hover:bg-[#0b172e]/70 opacity-75 hover:opacity-100'
+                  className={`group relative text-left p-2 sm:p-2.5 rounded-2xl border transition-all duration-300 backdrop-blur-xl cursor-pointer ${isSelected
+                    ? 'bg-[#0a142c] border-[#38BDF8] shadow-glow-cyan scale-105'
+                    : 'bg-[#081329]/70 border-[#1b2d55] hover:border-[#38BDF8]/40 hover:bg-[#0a142c] opacity-80 hover:opacity-100'
                     }`}
                 >
                   {/* Miniature Card Preview */}
@@ -90,13 +90,13 @@ export const Rotating3DCardHero: React.FC = () => {
                     <p className="text-[11px] sm:text-xs font-bold text-white truncate max-w-[70px] sm:max-w-[85px]">
                       {variant.name}
                     </p>
-                    <p className="text-[9px] sm:text-[10px] text-cyan-400 font-mono font-medium">
+                    <p className="text-[9px] sm:text-[10px] text-[#38BDF8] font-mono font-medium">
                       {variant.subtitle}
                     </p>
                   </div>
 
                   {isSelected && (
-                    <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-cyan-400 text-black flex items-center justify-center text-[9px] font-black shadow-md">
+                    <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#38BDF8] text-slate-950 flex items-center justify-center text-[9px] font-black shadow-md">
                       ✓
                     </div>
                   )}
@@ -133,7 +133,7 @@ export const Rotating3DCardHero: React.FC = () => {
       </div>
 
       {/* 3D ROTATING STAGE AREA */}
-      <div className="relative w-full max-w-[560px] h-[300px] xs:h-[340px] sm:h-[400px] md:h-[440px] flex items-center justify-center perspective-1200 select-none overflow-visible">
+      <div className="relative w-full max-w-[560px] h-[300px] xs:h-[340px] sm:h-[400px] md:h-[440px] flex items-center justify-center perspective-1200 select-none overflow-hidden sm:overflow-visible">
         {/* Ambient Oceanic Glow behind card */}
         <div
           className="absolute inset-0 rounded-full blur-[90px] opacity-45 pointer-events-none transition-all duration-700"
@@ -145,25 +145,25 @@ export const Rotating3DCardHero: React.FC = () => {
           <div className="w-2.5 h-2.5 rounded-full bg-white/60 blur-[1px] -translate-x-1.5 -translate-y-1.5" />
         </div>
 
-        <div className="absolute top-1/2 -left-3 sm:-left-10 w-16 sm:w-24 h-16 sm:h-24 rounded-full glass-bubble animate-bubble-float-2 z-20 pointer-events-none flex items-center justify-center">
+        <div className="absolute top-1/2 left-0 sm:-left-10 w-16 sm:w-24 h-16 sm:h-24 rounded-full glass-bubble animate-bubble-float-2 z-20 pointer-events-none flex items-center justify-center">
           <div className="w-3 h-3 rounded-full bg-white/70 blur-[1px] -translate-x-2 -translate-y-2" />
         </div>
 
-        <div className="absolute -bottom-4 left-10 sm:left-24 w-10 sm:w-16 h-10 sm:h-16 rounded-full glass-bubble animate-bubble-float-3 z-20 pointer-events-none flex items-center justify-center">
+        <div className="absolute -bottom-4 left-8 sm:left-24 w-10 sm:w-16 h-10 sm:h-16 rounded-full glass-bubble animate-bubble-float-3 z-20 pointer-events-none flex items-center justify-center">
           <div className="w-2 h-2 rounded-full bg-white/50 blur-[1px] -translate-x-1 -translate-y-1" />
         </div>
 
-        <div className="absolute top-4 -right-2 sm:right-4 w-12 sm:w-20 h-12 sm:h-20 rounded-full glass-bubble animate-bubble-float-4 z-20 pointer-events-none flex items-center justify-center">
+        <div className="absolute top-4 right-0 sm:right-4 w-12 sm:w-20 h-12 sm:h-20 rounded-full glass-bubble animate-bubble-float-4 z-20 pointer-events-none flex items-center justify-center">
           <div className="w-2.5 h-2.5 rounded-full bg-white/60 blur-[1px] -translate-x-1.5 -translate-y-1.5" />
         </div>
 
-        <div className="absolute bottom-6 -right-3 sm:-right-8 w-18 sm:w-28 h-18 sm:h-28 rounded-full glass-bubble animate-bubble-float-5 z-20 pointer-events-none flex items-center justify-center">
+        <div className="absolute bottom-6 right-0 sm:-right-8 w-18 sm:w-28 h-18 sm:h-28 rounded-full glass-bubble animate-bubble-float-5 z-20 pointer-events-none flex items-center justify-center">
           <div className="w-4 h-4 rounded-full bg-white/80 blur-[1px] -translate-x-3 -translate-y-3" />
         </div>
 
         {/* 3D CONTINUOUS 360-DEGREE ROTATING CARD WRAPPER */}
         <div
-          className={`relative w-[270px] xs:w-[310px] sm:w-[380px] md:w-[420px] aspect-[1.586/1] transform-style-3d cursor-pointer ${isPaused ? '' : 'animate-spin-360-slow'
+          className={`relative w-[min(100%,270px)] xs:w-[310px] sm:w-[380px] md:w-[420px] max-w-full aspect-[1.586/1] transform-style-3d cursor-pointer ${isPaused ? '' : 'animate-spin-360-slow'
             }`}
           onClick={() => setIsPaused(!isPaused)}
           title="Click to pause or resume 3D rotation"

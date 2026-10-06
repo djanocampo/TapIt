@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTapIt } from '../../store';
 import { NFCCard } from '../../types';
-import { WebNFCWriterModal } from '../../components/nfc/WebNFCWriterModal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Radio, CreditCard, Sparkles, CheckCircle2, ArrowRight, Layers, Smartphone, Zap } from 'lucide-react';
+import { Radio, CreditCard, Sparkles, CheckCircle2, ArrowRight, Layers, Smartphone } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 import tapItLogo from '../../assets/tapit-logo.png';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 interface UnclaimedCardPageProps {
   cardToken: string;
@@ -25,7 +25,6 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
   const [selectedProfileId, setSelectedProfileId] = useState<string>(profiles[0]?.id || '');
   const [customCardName, setCustomCardName] = useState('My TapIt NFC Card');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isWriterOpen, setIsWriterOpen] = useState(false);
   const [activatedCard, setActivatedCard] = useState<NFCCard | null>(null);
 
   const handleClaim = () => {
@@ -48,36 +47,37 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
   const assignedProfile = profiles.find((p) => p.id === selectedProfileId) || profiles[0];
 
   return (
-    <div className="min-h-screen bg-[#070a13] flex items-center justify-center p-4 py-16">
-      <div className="w-full max-w-lg bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-bits-midnight bits-hero-mesh flex items-center justify-center p-3 sm:p-4 py-8 sm:py-16 selection:bg-bits-cyan selection:text-bits-midnight">
+      <div className="w-full max-w-lg bg-bits-navy/90 border border-bits-vapor/20 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-card-bits space-y-6 relative overflow-hidden backdrop-blur-2xl">
         {/* Glow */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-bits-amber/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* STEP 1: Welcome / Unclaimed Prompt */}
         {step === 'welcome' && (
           <div className="text-center space-y-6">
             <div className="flex justify-center pb-1">
-              <img src={tapItLogo} alt="TapIt" className="h-8 w-auto object-contain drop-shadow-[0_2px_12px_rgba(245,158,11,0.3)]" />
+              <img src={tapItLogo} alt="TapIt" className="h-8 w-auto object-contain drop-shadow-[0_2px_14px_rgba(245,158,11,0.3)]" />
             </div>
 
-            <div className="w-16 h-16 rounded-3xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-bits-amber/15 border border-bits-amber/40 text-bits-amber flex items-center justify-center mx-auto shadow-glow-amber">
               <CreditCard className="w-8 h-8" />
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-950/60 border border-amber-500/30 px-3 py-1 rounded-full inline-block">
-                Unregistered NFC Card
-              </span>
+              <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-bits-amber bg-amber-950/60 border border-bits-amber/40 px-3 py-1 rounded-full">
+                <BitsInfinityEmblem size={12} />
+                <span>Unclaimed BITS Tap™ NFC Hardware</span>
+              </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-display">
                 Welcome to TapIt
               </h2>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto">
-                This TapIt Card hasn't been activated yet. Claim it now to connect your digital profile.
+              <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto">
+                This TapIt Card hasn't been activated yet. Claim it now to bind your dynamic digital identity.
               </p>
             </div>
 
             {/* Token box */}
-            <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl text-xs font-mono text-cyan-400">
+            <div className="p-3 bg-bits-midnight/80 border border-bits-horizon/40 rounded-2xl text-xs font-mono text-bits-cyan">
               Hardware Token: <strong className="text-white">/t/{cardToken}</strong>
             </div>
 
@@ -184,50 +184,26 @@ export const UnclaimedCardPage: React.FC<UnclaimedCardPageProps> = ({
             </div>
 
             <div className="space-y-3 pt-2">
-              <Button
-                variant="glow"
-                size="lg"
-                onClick={() => setIsWriterOpen(true)}
-                className="w-full justify-center"
-                leftIcon={<Zap className="w-4 h-4 text-cyan-300" />}
-              >
-                Program / Write Physical NFC Tag
-              </Button>
+              <Link to={`/@${assignedProfile?.slug}`} className="block w-full">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full justify-center"
+                  rightIcon={<Smartphone className="w-4 h-4" />}
+                >
+                  View Live Profile
+                </Button>
+              </Link>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Link to="/dashboard/cards" className="w-full">
-                  <Button variant="secondary" size="md" className="w-full justify-center">
-                    My TapIt Cards
-                  </Button>
-                </Link>
-                <Link to={`/@${assignedProfile?.slug}`} className="w-full">
-                  <Button variant="outline" size="md" className="w-full justify-center" rightIcon={<Smartphone className="w-4 h-4" />}>
-                    View Live Profile
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/dashboard/cards" className="block w-full">
+                <Button variant="secondary" size="md" className="w-full justify-center">
+                  Go to My TapIt Cards
+                </Button>
+              </Link>
             </div>
           </div>
         )}
       </div>
-
-      {/* WEB NFC WRITER MODAL */}
-      <WebNFCWriterModal
-        isOpen={isWriterOpen}
-        onClose={() => setIsWriterOpen(false)}
-        card={activatedCard || {
-          id: 'new-activated',
-          cardToken,
-          name: customCardName,
-          profileId: selectedProfileId,
-          status: 'active',
-          material: 'matte-black',
-          createdAt: new Date().toISOString(),
-          taps: 0,
-          uniqueTappers: 0
-        }}
-        profile={assignedProfile}
-      />
     </div>
   );
 };

@@ -16,6 +16,7 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 import { formatNumber } from '../../lib/utils';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const AdminAnalyticsPage: React.FC = () => {
   const { allCards, allProfiles, allUsers, allAnalyticsEvents } = useTapIt();
@@ -28,13 +29,17 @@ export const AdminAnalyticsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3 py-0.5 rounded-full mb-1">
+            <BitsInfinityEmblem size={12} />
+            <span>High-Altitude Telemetry Core</span>
+          </div>
           <h2 className="text-xl sm:text-2xl font-bold text-white font-display">Platform-Wide Telemetry</h2>
           <p className="text-xs sm:text-sm text-slate-400">
             Global traffic distribution, hardware tap rates, anti-fraud detection, and regional usage.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl shadow-glow-emerald">
           <Activity className="w-4 h-4 animate-pulse" />
           <span>Global Event Ingestion: Active</span>
         </div>
@@ -47,21 +52,21 @@ export const AdminAnalyticsPage: React.FC = () => {
           value={totalProfileVisits}
           change={totalProfileVisits > 0 ? 100 : 0}
           icon={Globe}
-          variant="cyan"
+          variant="azure"
         />
         <MetricCard
           title="Total NFC Hardware Taps"
           value={totalNFCTaps}
           change={totalNFCTaps > 0 ? 100 : 0}
           icon={Radio}
-          variant="purple"
+          variant="electric"
         />
         <MetricCard
           title="Active Creators & Pros"
           value={allUsers.length}
           change={allUsers.length > 0 ? 100 : 0}
           icon={Users}
-          variant="emerald"
+          variant="cyan"
         />
         <MetricCard
           title="Suspicious Tap Detection"
@@ -95,28 +100,28 @@ export const AdminAnalyticsPage: React.FC = () => {
         </div>
 
         <div className="space-y-2.5 text-xs text-slate-300">
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Token <strong className="font-mono text-cyan-400">/t/8xK29mQ</strong> verified cryptographic handshake with iPhone 15 Pro.</span>
+          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="break-words">Token <strong className="font-mono text-cyan-400">/t/8xK29mQ</strong> verified cryptographic handshake with iPhone 15 Pro.</span>
             </div>
-            <span className="text-slate-500 text-[10px]">Just now</span>
+            <span className="text-slate-500 text-[10px] sm:text-right shrink-0">Just now</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Token <strong className="font-mono text-cyan-400">/t/4kL92pZ</strong> rate limit check passed (1 tap / 30s debounce).</span>
+          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="break-words">Token <strong className="font-mono text-cyan-400">/t/4kL92pZ</strong> rate limit check passed (1 tap / 30s debounce).</span>
             </div>
-            <span className="text-slate-500 text-[10px]">4m ago</span>
+            <span className="text-slate-500 text-[10px] sm:text-right shrink-0">4m ago</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <span>Unclaimed token <strong className="font-mono text-amber-400">/t/NEW_TAP_77</strong> pinged from IP: 112.198.x.x — redirected to claim page.</span>
+          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="break-words">Unclaimed token <strong className="font-mono text-amber-400">/t/NEW_TAP_77</strong> pinged from IP: 112.198.x.x — redirected to claim page.</span>
             </div>
-            <span className="text-slate-500 text-[10px]">12m ago</span>
+            <span className="text-slate-500 text-[10px] sm:text-right shrink-0">12m ago</span>
           </div>
         </div>
       </div>

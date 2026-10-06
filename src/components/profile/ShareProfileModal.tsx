@@ -59,18 +59,20 @@ export const ShareProfileModal: React.FC<ShareProfileModalProps> = ({
         />
 
         {/* URL Pill */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-          <div className="truncate font-mono text-cyan-400 font-medium">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs min-w-0 gap-2">
+          <div className="truncate font-mono text-cyan-400 font-medium min-w-0 flex-1">
             {profileUrl}
           </div>
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={handleCopy}
-            leftIcon={copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-          >
-            {copied ? 'Copied' : 'Copy'}
-          </Button>
+          <div className="shrink-0">
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={handleCopy}
+              leftIcon={copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            >
+              {copied ? 'Copied' : 'Copy'}
+            </Button>
+          </div>
         </div>
 
         {/* Quick Actions */}

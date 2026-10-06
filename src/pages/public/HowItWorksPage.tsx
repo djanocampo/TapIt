@@ -53,50 +53,52 @@ export const HowItWorksPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#070a13] text-slate-100 py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+    <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-[#060c1c] text-slate-100 py-12 sm:py-16 relative">
+      <div className="absolute inset-0 bits-hero-mesh pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 relative z-10">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 bg-purple-950/60 border border-purple-500/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-purple-400">
-            <Zap className="w-3.5 h-3.5" />
-            <span>The Magic Behind The Tap</span>
+          <div className="inline-flex items-center gap-2 bg-[#124294]/30 border border-[#38BDF8]/40 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#38BDF8] font-mono">
+            <Zap className="w-3.5 h-3.5 text-[#38BDF8]" />
+            <span>UNBROKEN OPERATIONAL CYCLES • ARCHITECTURE</span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-white font-display tracking-tight">
             How TapIt Technology Works
           </h1>
-          <p className="text-base sm:text-lg text-slate-400">
-            Learn how TapIt bridges physical hardware with cloud-powered dynamic digital identities.
+          <p className="text-base sm:text-lg text-slate-300">
+            Learn how TapIt bridges physical NFC hardware with high-availability dynamic digital identities.
           </p>
         </div>
 
         {/* Technical Architecture Diagram Banner */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 text-center mb-6">
-            NFC Token Resolution Flowchart
+        <div className="bits-glass rounded-3xl p-6 sm:p-8 shadow-2xl">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#38BDF8] text-center mb-6 font-mono">
+            Deterministic NFC Token Resolution Lifecycle
           </h3>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center max-w-4xl mx-auto">
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 w-full md:w-48">
-              <CreditCard className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
+            <div className="p-4 rounded-2xl bg-[#081329] border border-[#1b2d55] w-full md:w-48 shadow-md">
+              <CreditCard className="w-6 h-6 text-[#38BDF8] mx-auto mb-2" />
               <h4 className="text-xs font-bold text-white">1. Physical Card</h4>
-              <p className="text-[10px] text-slate-400 font-mono mt-1">tapit.app/t/8xK29mQ</p>
+              <p className="text-[10px] text-[#38BDF8] font-mono mt-1">tapit.app/t/8xK29mQ</p>
             </div>
-            <span className="text-slate-600 font-bold hidden md:inline">→</span>
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 w-full md:w-48">
-              <Zap className="w-6 h-6 text-purple-400 mx-auto mb-2 animate-pulse" />
+            <span className="text-[#38BDF8] font-bold hidden md:inline">→</span>
+            <div className="p-4 rounded-2xl bg-[#081329] border border-[#1b2d55] w-full md:w-48 shadow-md">
+              <Zap className="w-6 h-6 text-[#2563EB] mx-auto mb-2 animate-pulse" />
               <h4 className="text-xs font-bold text-white">2. Token Router</h4>
-              <p className="text-[10px] text-slate-400 mt-1">Validate & Log Event</p>
+              <p className="text-[10px] text-slate-300 mt-1">&lt;300ms Validation</p>
             </div>
-            <span className="text-slate-600 font-bold hidden md:inline">→</span>
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 w-full md:w-48">
-              <Smartphone className="w-6 h-6 text-sky-400 mx-auto mb-2" />
+            <span className="text-[#38BDF8] font-bold hidden md:inline">→</span>
+            <div className="p-4 rounded-2xl bg-[#081329] border border-[#1b2d55] w-full md:w-48 shadow-md">
+              <Smartphone className="w-6 h-6 text-[#38BDF8] mx-auto mb-2" />
               <h4 className="text-xs font-bold text-white">3. Public Profile</h4>
-              <p className="text-[10px] text-slate-400 mt-1">Live Theme Render</p>
+              <p className="text-[10px] text-slate-300 mt-1">Live Persona Render</p>
             </div>
-            <span className="text-slate-600 font-bold hidden md:inline">→</span>
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 w-full md:w-48">
-              <BarChart3 className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
+            <span className="text-[#38BDF8] font-bold hidden md:inline">→</span>
+            <div className="p-4 rounded-2xl bg-[#081329] border border-[#1b2d55] w-full md:w-48 shadow-md">
+              <BarChart3 className="w-6 h-6 text-[#F59E0B] mx-auto mb-2" />
               <h4 className="text-xs font-bold text-white">4. Telemetry Stream</h4>
-              <p className="text-[10px] text-slate-400 mt-1">Real-time Analytics</p>
+              <p className="text-[10px] text-slate-300 mt-1">Event Bus Audit</p>
             </div>
           </div>
         </div>
@@ -108,20 +110,20 @@ export const HowItWorksPage: React.FC = () => {
             return (
               <div
                 key={step.num}
-                className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row items-start gap-6 hover:border-slate-700 transition"
+                className="bits-glass rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row items-start gap-6 hover:border-[#38BDF8]/40 transition group"
               >
                 <div className="flex sm:flex-col items-center gap-3 shrink-0">
-                  <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-display font-black text-xl">
+                  <div className="w-14 h-14 rounded-2xl bg-[#124294]/40 text-[#38BDF8] border border-[#38BDF8]/30 flex items-center justify-center font-display font-black text-xl shadow-glow-cyan/30">
                     {step.num}
                   </div>
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hidden sm:flex">
+                  <div className="p-2.5 rounded-xl bg-[#081329] border border-[#1b2d55] text-[#38BDF8] hidden sm:flex group-hover:scale-110 transition-transform">
                     <Icon className="w-5 h-5" />
                   </div>
                 </div>
 
                 <div className="space-y-3 flex-1">
                   <div>
-                    <span className="text-xs font-semibold text-cyan-400">{step.subtitle}</span>
+                    <span className="text-xs font-semibold text-[#38BDF8] font-mono">{step.subtitle}</span>
                     <h3 className="text-xl sm:text-2xl font-bold text-white font-display mt-0.5">
                       {step.title}
                     </h3>
@@ -131,7 +133,7 @@ export const HowItWorksPage: React.FC = () => {
                     {step.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-[11px] font-semibold bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-lg"
+                        className="text-[11px] font-semibold bg-[#081329] border border-[#1b2d55] text-slate-200 px-2.5 py-1 rounded-lg"
                       >
                         ✓ {tag}
                       </span>
@@ -149,6 +151,7 @@ export const HowItWorksPage: React.FC = () => {
             <Button
               variant="glow"
               size="lg"
+              className="rounded-full px-8 font-extrabold"
               leftIcon={<Smartphone className="w-4 h-4" />}
             >
               Get Your TapIt Smart Card Now

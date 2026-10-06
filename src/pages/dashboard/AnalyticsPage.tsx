@@ -20,6 +20,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const AnalyticsPage: React.FC = () => {
   const { profiles, activeProfile, links, cards, analyticsEvents } = useTapIt();
@@ -49,14 +50,18 @@ export const AnalyticsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3 py-0.5 rounded-full mb-1">
+            <BitsInfinityEmblem size={12} />
+            <span>Real-Time Contactless Telemetry Engine</span>
+          </div>
           <h2 className="text-xl sm:text-2xl font-bold text-white font-display">Deep Telemetry & Analytics</h2>
           <p className="text-xs sm:text-sm text-slate-400">
-            Real-time insights across NFC chip taps, QR scans, profile visits, and link click-through conversions.
+            Real-time insights across NFC chip taps, QR scans, persona visits, and link click-through conversions.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+          <div className="text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-glow-emerald">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span>Live Stream Active</span>
           </div>
@@ -70,7 +75,7 @@ export const AnalyticsPage: React.FC = () => {
           value={totalViews}
           change={totalViews > 0 ? 100 : 0}
           icon={Eye}
-          variant="purple"
+          variant="azure"
         />
         <MetricCard
           title="Unique Visitors"
@@ -84,21 +89,21 @@ export const AnalyticsPage: React.FC = () => {
           value={totalTaps}
           change={totalTaps > 0 ? 100 : 0}
           icon={Radio}
-          variant="cyan"
+          variant="amber"
         />
         <MetricCard
           title="QR Scans"
           value={totalQRScans}
           change={totalQRScans > 0 ? 100 : 0}
           icon={QrCode}
-          variant="purple"
+          variant="azure"
         />
         <MetricCard
           title="Link Clicks"
           value={totalClicks}
           change={totalClicks > 0 ? 100 : 0}
           icon={MousePointerClick}
-          variant="emerald"
+          variant="electric"
         />
         <MetricCard
           title="CTR %"
@@ -112,7 +117,7 @@ export const AnalyticsPage: React.FC = () => {
           value={engagement}
           change={totalViews > 0 ? 100 : 0}
           icon={Zap}
-          variant="emerald"
+          variant="cyan"
         />
       </div>
 

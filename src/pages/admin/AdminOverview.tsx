@@ -19,6 +19,7 @@ import {
   Activity
 } from 'lucide-react';
 import { formatNumber } from '../../lib/utils';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const AdminOverview: React.FC = () => {
   const { allUsers, allProfiles, allCards, allAnalyticsEvents } = useTapIt();
@@ -26,17 +27,17 @@ export const AdminOverview: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-950/40 via-slate-900 to-indigo-950/40 border border-purple-800/40 shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-bits-azure/40 via-bits-navy/90 to-bits-midnight border border-bits-vapor/15 shadow-card-bits relative overflow-hidden backdrop-blur-xl">
         <div className="space-y-1 relative z-10">
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-400 bg-purple-950/60 border border-purple-500/30 px-2.5 py-0.5 rounded-full mb-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Platform Operations Hub</span>
+          <div className="inline-flex items-center gap-2 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3 py-0.5 rounded-full mb-1">
+            <BitsInfinityEmblem size={12} />
+            <span>BITS Tap™ Corporate Fleet Admin Console</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-display">
             TapIt Global Administrator Console
           </h2>
           <p className="text-xs sm:text-sm text-slate-300">
-            Monitor real-time platform metrics, provision NFC hardware tokens, manage users, and enforce security policies.
+            Monitor real-time platform metrics, provision NFC hardware tokens, manage users, and enforce sovereign security policies.
           </p>
         </div>
 
@@ -56,10 +57,10 @@ export const AdminOverview: React.FC = () => {
           value={allUsers.length}
           change={allUsers.length > 0 ? 100 : 0}
           icon={Users}
-          variant="purple"
+          variant="azure"
         />
         <MetricCard
-          title="Active Profiles"
+          title="Active Personas"
           value={allProfiles.filter(p => p.isActive).length}
           change={allProfiles.length > 0 ? 100 : 0}
           icon={UserSquare2}
@@ -70,7 +71,7 @@ export const AdminOverview: React.FC = () => {
           value={allCards.length}
           change={allCards.length > 0 ? 100 : 0}
           icon={CreditCard}
-          variant="emerald"
+          variant="electric"
         />
         <MetricCard
           title="Total Profile Visits"
@@ -89,48 +90,48 @@ export const AdminOverview: React.FC = () => {
 
         <div className="lg:col-span-4 space-y-6">
           {/* Quick Management Shortcuts */}
-          <div className="bg-[#0d1322] border border-purple-900/30 rounded-3xl p-5 shadow-xl space-y-4">
+          <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-5 shadow-card-bits space-y-4 backdrop-blur-xl">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-purple-400" />
+              <Zap className="w-4 h-4 text-bits-cyan" />
               Administrative Portals
             </h3>
 
             <div className="space-y-2">
               <Link
                 to="/admin/users"
-                className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-purple-500/40 transition group"
+                className="flex items-center justify-between p-3 rounded-2xl bg-bits-midnight/60 border border-bits-vapor/10 hover:border-bits-cyan/40 transition group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400">
+                  <div className="p-2 rounded-xl bg-bits-azure/30 text-bits-cyan">
                     <Users className="w-4 h-4" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white">User Management</h4>
-                    <p className="text-[10px] text-slate-400">{allUsers.length} registered accounts</p>
+                    <p className="text-[10px] text-slate-400 font-mono">{allUsers.length} registered accounts</p>
                   </div>
                 </div>
-                <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-purple-400 transition" />
+                <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-bits-cyan transition" />
               </Link>
 
               <Link
                 to="/admin/profiles"
-                className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-purple-500/40 transition group"
+                className="flex items-center justify-between p-3 rounded-2xl bg-bits-midnight/60 border border-bits-vapor/10 hover:border-bits-cyan/40 transition group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+                  <div className="p-2 rounded-xl bg-bits-electric/20 text-bits-cyan">
                     <UserSquare2 className="w-4 h-4" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white">Profile Directory</h4>
-                    <p className="text-[10px] text-slate-400">{allProfiles.length} published profiles</p>
+                    <p className="text-[10px] text-slate-400 font-mono">{allProfiles.length} published profiles</p>
                   </div>
                 </div>
-                <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition" />
+                <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-bits-cyan transition" />
               </Link>
 
               <Link
                 to="/admin/cards"
-                className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-purple-500/40 transition group"
+                className="flex items-center justify-between p-3 rounded-2xl bg-bits-midnight/60 border border-bits-vapor/10 hover:border-bits-cyan/40 transition group"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">

@@ -4,60 +4,95 @@ import { useTapIt } from '../../store';
 import {
   Zap,
   Smartphone,
-  BarChart3
+  BarChart3,
+  ShieldCheck,
+  Cpu,
+  Layers,
+  ArrowRight,
+  CheckCircle2,
+  Lock,
+  Globe
 } from 'lucide-react';
 import { Rotating3DCardHero } from '../../components/nfc/Rotating3DCardHero';
+import { BitsInfinityEmblem, BitsEnterpriseBadge } from '../../components/common/BitsBrandElements';
+import { Button } from '../../components/ui/Button';
 
 import tapItLogo from '../../assets/tapit-logo.png';
 
 export const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#040c1a] text-slate-100 overflow-hidden relative selection:bg-cyan-500 selection:text-black">
-      {/* Ambient Atmospheric Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[600px] bg-gradient-to-b from-[#0e3b6d]/30 via-[#0a274e]/20 to-transparent blur-[140px] pointer-events-none" />
-      <div className="absolute top-[25%] right-[-10%] w-[500px] h-[500px] bg-cyan-600/15 rounded-full blur-[150px] pointer-events-none" />
-      <div className="absolute top-[55%] left-[-10%] w-[500px] h-[500px] bg-sky-600/10 rounded-full blur-[150px] pointer-events-none" />
+    <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-[#060c1c] text-slate-100 relative selection:bg-[#38BDF8] selection:text-slate-950">
+      {/* BITS Ambient Atmospheric Hero Mesh */}
+      <div className="absolute inset-0 bits-hero-mesh pointer-events-none" />
+      <div className="absolute top-[20%] right-[-10%] w-[550px] h-[550px] bg-[#124294]/25 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute top-[50%] left-[-10%] w-[500px] h-[500px] bg-[#38BDF8]/10 rounded-full blur-[160px] pointer-events-none" />
 
       {/* ========================================================
           1. HOME SECTION (HERO)
           ======================================================== */}
-      <section id="home" className="relative pt-6 pb-16 sm:pt-14 sm:pb-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="home" className="relative pt-8 pb-16 sm:pt-16 sm:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
 
-          {/* Left Column: Logo & CTAs */}
+          {/* Left Column: Logo, Tagline & CTAs */}
           <div className="lg:col-span-5 space-y-6 z-20 text-center lg:text-left flex flex-col items-center lg:items-start">
-            {/* TapIt Logo as Hero Title (+30% larger) */}
+            {/* BITS Submark Monogram Chip */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#124294]/30 border border-[#38BDF8]/40 text-[#E0F2FE] text-xs font-semibold backdrop-blur-md shadow-glow-cyan">
+              <BitsInfinityEmblem size={16} />
+              <span className="tracking-wide uppercase font-mono text-[11px]">STAY GROUNDED, BE BOUNDLESS</span>
+            </div>
+
+            {/* TapIt Logo as Hero Title */}
             <div className="w-full flex justify-center lg:justify-start">
               <img
                 src={tapItLogo}
                 alt="TapIt"
-                className="h-[84px] xs:h-[104px] sm:h-[125px] lg:h-[146px] w-auto object-contain drop-shadow-[0_12px_28px_rgba(6,182,212,0.35)] select-none"
+                className="h-[84px] xs:h-[104px] sm:h-[125px] lg:h-[146px] w-auto object-contain drop-shadow-[0_16px_36px_rgba(27,85,198,0.45)] select-none"
               />
             </div>
 
-            {/* Description Text */}
+            {/* Value Proposition Description Text */}
             <p className="text-base sm:text-lg text-slate-300 max-w-lg leading-relaxed font-normal">
-              Unleash the speed of instant connection. Networking redefined in every tap — all in one sleek smart card.
+              1 Card for Life. Tap any smartphone to share dynamic profiles, portfolios, and contact credentials. High-altitude cloud clarity paired with grounded bedrock security.
             </p>
 
             {/* Action Buttons */}
             <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-4 w-full">
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-3.5 bg-[#0b172e] hover:bg-[#102449] text-white border border-cyan-400/40 hover:border-cyan-300 px-6 py-3.5 rounded-full text-sm sm:text-base font-bold shadow-xl shadow-cyan-950/80 transition-all duration-300 group hover:scale-[1.02]"
-              >
-                <span>Create Your TapIt</span>
-                <span className="w-7 h-7 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center font-black group-hover:rotate-90 transition-transform duration-300 shadow-md shadow-cyan-400/30 text-sm">
-                  +
-                </span>
+              <Link to="/register">
+                <Button
+                  variant="glow"
+                  size="lg"
+                  className="rounded-full px-7 font-extrabold"
+                  rightIcon={<span className="w-6 h-6 rounded-full bg-white text-slate-950 flex items-center justify-center font-black text-sm">+</span>}
+                >
+                  Create Your TapIt
+                </Button>
               </Link>
 
-              <Link
-                to="/features"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/80 px-5 py-3.5 rounded-full transition-all duration-200"
-              >
-                <span>Explore Features</span>
+              <Link to="/features">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="rounded-full px-6"
+                >
+                  Explore Features
+                </Button>
               </Link>
+            </div>
+
+            {/* Trust Micro-Badges */}
+            <div className="pt-2 flex items-center gap-4 text-xs text-slate-400 font-mono flex-wrap justify-center lg:justify-start">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#38BDF8]" />
+                Zero Seat Penalties
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#38BDF8]" />
+                ISO/IEC 14443-A Ready
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#38BDF8]" />
+                NPC & BSP Compliant
+              </span>
             </div>
           </div>
 
@@ -69,29 +104,97 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ========================================================
-          2. ABOUT US SECTION
+          2. CORE VALUE EQUATION (Tailored Systems > Generic SaaS)
           ======================================================== */}
-      <section id="about" className="py-24 bg-[#050e1f]/80 border-y border-white/[0.06] relative z-20">
+      <section className="py-16 bg-[#0a142c]/90 border-y border-[#1b2d55] relative z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
+            <span className="text-xs font-bold text-[#38BDF8] uppercase tracking-widest bg-[#124294]/40 border border-[#1B55C6]/50 px-3.5 py-1.5 rounded-full font-mono">
+              THE CORE VALUE EQUATION
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display tracking-tight">
+              Tailored Systems &gt; Generic SaaS
+            </h2>
+            <p className="text-sm sm:text-base text-slate-300">
+              Built on the BITS standard: concrete architecture and working previews instead of speculative futures.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Box 1 */}
+            <div className="p-6 rounded-2xl bg-[#081329] border border-[#1b2d55] hover:border-[#38BDF8]/40 transition shadow-lg">
+              <div className="text-xs font-mono font-bold text-[#38BDF8] mb-2 uppercase">Rule 01</div>
+              <h3 className="text-lg font-bold text-white mb-2 font-display">Zero Per-User Traps</h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Flat, transparent tiers that scale with output, not headcounts. No seat penalties or artificial paywalls as your team expands.
+              </p>
+            </div>
+
+            {/* Box 2 */}
+            <div className="p-6 rounded-2xl bg-[#081329] border border-[#1b2d55] hover:border-[#38BDF8]/40 transition shadow-lg">
+              <div className="text-xs font-mono font-bold text-[#38BDF8] mb-2 uppercase">Rule 02</div>
+              <h3 className="text-lg font-bold text-white mb-2 font-display">No Speculative Futures</h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Concrete architecture and working previews instead of jargon. Direct browser Web NFC flashing, verified token encryption, and native vCard.
+              </p>
+            </div>
+
+            {/* Box 3 */}
+            <div className="p-6 rounded-2xl bg-[#081329] border border-[#1b2d55] hover:border-[#38BDF8]/40 transition shadow-lg">
+              <div className="text-xs font-mono font-bold text-[#38BDF8] mb-2 uppercase">Rule 03</div>
+              <h3 className="text-lg font-bold text-white mb-2 font-display">The Dual Mandate</h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                High-altitude cloud clarity paired with on-premise bedrock security. BSP, NPC DPA, and BIR CAS compliant data governance.
+              </p>
+            </div>
+          </div>
+
+          {/* 4 Telemetry Metrics Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-[#1b2d55]">
+            <div className="text-center p-4 rounded-xl bg-[#060c1c]/60 border border-[#1b2d55]">
+              <div className="text-2xl sm:text-3xl font-extrabold text-white font-display">&lt;300ms</div>
+              <div className="text-[11px] text-[#38BDF8] font-mono mt-1 uppercase">Tap-to-Profile Speed</div>
+            </div>
+            <div className="text-center p-4 rounded-xl bg-[#060c1c]/60 border border-[#1b2d55]">
+              <div className="text-2xl sm:text-3xl font-extrabold text-white font-display">1 Card</div>
+              <div className="text-[11px] text-[#38BDF8] font-mono mt-1 uppercase">Lifetime Dynamic Identity</div>
+            </div>
+            <div className="text-center p-4 rounded-xl bg-[#060c1c]/60 border border-[#1b2d55]">
+              <div className="text-2xl sm:text-3xl font-extrabold text-white font-display">Zero ₱</div>
+              <div className="text-[11px] text-[#38BDF8] font-mono mt-1 uppercase">Monthly Seat Penalties</div>
+            </div>
+            <div className="text-center p-4 rounded-xl bg-[#060c1c]/60 border border-[#1b2d55]">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#F59E0B] font-display">99.99%</div>
+              <div className="text-[11px] text-amber-400 font-mono mt-1 uppercase">Telemetry Availability</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================
+          3. ABOUT US SECTION (3 Pillars)
+          ======================================================== */}
+      <section id="about" className="py-24 bg-[#060c1c] relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest bg-cyan-950/60 border border-cyan-500/30 px-3.5 py-1.5 rounded-full">
-              About Us
+            <span className="text-xs font-bold text-[#38BDF8] uppercase tracking-widest bg-[#124294]/30 border border-[#1B55C6]/50 px-3.5 py-1.5 rounded-full font-mono">
+              ENGINEERED FOR SCALE
             </span>
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white font-display tracking-tight">
-              Redefining How the World Connects
+              Redefining How Enterprise Connects
             </h2>
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
-              TapIt was created to replace outdated paper business cards and fragmented bio links with one smart, dynamic, and eco-friendly physical card.
+              TapIt replaces disposable paper cards and rigid link services with an unbroken, automated operational identity cycle.
             </p>
           </div>
 
           {/* 3 Core Pillars */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Pillar 1 */}
-            <div className="bg-[#091429]/90 border border-white/[0.08] hover:border-cyan-400/40 rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 group hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <div className="bits-glass rounded-3xl p-8 hover:border-[#38BDF8]/40 transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-2xl bg-[#2563EB]/20 border border-[#38BDF8]/30 text-[#38BDF8] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Zap className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-white font-display mb-3">
@@ -103,28 +206,28 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Pillar 2 */}
-            <div className="bg-[#091429]/90 border border-white/[0.08] hover:border-cyan-400/40 rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 group hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <div className="bits-glass rounded-3xl p-8 hover:border-[#38BDF8]/40 transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-2xl bg-[#2563EB]/20 border border-[#38BDF8]/30 text-[#38BDF8] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Smartphone className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-white font-display mb-3">
                 Dynamic Cloud Profiles
               </h3>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Change your phone number, social links, portfolio, or resume anytime from your dashboard without ever needing to reprint or rewrite your card.
+                Switch between Professional, Executive, and Creator personas in real time without ever needing to reprint or reflash the physical card.
               </p>
             </div>
 
             {/* Pillar 3 */}
-            <div className="bg-[#091429]/90 border border-white/[0.08] hover:border-cyan-400/40 rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 group hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <div className="bits-glass rounded-3xl p-8 hover:border-[#38BDF8]/40 transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-2xl bg-[#2563EB]/20 border border-[#38BDF8]/30 text-[#38BDF8] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <BarChart3 className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-white font-display mb-3">
                 Real-Time Telemetry
               </h3>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Track how many people tap your card, see which links convert, monitor visitor trends, and protect your privacy with encrypted token security.
+                Floor metrics, tap conversion tracking, traffic attribution, and instant lost-card killswitch protection with zero data leak.
               </p>
             </div>
           </div>

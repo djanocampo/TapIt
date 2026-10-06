@@ -25,6 +25,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -115,6 +116,10 @@ export const SettingsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3 py-0.5 rounded-full mb-1">
+            <BitsInfinityEmblem size={12} />
+            <span>Sovereign Security & Cache Control</span>
+          </div>
           <h2 className="text-xl sm:text-2xl font-bold text-white font-display">Account Settings</h2>
           <p className="text-xs sm:text-sm text-slate-400">
             Manage your personal account credentials, notifications, and local storage cache.
@@ -125,20 +130,20 @@ export const SettingsPage: React.FC = () => {
           variant="glow"
           size="sm"
           onClick={() => setIsCacheModalOpen(true)}
-          leftIcon={<HardDrive className="w-4 h-4 text-cyan-300" />}
+          leftIcon={<HardDrive className="w-4 h-4 text-bits-cyan" />}
         >
           Storage Cache Inspector ({approxKb} KB)
         </Button>
       </div>
 
       {/* Local Storage Cache & Offline Hydration Manager */}
-      <div className="bg-[#081224] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
+      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-6 sm:p-8 shadow-card-bits space-y-4 backdrop-blur-xl">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <HardDrive className="w-4 h-4 text-cyan-400" />
+            <HardDrive className="w-4 h-4 text-bits-cyan" />
             Local Storage Cache & State Hydration
           </h3>
-          <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 px-3 py-1 rounded-full">
+          <span className="text-xs font-mono font-bold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3 py-1 rounded-full shadow-glow-cyan">
             ● Hydrated Locally First
           </span>
         </div>

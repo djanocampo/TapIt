@@ -37,6 +37,7 @@ import {
   KeyRound
 } from 'lucide-react';
 import { formatRelativeTime, triggerConfetti } from '../../lib/utils';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const UserManagementPage: React.FC = () => {
   const { allUsers, toggleUserStatus, createInvite, deleteUser, requestPasswordReset } = useTapIt();
@@ -349,13 +350,14 @@ export const UserManagementPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Top Action Bar (Consolidated Header) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#081224]/90 border border-white/[0.08] shadow-xl backdrop-blur-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-bits-navy/90 border border-bits-vapor/15 shadow-card-bits backdrop-blur-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-2.5 py-0.5 rounded-full">
+              <BitsInfinityEmblem size={12} />
+              <span>{nonAdminUsers.length} Active Accounts</span>
+            </div>
             <h2 className="text-lg sm:text-xl font-bold text-white font-display">Account Directory</h2>
-            <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-              {nonAdminUsers.length} Active Accounts
-            </span>
           </div>
           <p className="text-xs text-slate-400">
             Manage system users, activate invitation links, and provision hardware NFC tags.
@@ -375,7 +377,7 @@ export const UserManagementPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-4 sm:p-6 shadow-card-bits flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
         <div className="w-full sm:w-80">
           <Input
             placeholder="Search by name, email, or username..."
@@ -385,11 +387,11 @@ export const UserManagementPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:outline-none"
+            className="flex-1 sm:flex-initial bg-bits-midnight border border-bits-horizon/40 text-base sm:text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:border-bits-cyan focus:outline-none"
           >
             <option value="all">All Roles</option>
             <option value="user">User</option>
@@ -398,7 +400,7 @@ export const UserManagementPage: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:outline-none"
+            className="flex-1 sm:flex-initial bg-bits-midnight border border-bits-horizon/40 text-base sm:text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:border-bits-cyan focus:outline-none"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -408,11 +410,11 @@ export const UserManagementPage: React.FC = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-[#081224]/90 border border-white/[0.08] rounded-3xl shadow-xl overflow-hidden backdrop-blur-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl shadow-card-bits overflow-hidden backdrop-blur-xl">
+        <div className="overflow-x-auto touch-pan-x">
+          <table className="w-full min-w-[580px] text-left text-xs">
             <thead>
-              <tr className="border-b border-white/[0.08] bg-[#040813] text-slate-400 uppercase tracking-wider font-semibold">
+              <tr className="border-b border-bits-vapor/10 bg-bits-midnight/80 text-slate-400 uppercase tracking-wider font-semibold">
                 <th className="py-3.5 px-4 font-medium">User Profile</th>
                 <th className="py-3.5 px-4 font-medium hidden sm:table-cell">Role & Permissions</th>
                 <th className="py-3.5 px-4 font-medium">Status</th>

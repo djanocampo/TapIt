@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { formatNumber, triggerConfetti } from '../../lib/utils';
 import { Link } from 'react-router-dom';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 const PRESET_ICONS: Record<string, React.ElementType> = {
   Facebook,
@@ -180,13 +181,14 @@ export const MyLinksPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#081224]/90 border border-white/[0.08] shadow-xl backdrop-blur-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-bits-navy/90 border border-bits-vapor/15 shadow-card-bits backdrop-blur-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg sm:text-xl font-bold text-white font-display">Links & Mobile View</h2>
-            <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-              {profileLinks.length} Links
-            </span>
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-2.5 py-0.5 rounded-full">
+              <BitsInfinityEmblem size={12} />
+              <span>{profileLinks.length} Active Targets</span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-white font-display">Destinations & Telemetry</h2>
           </div>
           <p className="text-xs text-slate-400">
             Manage links, reorder destinations, and live-preview in mobile view for <strong>{activeProfile.name}</strong>.
@@ -199,10 +201,10 @@ export const MyLinksPage: React.FC = () => {
             value={activeProfile.id}
             onChange={(e) => setActiveProfileId(e.target.value)}
             aria-label="Active profile"
-            className="bg-[#050c18] border border-cyan-500/30 hover:border-cyan-400 text-xs font-bold text-cyan-300 rounded-xl px-3 py-2 focus:outline-none shadow-sm cursor-pointer"
+            className="bg-bits-midnight border border-bits-horizon/40 hover:border-bits-cyan text-base sm:text-xs font-bold text-bits-cyan rounded-xl px-3 py-2 focus:outline-none shadow-sm cursor-pointer"
           >
             {profiles.map((p) => (
-              <option key={p.id} value={p.id} className="bg-[#081224] text-white">
+              <option key={p.id} value={p.id} className="bg-bits-navy text-white">
                 {p.name} Profile
               </option>
             ))}
@@ -218,7 +220,7 @@ export const MyLinksPage: React.FC = () => {
           </Button>
 
           <Link to={`/@${activeProfile.slug}`} target="_blank">
-            <Button variant="secondary" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5" />}>
+            <Button variant="secondary" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5 text-bits-cyan" />}>
               Open
             </Button>
           </Link>
@@ -485,7 +487,7 @@ export const MyLinksPage: React.FC = () => {
             <select
               value={modalCategory}
               onChange={(e) => setModalCategory(e.target.value as LinkCategory)}
-              className="w-full bg-[#050c18] border border-white/[0.12] rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-cyan-400 focus:outline-none"
+              className="w-full bg-[#050c18] border border-white/[0.12] rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none"
             >
               <option value="work">Work & Professional</option>
               <option value="social">Social & Community</option>
@@ -499,7 +501,7 @@ export const MyLinksPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">Choose Icon</label>
-            <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1 bg-[#050c18] rounded-xl border border-white/[0.08]">
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1 bg-[#050c18] rounded-xl border border-white/[0.08]">
               {ICON_PICKER_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const selected = modalIcon === opt.id;

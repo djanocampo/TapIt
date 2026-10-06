@@ -636,7 +636,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                             }
                           }
                         }}
-                        className="w-full bg-[#050b18] border border-cyan-500/30 text-xs font-bold text-white rounded-xl px-3.5 py-2.5 appearance-none focus:outline-none focus:border-cyan-400"
+                        className="w-full bg-[#050b18] border border-cyan-500/30 text-base sm:text-xs font-bold text-white rounded-xl px-3.5 py-2.5 appearance-none focus:outline-none focus:border-cyan-400"
                       >
                         {cards.map((c) => {
                           const p = profiles.find((prof) => prof.id === c.profileId);
@@ -684,7 +684,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
                     <select
                       value={targetProfileId}
                       onChange={(e) => setTargetProfileId(e.target.value)}
-                      className="w-full bg-[#050b18] border border-cyan-500/30 text-xs font-bold text-white rounded-xl px-3.5 py-2.5 appearance-none focus:outline-none focus:border-cyan-400"
+                      className="w-full bg-[#050b18] border border-cyan-500/30 text-base sm:text-xs font-bold text-white rounded-xl px-3.5 py-2.5 appearance-none focus:outline-none focus:border-cyan-400"
                     >
                       {profiles.map((p) => (
                         <option key={p.id} value={p.id}>

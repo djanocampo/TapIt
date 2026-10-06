@@ -9,17 +9,18 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'default', glow = 'none', children, ...props }, ref) => {
     const variants = {
-      default: 'bg-[#0d1322] border border-slate-800/80 rounded-2xl shadow-xl',
-      glass: 'glass-panel rounded-2xl shadow-2xl',
-      subtle: 'bg-slate-900/40 border border-slate-800/50 rounded-2xl backdrop-blur-sm',
-      gradient: 'bg-gradient-to-b from-slate-900/90 to-[#0d1322] border border-slate-800 rounded-2xl shadow-xl',
-      interactive: 'bg-[#0d1322]/90 border border-slate-800/80 rounded-2xl shadow-xl hover:border-slate-700 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer',
+      default: 'bg-[#0a142c] border border-[#1b2d55] rounded-2xl shadow-xl',
+      glass: 'bits-glass rounded-2xl shadow-2xl',
+      subtle: 'bg-[#081329]/60 border border-[#182c58]/40 rounded-2xl backdrop-blur-md',
+      gradient: 'bg-gradient-to-b from-[#0f1f42] to-[#0a142c] border border-[#1b2d55] rounded-2xl shadow-xl',
+      interactive: 'bg-[#0a142c]/90 border border-[#1b2d55] rounded-2xl shadow-xl hover:border-[#38BDF8]/50 hover:shadow-glow-cyan hover:-translate-y-0.5 transition-all duration-200 cursor-pointer',
     };
 
     const glows = {
-      cyan: 'hover:shadow-glow-cyan hover:border-cyan-500/40',
+      cyan: 'hover:shadow-glow-cyan hover:border-[#38BDF8]/50',
       purple: 'hover:shadow-glow-purple hover:border-purple-500/40',
       emerald: 'hover:shadow-glow-emerald hover:border-emerald-500/40',
+      amber: 'hover:shadow-glow-amber hover:border-[#F59E0B]/50',
       none: '',
     };
 

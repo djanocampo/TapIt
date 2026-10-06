@@ -73,8 +73,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             placeholder={resolvedPlaceholder}
             className={cn(
-              'w-full rounded-xl bg-slate-900/90 border border-slate-800 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition duration-150',
-              'focus:border-cyan-500/80 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500/20',
+              'w-full rounded-xl bg-[#081329] border border-[#1b2d55] px-3.5 py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-400 transition duration-150',
+              'focus:border-[#38BDF8] focus:bg-[#0a1835] focus:outline-none focus:ring-2 focus:ring-[#38BDF8]/25',
               leftIcon && 'pl-10',
               renderedRightIcon && 'pr-10',
               error && 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/20',

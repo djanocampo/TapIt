@@ -23,6 +23,7 @@ import {
   CopyCheck
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const MyProfilesPage: React.FC = () => {
   const { profiles, activeProfile, setActiveProfileId, createProfile, duplicateProfile, deleteProfile, toggleProfileArchive, links } = useTapIt();
@@ -68,13 +69,14 @@ export const MyProfilesPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#081224]/90 border border-white/[0.08] shadow-xl backdrop-blur-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-bits-navy/90 border border-bits-vapor/15 shadow-card-bits backdrop-blur-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-2.5 py-0.5 rounded-full">
+              <BitsInfinityEmblem size={12} />
+              <span>{profiles.length} Active Personas</span>
+            </div>
             <h2 className="text-lg sm:text-xl font-bold text-white font-display">My Profiles</h2>
-            <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-              {profiles.length} Active Personas
-            </span>
           </div>
           <p className="text-xs text-slate-400">
             Manage your distinct digital personas for professional, personal, creator, and business networking.
@@ -101,10 +103,10 @@ export const MyProfilesPage: React.FC = () => {
           return (
             <div
               key={profile.id}
-              className={`bg-[#081224]/90 border rounded-3xl p-6 shadow-xl flex flex-col justify-between transition-all duration-200 backdrop-blur-xl ${
+              className={`bg-bits-navy/90 border rounded-3xl p-6 shadow-card-bits flex flex-col justify-between transition-all duration-200 backdrop-blur-xl ${
                 isActive
-                  ? 'border-cyan-400/80 ring-2 ring-cyan-500/20 shadow-glow-cyan'
-                  : 'border-white/[0.08] hover:border-white/20'
+                  ? 'border-bits-cyan ring-2 ring-bits-cyan/20 shadow-glow-cyan'
+                  : 'border-bits-vapor/15 hover:border-bits-cyan/40'
               }`}
             >
               <div>

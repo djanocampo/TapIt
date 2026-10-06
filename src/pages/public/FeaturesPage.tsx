@@ -67,18 +67,20 @@ export const FeaturesPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#070a13] text-slate-100 py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+    <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-[#060c1c] text-slate-100 py-12 sm:py-16 relative">
+      <div className="absolute inset-0 bits-hero-mesh pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 relative z-10">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 bg-cyan-950/60 border border-cyan-500/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-cyan-400">
+          <div className="inline-flex items-center gap-2 bg-[#124294]/30 border border-[#38BDF8]/40 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#38BDF8] font-mono">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Everything Built For Seamless Connection</span>
+            <span>ENTERPRISE SPECIFICATION • 2026 EDITION</span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-white font-display tracking-tight">
             Designed to Revolutionize Digital Networking
           </h1>
-          <p className="text-base sm:text-lg text-slate-400">
+          <p className="text-base sm:text-lg text-slate-300">
             Explore the comprehensive feature suite powering the TapIt NFC Smart Identity Platform.
           </p>
         </div>
@@ -90,19 +92,19 @@ export const FeaturesPage: React.FC = () => {
             return (
               <div
                 key={block.title}
-                className="bg-[#0d1322] border border-slate-800 rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-slate-700 transition space-y-4"
+                className="bits-glass rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-[#38BDF8]/50 hover:shadow-glow-cyan/40 transition duration-300 space-y-4 group hover:-translate-y-1"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-cyan-400">
+                    <div className="p-3 rounded-2xl bg-[#2563EB]/20 border border-[#38BDF8]/30 text-[#38BDF8] group-hover:scale-110 transition-transform">
                       <Icon className="w-6 h-6" />
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-900 text-slate-400 border border-slate-800 px-2.5 py-1 rounded-full">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#0a142c] text-[#38BDF8] border border-[#1b2d55] px-2.5 py-1 rounded-full font-mono">
                       {block.badge}
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-white font-display mb-2">{block.title}</h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">{block.description}</p>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{block.description}</p>
                 </div>
               </div>
             );
@@ -110,20 +112,21 @@ export const FeaturesPage: React.FC = () => {
         </div>
 
         {/* Hardware Web NFC Flashing Banner */}
-        <div className="bg-gradient-to-r from-[#0a1226] via-[#121b38] to-[#0a1226] border border-cyan-500/30 rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto shadow-glow-cyan">
-            <Zap className="w-8 h-8 animate-pulse text-cyan-400" />
+        <div className="bg-gradient-to-r from-[#124294]/30 via-[#0a142c] to-[#124294]/30 border border-[#1B55C6]/60 rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-2xl backdrop-blur-xl">
+          <div className="w-16 h-16 rounded-2xl bg-[#2563EB]/20 text-[#38BDF8] border border-[#38BDF8]/40 flex items-center justify-center mx-auto shadow-glow-cyan">
+            <Zap className="w-8 h-8 animate-pulse text-[#38BDF8]" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-display">
             Ready to Flash & Claim Your Physical NFC Smart Card?
           </h2>
-          <p className="text-sm text-slate-300 max-w-xl mx-auto">
+          <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
             Program physical NTAG213/215 microchips directly in your mobile browser using our native Web NFC engine. No third-party apps required.
           </p>
           <Link to="/register">
             <Button
               variant="glow"
               size="lg"
+              className="rounded-full px-8"
               leftIcon={<Zap className="w-4 h-4" />}
             >
               Get Started Now

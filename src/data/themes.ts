@@ -1,6 +1,22 @@
 import { ProfileThemeConfig } from '../types';
 
 export const THEME_PRESETS: Record<string, ProfileThemeConfig> = {
+  'bits-enterprise': {
+    id: 'bits-enterprise',
+    name: 'BITS Enterprise (Brand Flagship)',
+    bgType: 'mesh',
+    bgColor: '#060c1c',
+    bgGradient: 'radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.25) 0%, rgba(18, 66, 148, 0.18) 45%, #060c1c 90%)',
+    textColor: '#ffffff',
+    subtextColor: '#94a3b8',
+    cardBg: 'rgba(8, 19, 41, 0.75)',
+    cardBorder: 'rgba(56, 189, 248, 0.28)',
+    cardHover: 'rgba(27, 85, 198, 0.35)',
+    buttonStyle: 'glass',
+    fontStyle: 'outfit',
+    accentColor: '#38bdf8',
+    badgeBg: 'rgba(56, 189, 248, 0.18)',
+  },
   'minimal-dark': {
     id: 'minimal-dark',
     name: 'Minimal Dark',

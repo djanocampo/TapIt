@@ -22,6 +22,7 @@ import {
   Eye
 } from 'lucide-react';
 import { formatRelativeTime } from '../../lib/utils';
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const ProfileDirectoryPage: React.FC = () => {
   const { allUsers, allProfiles, allLinks, allCards } = useTapIt();
@@ -79,16 +80,17 @@ export const ProfileDirectoryPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Top Header & Overview Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#081224]/90 border border-white/[0.08] shadow-xl backdrop-blur-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-bits-navy/90 border border-bits-vapor/15 shadow-card-bits backdrop-blur-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-2.5 py-0.5 rounded-full">
+              <BitsInfinityEmblem size={12} />
+              <span>{allProfiles.length} Personas across {allUsers.length} Accounts</span>
+            </div>
             <h2 className="text-lg sm:text-xl font-bold text-white font-display">User Profile Directory</h2>
-            <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-              {allProfiles.length} Profiles across {allUsers.length} Accounts
-            </span>
           </div>
           <p className="text-xs text-slate-400">
-            Organized hierarchy of digital profiles, assigned themes, link trees, and linked NFC hardware per user.
+            Organized hierarchy of digital personas, assigned themes, link trees, and linked NFC hardware per user.
           </p>
         </div>
 
@@ -125,7 +127,7 @@ export const ProfileDirectoryPage: React.FC = () => {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:outline-none"
+            className="w-full sm:w-auto bg-slate-900 border border-slate-700 text-base sm:text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:outline-none"
           >
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>

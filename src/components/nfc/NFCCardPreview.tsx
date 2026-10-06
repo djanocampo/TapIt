@@ -3,6 +3,7 @@ import { NFCCard, Profile } from '../../types';
 import { Radio, Wifi, ShieldCheck, CheckCircle2, AlertCircle, ArrowUpRight, Cpu, Layers } from 'lucide-react';
 import { formatNumber } from '../../lib/utils';
 import tapItLogo from '../../assets/tapit-logo.png';
+import { BitsInfinityEmblem } from '../common/BitsBrandElements';
 
 interface NFCCardPreviewProps {
   card: NFCCard;
@@ -63,13 +64,16 @@ export const NFCCardPreview: React.FC<NFCCardPreviewProps> = ({
                 >
                   <Wifi className="w-4 h-4 rotate-90" />
                 </div>
-                <span
-                  className={`text-[10px] font-mono uppercase tracking-widest font-bold ${
-                    isWhite ? 'text-slate-600' : 'text-slate-400'
-                  }`}
-                >
-                  NFC SMART CARD
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <BitsInfinityEmblem size={11} />
+                  <span
+                    className={`text-[10px] font-mono uppercase tracking-widest font-bold ${
+                      isWhite ? 'text-slate-600' : 'text-slate-400'
+                    }`}
+                  >
+                    BITS TAP™
+                  </span>
+                </div>
               </div>
 
               <div>

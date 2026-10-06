@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import tapItLogo from '../../assets/tapit-logo.png';
 import { Wifi, Sparkles } from 'lucide-react';
+import { BitsInfinityEmblem } from '../common/BitsBrandElements';
 
 interface NFCTapLoadingScreenProps {
   statusText?: string;
@@ -28,35 +29,32 @@ export const NFCTapLoadingScreen: React.FC<NFCTapLoadingScreenProps> = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#070a13] flex flex-col items-center justify-center p-4 text-center relative overflow-hidden select-none">
+    <div className="min-h-screen bg-bits-midnight bits-hero-mesh flex flex-col items-center justify-center p-4 text-center relative overflow-hidden select-none">
       {/* Dynamic Background Ambient Glows */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[480px] h-[340px] sm:h-[480px] bg-gradient-to-tr from-cyan-500/20 via-blue-600/15 to-purple-600/20 rounded-full blur-[90px] sm:blur-[130px] pointer-events-none animate-pulse duration-1000" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-400/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[480px] h-[340px] sm:h-[480px] bg-gradient-to-tr from-bits-azure/30 via-bits-electric/25 to-bits-cyan/20 rounded-full blur-[100px] pointer-events-none animate-pulse duration-1000" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-bits-cyan/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Loading Card Container */}
       <div className="relative z-10 flex flex-col items-center max-w-sm w-full px-4">
         
         {/* Top Status Pill: Contactless Flash Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.2)] backdrop-blur-md mb-8 animate-fade-in">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
-          </span>
-          <Wifi className="w-3.5 h-3.5 text-cyan-400 rotate-90" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-bits-navy/80 border border-bits-cyan/40 text-bits-cyan shadow-glow-cyan backdrop-blur-md mb-8 animate-fade-in">
+          <BitsInfinityEmblem size={12} />
+          <Wifi className="w-3.5 h-3.5 text-bits-cyan rotate-90" />
           <span className="text-[11px] font-mono font-bold tracking-wider uppercase">
-            NFC Smart Card Flashed
+            BITS Tap™ NFC Read Handshake
           </span>
         </div>
 
         {/* Center Logo Experience with Expanding Electromagnetic Waves */}
         <div className="relative flex items-center justify-center my-4 w-44 h-44 sm:w-52 sm:h-52">
           {/* Concentric NFC Electromagnetic Wave Rings */}
-          <div className="absolute inset-0 rounded-full border border-cyan-400/30 nfc-wave-1 pointer-events-none" />
-          <div className="absolute inset-0 rounded-full border border-cyan-400/20 nfc-wave-2 pointer-events-none" />
-          <div className="absolute inset-0 rounded-full border border-purple-400/20 nfc-wave-3 pointer-events-none" />
+          <div className="absolute inset-0 rounded-full border border-bits-cyan/35 nfc-wave-1 pointer-events-none" />
+          <div className="absolute inset-0 rounded-full border border-bits-electric/30 nfc-wave-2 pointer-events-none" />
+          <div className="absolute inset-0 rounded-full border border-bits-azure/30 nfc-wave-3 pointer-events-none" />
 
           {/* Glowing Aura Disk */}
-          <div className="absolute w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-b from-cyan-500/20 to-blue-900/30 border border-cyan-400/30 shadow-[0_0_40px_rgba(6,182,212,0.35)] backdrop-blur-xl flex items-center justify-center" />
+          <div className="absolute w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-b from-bits-azure/30 to-bits-navy/90 border border-bits-cyan/40 shadow-glow-cyan backdrop-blur-xl flex items-center justify-center" />
 
           {/* Official TapIt Logo */}
           <div className="relative z-10 p-3 flex items-center justify-center">

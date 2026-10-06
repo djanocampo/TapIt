@@ -7,6 +7,8 @@ import { Mail, Lock, User, AtSign, Check, X, ArrowRight } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 import tapItLogo from '../../assets/tapit-logo.png';
 
+import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
+
 export const RegisterPage: React.FC = () => {
   const { registerUser, allUsers } = useTapIt();
   const navigate = useNavigate();
@@ -61,10 +63,11 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#040c1a] flex items-center justify-center p-4 py-16 relative selection:bg-cyan-500 selection:text-black">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none" />
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-[#060c1c] flex items-center justify-center p-3.5 sm:p-4 py-8 sm:py-16 relative selection:bg-[#38BDF8] selection:text-slate-950">
+      <div className="absolute inset-0 bits-hero-mesh pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#124294]/25 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-[#081224]/90 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6 backdrop-blur-2xl">
+      <div className="w-full max-w-md bits-glass rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl relative z-10 space-y-6">
         {/* Brand */}
         <div className="text-center space-y-2 flex flex-col items-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-2 group">
@@ -74,8 +77,12 @@ export const RegisterPage: React.FC = () => {
               className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
             />
           </Link>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#124294]/30 border border-[#38BDF8]/40 text-[#38BDF8] text-[11px] font-mono">
+            <BitsInfinityEmblem size={12} />
+            <span>DYNAMIC IDENTITY ENROLLMENT</span>
+          </div>
           <h2 className="text-2xl font-bold text-white font-display">Create Your TapIt Account</h2>
-          <p className="text-xs text-slate-300">Claim your personalized URL and start sharing with one tap</p>
+          <p className="text-xs text-slate-300">Claim your sovereign URL with zero monthly per-user fees</p>
         </div>
 
         {errorMessage && (
@@ -91,7 +98,7 @@ export const RegisterPage: React.FC = () => {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            leftIcon={<User className="w-4 h-4" />}
+            leftIcon={<User className="w-4 h-4 text-slate-400" />}
             required
           />
 
@@ -100,7 +107,7 @@ export const RegisterPage: React.FC = () => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            leftIcon={<Mail className="w-4 h-4" />}
+            leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
             required
           />
 
@@ -111,11 +118,11 @@ export const RegisterPage: React.FC = () => {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
-              leftIcon={<AtSign className="w-4 h-4" />}
+              leftIcon={<AtSign className="w-4 h-4 text-slate-400" />}
               required
             />
             {/* Live validation feedback */}
-            <div className="flex items-center justify-between text-xs px-1">
+            <div className="flex items-center justify-between text-xs px-1 flex-wrap gap-1">
               {username.length > 0 && (
                 <>
                   {isUsernameValid ? (
@@ -129,7 +136,7 @@ export const RegisterPage: React.FC = () => {
                       ✕ This username is already taken
                     </span>
                   )}
-                  <span className="text-slate-400 font-mono text-[11px]">
+                  <span className="text-[#38BDF8] font-mono text-[11px] truncate max-w-[170px]">
                     tapit.app/@{username || 'username'}
                   </span>
                 </>
@@ -143,7 +150,7 @@ export const RegisterPage: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              leftIcon={<Lock className="w-4 h-4" />}
+              leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
               required
             />
             <Input
@@ -151,7 +158,7 @@ export const RegisterPage: React.FC = () => {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              leftIcon={<Lock className="w-4 h-4" />}
+              leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
               required
             />
           </div>
@@ -162,7 +169,7 @@ export const RegisterPage: React.FC = () => {
             size="lg"
             isLoading={isLoading}
             disabled={!isUsernameValid}
-            className="w-full justify-center mt-2"
+            className="w-full justify-center mt-2 rounded-xl"
             rightIcon={<ArrowRight className="w-4 h-4" />}
           >
             Create Your Account
@@ -170,9 +177,9 @@ export const RegisterPage: React.FC = () => {
         </form>
 
         {/* Footer link */}
-        <div className="text-center text-xs text-slate-400 border-t border-slate-800 pt-4">
+        <div className="text-center text-xs text-slate-400 border-t border-[#1b2d55] pt-4">
           Already have an account?{' '}
-          <Link to="/login" className="text-cyan-400 font-semibold hover:underline">
+          <Link to="/login" className="text-[#38BDF8] font-semibold hover:underline">
             Sign in
           </Link>
         </div>

@@ -106,7 +106,7 @@ export const NFCTapSimulatorModal: React.FC = () => {
                 setCustomToken(e.target.value);
                 setTapResult(null);
               }}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
             />
           </div>
         </div>
@@ -129,12 +129,12 @@ export const NFCTapSimulatorModal: React.FC = () => {
               }`}>
                 <Smartphone className="w-8 h-8" />
               </div>
-              <div>
+              <div className="max-w-full px-2">
                 <p className="text-sm font-bold text-white">
                   {isTapping ? 'Simulating NFC Tap...' : 'Ready to Tap'}
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Target URL: <span className="font-mono text-cyan-400 font-semibold">https://tapit.app/t/{activeToken}</span>
+                <p className="text-xs text-slate-400 mt-0.5 break-all">
+                  Target URL: <span className="font-mono text-cyan-400 font-semibold break-all">https://tapit.app/t/{activeToken}</span>
                 </p>
               </div>
             </div>
@@ -201,7 +201,7 @@ export const NFCTapSimulatorModal: React.FC = () => {
         </div>
 
         {/* Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="flex flex-wrap items-center justify-end gap-2.5 sm:gap-3 pt-2">
           <Button variant="secondary" size="md" onClick={closeSimulator}>
             Cancel
           </Button>

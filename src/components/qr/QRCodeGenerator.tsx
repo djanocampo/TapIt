@@ -45,20 +45,20 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center p-6 bg-[#0d1322] border border-slate-800 rounded-3xl shadow-2xl text-center space-y-4 max-w-sm mx-auto">
+    <div className="w-full max-w-sm mx-auto flex flex-col items-center p-4 sm:p-6 bits-glass rounded-3xl shadow-2xl text-center space-y-4">
       {/* Title */}
       <div>
-        <h3 className="text-base font-bold text-white flex items-center justify-center gap-1.5">
-          <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+        <h3 className="text-base font-bold text-white flex items-center justify-center gap-1.5 font-display">
+          <Radio className="w-4 h-4 text-[#38BDF8] animate-pulse" />
           {title}
         </h3>
-        <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+        <p className="text-xs text-slate-300 mt-0.5">{subtitle}</p>
       </div>
 
       {/* QR Code Canvas container */}
       <div
         ref={canvasRef}
-        className="p-4 rounded-2xl border border-slate-700/80 shadow-inner flex items-center justify-center relative group"
+        className="p-3 sm:p-4 rounded-2xl border border-[#1b2d55] shadow-inner flex items-center justify-center relative group max-w-full overflow-hidden"
         style={{ backgroundColor: bgColor }}
       >
         <QRCodeCanvas
@@ -72,11 +72,11 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
       </div>
 
       {/* URL Link pill */}
-      <div className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs">
-        <span className="truncate text-slate-300 font-mono">{url}</span>
+      <div className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-[#081329] border border-[#1b2d55] rounded-xl text-xs min-w-0">
+        <span className="truncate text-slate-300 font-mono text-[11px] min-w-0 flex-1 text-left">{url}</span>
         <button
           onClick={handleCopyLink}
-          className="text-cyan-400 hover:text-cyan-300 shrink-0 font-medium flex items-center gap-1"
+          className="text-[#38BDF8] hover:text-white shrink-0 font-medium flex items-center gap-1 cursor-pointer transition min-h-[32px]"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
           <span>{copied ? 'Copied!' : 'Copy'}</span>
@@ -90,7 +90,7 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
             variant="secondary"
             size="sm"
             onClick={handleDownloadPNG}
-            leftIcon={<Download className="w-3.5 h-3.5" />}
+            leftIcon={<Download className="w-3.5 h-3.5 text-[#38BDF8]" />}
           >
             Download PNG
           </Button>
