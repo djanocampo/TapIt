@@ -140,51 +140,63 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
       )}
 
       {/* Main Avatar Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-4 rounded-2xl bg-[#050c18] border border-white/[0.06]">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5 p-4 sm:p-5 rounded-3xl bg-[#050c18]/90 border border-white/[0.08] shadow-sm">
         {/* Clickable / Dropzone Avatar Container */}
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`relative ${avatarDimensions} rounded-full shrink-0 cursor-pointer group overflow-hidden border-2 transition-all duration-200 shadow-xl ${
-            isDragging
-              ? 'border-cyan-400 ring-4 ring-cyan-500/30 scale-105'
-              : 'border-cyan-500/40 hover:border-cyan-400 hover:ring-2 hover:ring-cyan-500/20'
-          }`}
-          title="Click to upload or drag & drop photo"
-        >
-          {currentAvatar ? (
-            <img
-              src={currentAvatar}
-              alt={name}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-cyan-950 via-slate-900 to-purple-950 flex flex-col items-center justify-center text-slate-400">
-              <ImageIcon className="w-7 h-7 text-cyan-400/80 mb-1" />
-              <span className="text-[9px] uppercase font-bold tracking-wider text-cyan-300">Upload</span>
-            </div>
-          )}
+        <div className="flex items-center gap-4 sm:block self-start sm:self-auto">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`relative ${avatarDimensions} rounded-full shrink-0 cursor-pointer group overflow-hidden border-2 transition-all duration-200 shadow-xl ${
+              isDragging
+                ? 'border-cyan-400 ring-4 ring-cyan-500/30 scale-105'
+                : 'border-cyan-500/40 hover:border-cyan-400 hover:ring-2 hover:ring-cyan-500/20'
+            }`}
+            title="Click to upload or drag & drop photo"
+          >
+            {currentAvatar ? (
+              <img
+                src={currentAvatar}
+                alt={name}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-cyan-950 via-slate-900 to-purple-950 flex flex-col items-center justify-center text-slate-400">
+                <ImageIcon className="w-7 h-7 text-cyan-400/80 mb-1" />
+                <span className="text-[9px] uppercase font-bold tracking-wider text-cyan-300">Upload</span>
+              </div>
+            )}
 
-          {/* Hover Camera Overlay */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white">
-            <Camera className="w-5 h-5 text-cyan-400 mb-0.5" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Change</span>
+            {/* Hover Camera Overlay */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white">
+              <Camera className="w-5 h-5 text-cyan-400 mb-0.5" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Change</span>
+            </div>
+
+            {/* Drag Indicator Overlay */}
+            {isDragging && (
+              <div className="absolute inset-0 bg-cyan-950/80 backdrop-blur-sm flex flex-col items-center justify-center text-cyan-300">
+                <Upload className="w-6 h-6 animate-bounce mb-1" />
+                <span className="text-[9px] font-bold uppercase">Drop Image</span>
+              </div>
+            )}
           </div>
 
-          {/* Drag Indicator Overlay */}
-          {isDragging && (
-            <div className="absolute inset-0 bg-cyan-950/80 backdrop-blur-sm flex flex-col items-center justify-center text-cyan-300">
-              <Upload className="w-6 h-6 animate-bounce mb-1" />
-              <span className="text-[9px] font-bold uppercase">Drop Image</span>
-            </div>
-          )}
+          {/* Quick indicator on mobile next to photo */}
+          <div className="sm:hidden flex-1 min-w-0">
+            <p className="text-xs font-bold text-white truncate">
+              {currentAvatar ? 'Avatar Uploaded' : 'No Photo Selected'}
+            </p>
+            <p className="text-[11px] text-slate-400">
+              {currentAvatar ? 'Ready to crop & adjust' : 'Tap photo or button below'}
+            </p>
+          </div>
         </div>
 
         {/* Action Buttons & Helpers */}
-        <div className="flex-1 space-y-2.5">
-          <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex-1 space-y-2.5 w-full">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Native File Input Trigger */}
             <input
               ref={fileInputRef}
@@ -199,7 +211,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
               variant="glow"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              leftIcon={<Upload className="w-3.5 h-3.5 text-cyan-300" />}
+              leftIcon={<Upload className="w-3.5 h-3.5 text-slate-950" />}
             >
               Upload Photo
             </Button>
@@ -235,18 +247,18 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
           </div>
 
           {/* Secondary Options: Drag & Drop hint or Enter URL */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400">
-            <span>Drag & drop image onto photo circle</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+            <span className="hidden sm:inline">Drag & drop image onto photo circle</span>
             {allowUrlInput && (
               <>
-                <span>•</span>
+                <span className="hidden sm:inline">•</span>
                 <button
                   type="button"
                   onClick={() => setShowUrlField(!showUrlField)}
-                  className="text-cyan-400 hover:underline flex items-center gap-1 font-medium"
+                  className="text-cyan-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
                 >
                   <LinkIcon className="w-3 h-3" />
-                  {showUrlField ? 'Hide URL input' : 'Or use image URL'}
+                  {showUrlField ? 'Hide URL input' : 'Or use direct image URL'}
                 </button>
               </>
             )}
