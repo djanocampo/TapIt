@@ -50,14 +50,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   return (
-    <header className="bg-[#060c1c]/90 backdrop-blur-md border-b border-[#1b2d55] px-4 sm:px-6 lg:px-8 py-3 sm:py-4 sticky top-0 z-30 flex items-center justify-between gap-4">
+    <header className="bg-[#060c1c]/95 backdrop-blur-xl border-b border-[#1b2d55] px-4 sm:px-6 lg:px-8 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 sm:py-4 sticky top-0 z-30 flex items-center justify-between gap-3 sm:gap-4">
       {/* Left: Title & Breadcrumb */}
-      <div className="flex items-center gap-3">
-        <div>
-          <h1 className="text-base sm:text-xl font-bold text-white font-display tracking-tight flex items-center gap-2">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-xl font-bold text-white font-display tracking-tight flex items-center gap-2 truncate">
             {title || 'Dashboard'}
           </h1>
-          {subtitle && <p className="text-xs text-slate-400 hidden sm:block">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-400 hidden sm:block truncate">{subtitle}</p>}
         </div>
       </div>
 
@@ -80,11 +80,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <Link
           to={`/@${activeProfile.slug}`}
           target="_blank"
-          className="flex items-center gap-1.5 bg-[#124294]/30 border border-[#1B55C6]/60 hover:border-[#38BDF8]/60 text-[#E0F2FE] text-xs px-3 py-2 rounded-xl transition font-medium shadow-sm"
+          className="flex items-center justify-center gap-1.5 bg-[#124294]/30 border border-[#1B55C6]/60 hover:border-[#38BDF8]/60 text-[#E0F2FE] text-xs px-3 py-2 min-h-[40px] rounded-xl transition font-medium shadow-sm active:scale-95"
+          title={`Open live profile @${activeProfile.slug}`}
         >
-          <Smartphone className="w-3.5 h-3.5 text-[#38BDF8]" />
+          <Smartphone className="w-4 h-4 text-[#38BDF8] shrink-0" />
           <span className="hidden sm:inline">tapit.app/@{activeProfile.slug}</span>
-          <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
+          <ExternalLink className="w-3.5 h-3.5 ml-0.5 opacity-80 shrink-0" />
         </Link>
 
         {/* Share Profile Button */}
@@ -93,7 +94,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             variant="secondary"
             size="sm"
             onClick={onOpenShareModal}
-            leftIcon={<Share2 className="w-3.5 h-3.5 text-[#38BDF8]" />}
+            className="min-h-[40px] px-3 active:scale-95"
+            leftIcon={<Share2 className="w-4 h-4 text-[#38BDF8]" />}
           >
             <span className="hidden sm:inline">Share</span>
           </Button>
@@ -103,7 +105,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 rounded-xl bg-[#0a142c] border border-[#1b2d55] text-slate-300 hover:text-white hover:border-[#38BDF8]/40 transition cursor-pointer"
+            className="relative p-2.5 min-w-[40px] min-h-[40px] rounded-xl bg-[#0a142c] border border-[#1b2d55] text-slate-300 hover:text-white hover:border-[#38BDF8]/40 transition cursor-pointer flex items-center justify-center active:scale-95"
+            aria-label="Open notifications feed"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (

@@ -1,5 +1,5 @@
 // TapIt Progressive Web App Service Worker
-const CACHE_NAME = 'tapit-pwa-v1';
+const CACHE_NAME = 'tapit-pwa-v2';
 
 // Core assets to precache on install
 const PRECACHE_ASSETS = [

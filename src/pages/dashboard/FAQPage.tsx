@@ -249,7 +249,7 @@ export const FAQPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('playbook')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+            className={`flex items-center gap-2 px-4 py-2 min-h-[38px] rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer ${
               activeTab === 'playbook'
                 ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
                 : 'text-slate-400 hover:text-white'
@@ -261,7 +261,7 @@ export const FAQPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('faqs')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+            className={`flex items-center gap-2 px-4 py-2 min-h-[38px] rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer ${
               activeTab === 'faqs'
                 ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
                 : 'text-slate-400 hover:text-white'

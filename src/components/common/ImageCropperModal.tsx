@@ -148,7 +148,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
         isolated from any parent scrolling, transforms, or overflow-y-auto layout containers.
       */}
       <div 
-        className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 overflow-hidden select-none touch-none pointer-events-auto"
+        className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pl-[calc(0.75rem+env(safe-area-inset-left,0px))] pr-[calc(0.75rem+env(safe-area-inset-right,0px))] overflow-hidden select-none touch-none pointer-events-auto"
         style={{ isolation: 'isolate' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -169,7 +169,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
           transition={{ type: 'spring', damping: 26, stiffness: 320 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[calc(100dvh-2rem)] sm:max-h-[90dvh] bg-[#060c1c] border border-cyan-500/40 rounded-[28px] sm:rounded-3xl shadow-[0_0_80px_rgba(0,0,0,0.95),0_0_30px_rgba(6,182,212,0.3)] overflow-hidden z-10 flex flex-col justify-between my-auto"
+          className="relative w-full max-w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1.5rem)] sm:max-h-[90dvh] bg-[#060c1c] border border-cyan-500/40 rounded-[28px] sm:rounded-3xl shadow-[0_0_80px_rgba(0,0,0,0.95),0_0_30px_rgba(6,182,212,0.3)] overflow-hidden z-10 flex flex-col justify-between my-auto"
         >
           {/* ========================================================
               1. ENTERPRISE STUDIO HEADER
@@ -198,7 +198,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isProcessing}
-              className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl text-slate-400 hover:text-white hover:bg-white/10 active:scale-95 transition flex items-center justify-center shrink-0 cursor-pointer border border-transparent hover:border-white/10"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl text-slate-400 hover:text-white hover:bg-white/10 active:scale-95 transition flex items-center justify-center shrink-0 cursor-pointer border border-transparent hover:border-white/10"
               aria-label="Close Crop Modal"
             >
               <X className="w-5 h-5" />
@@ -391,7 +391,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
           {/* ========================================================
               4. FOOTER ACTIONS (Pinned, Ergonomic Safe-Area Padding)
               ======================================================== */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3 sm:py-3.5 border-t border-white/[0.08] bg-[#050b18] pb-[max(0.875rem,env(safe-area-inset-bottom))] shrink-0">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 sm:py-3.5 border-t border-white/[0.08] bg-[#050b18] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] shrink-0">
             <button
               type="button"
               onClick={onClose}

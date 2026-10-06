@@ -45,7 +45,7 @@ export const AdminLayout: React.FC = () => {
       {/* Main Workspace Area (Offset by sidebar width on desktop) */}
       <div className="md:pl-64 flex flex-col min-h-screen min-h-[100dvh] min-w-0 max-w-full bg-[#070a13] overflow-x-hidden">
         {/* Header */}
-        <header className="bg-[#050a17]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 lg:px-8 py-3.5 sticky top-0 z-30 flex items-center justify-between gap-4">
+        <header className="bg-[#050a17]/95 backdrop-blur-xl border-b border-white/[0.08] px-4 sm:px-6 lg:px-8 pt-[calc(0.875rem+env(safe-area-inset-top,0px))] pb-3.5 sm:py-3.5 sticky top-0 z-30 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 md:hidden">
               <ShieldAlert className="w-4 h-4" />
@@ -63,7 +63,7 @@ export const AdminLayout: React.FC = () => {
               type="button"
               onClick={() => setIsCacheModalOpen(true)}
               title="Inspect / Clear Local Storage Cache"
-              className="flex items-center gap-1.5 bg-[#081326] border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02]"
+              className="flex items-center gap-1.5 bg-[#081326] border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-xs px-2.5 py-1.5 min-h-[38px] rounded-xl transition font-medium shadow-sm hover:scale-[1.02] active:scale-95 cursor-pointer"
             >
               <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
               <span className="font-mono text-[11px] font-bold">{approxKb} KB Cache</span>

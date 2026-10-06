@@ -73,16 +73,6 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-[#1b2d55] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <p>© {new Date().getFullYear()} TapIt Platform • Boundless IT Solutions (BITS 2026 Edition).</p>
-          <div className="flex items-center gap-4">
-            <span className="text-slate-400 flex items-center gap-1">
-              Built for <strong className="text-slate-200">Djan Ocampo</strong>
-            </span>
-            <span>•</span>
-            <span className="text-[#38BDF8] flex items-center gap-1.5 font-medium">
-              <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-ping inline-block"></span>
-              All Telemetry Systems Operational
-            </span>
-          </div>
         </div>
       </div>
     </footer>

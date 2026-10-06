@@ -52,7 +52,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#060c1c]/90 backdrop-blur-2xl border-b border-[#1b2d55]/80 transition-all duration-300">
+    <header className="sticky top-0 z-40 bg-[#060c1c]/95 backdrop-blur-2xl border-b border-[#1b2d55]/80 pt-[env(safe-area-inset-top,0px)] transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Left Brand Logo & BITS Submark */}
@@ -161,7 +161,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0a142c] border-b border-[#1b2d55] px-4 pt-3 pb-6 space-y-3 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain touch-pan-y">
+        <div className="md:hidden bg-[#0a142c] border-b border-[#1b2d55] px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] space-y-3 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain touch-pan-y">
           <div className="space-y-1">
             {navLinks.map((link) => {
               if (link.isRoute) {

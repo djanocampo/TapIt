@@ -15,8 +15,9 @@ export function registerServiceWorker() {
             installingWorker.onstatechange = () => {
               if (installingWorker.state === 'installed') {
                 if (navigator.serviceWorker.controller) {
-                  // New content is available; it will be used when all tabs for this page are closed.
-                  console.info('[TapIt PWA] New update available. Reloading soon.');
+                  // New content is available; immediately tell worker to activate
+                  installingWorker.postMessage({ type: 'SKIP_WAITING' });
+                  console.info('[TapIt PWA] New update available. Activating new version.');
                 } else {
                   // Content is cached for offline use.
                   console.info('[TapIt PWA] Content cached for offline use.');
@@ -28,6 +29,15 @@ export function registerServiceWorker() {
         .catch((error) => {
           console.error('[TapIt PWA] Error registering service worker:', error);
         });
+
+      // Reload page once new controller activates
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
     });
   }
 }

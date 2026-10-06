@@ -72,7 +72,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
   return (
     <>
       {/* FIXED BOTTOM NAVIGATION BAR (MOBILE ONLY) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#060c1c]/95 backdrop-blur-2xl border-t border-[#1b2d55] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.8)] px-2 py-1.5 safe-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#060c1c]/95 backdrop-blur-2xl border-t border-[#1b2d55] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.8)] px-2 pt-2 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))]">
         <div className="grid grid-cols-5 items-center gap-1">
           {currentTabs.map((tab) => {
             const Icon = tab.icon;
@@ -82,14 +82,14 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
               <Link
                 key={tab.path}
                 to={tab.path}
-                className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-200 ${
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-200 min-h-[44px] ${
                   active
                     ? 'text-[#38BDF8] font-bold bg-[#124294]/35 border border-[#38BDF8]/40 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 font-medium'
                 }`}
               >
-                <Icon className={`w-5 h-5 mb-0.5 ${active ? 'text-[#38BDF8] scale-110' : ''}`} />
-                <span className="text-[10px] tracking-tight truncate max-w-[55px] text-center font-medium">
+                <Icon className={`w-5 h-5 mb-0.5 shrink-0 ${active ? 'text-[#38BDF8] scale-110' : ''}`} />
+                <span className="text-[10px] tracking-tight truncate max-w-[55px] text-center font-medium leading-tight">
                   {tab.label}
                 </span>
               </Link>
@@ -100,14 +100,14 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
           <button
             type="button"
             onClick={() => setIsMoreOpen(true)}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-200 cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-200 cursor-pointer min-h-[44px] ${
               isMoreOpen
                 ? 'text-[#38BDF8] font-bold bg-[#124294]/35 border border-[#38BDF8]/40'
                 : 'text-slate-400 hover:text-slate-200 font-medium'
             }`}
           >
-            <MoreHorizontal className={`w-5 h-5 mb-0.5 ${isMoreOpen ? 'text-[#38BDF8]' : ''}`} />
-            <span className="text-[10px] tracking-tight truncate max-w-[55px] text-center font-medium">
+            <MoreHorizontal className={`w-5 h-5 mb-0.5 shrink-0 ${isMoreOpen ? 'text-[#38BDF8]' : ''}`} />
+            <span className="text-[10px] tracking-tight truncate max-w-[55px] text-center font-medium leading-tight">
               More
             </span>
           </button>
@@ -124,7 +124,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
           />
 
           {/* Bottom Sheet Modal */}
-          <div className="relative z-10 w-full max-h-[85dvh] bg-[#0a142c] border-t border-[#1b2d55] rounded-t-[32px] p-5 sm:p-6 shadow-2xl flex flex-col space-y-5 overflow-y-auto pb-[max(2rem,env(safe-area-inset-bottom,0px))] animate-in slide-in-from-bottom duration-300 touch-pan-y">
+          <div className="relative z-10 w-full max-h-[85dvh] bg-[#0a142c] border-t border-[#1b2d55] rounded-t-[32px] p-5 sm:p-6 shadow-2xl flex flex-col space-y-5 overflow-y-auto pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] animate-in slide-in-from-bottom duration-300 touch-pan-y">
             {/* Visual Grab Handle for Bottom Sheet */}
             <div className="w-10 h-1 rounded-full bg-slate-600/80 mx-auto -mt-1" />
 
