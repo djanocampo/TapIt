@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { Button } from '../ui/Button';
-import { Download, Share2, Copy, Check, Radio } from 'lucide-react';
+import { Download, Share2, Copy, Check, Radio, Printer } from 'lucide-react';
 import { copyToClipboard } from '../../lib/utils';
 
 interface QRCodeGeneratorProps {
@@ -38,10 +38,28 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     const pngUrl = canvas.toDataURL('image/png');
     const downloadLink = document.createElement('a');
     downloadLink.href = pngUrl;
-    downloadLink.download = `tapit-qr-${Date.now()}.png`;
+    downloadLink.download = `tapit-qr-screen-${Date.now()}.png`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
+  };
+
+  const handleDownloadSVG = () => {
+    const svg = canvasRef.current?.querySelector('svg');
+    if (svg) {
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = svgUrl;
+      downloadLink.download = `tapit-qr-print-vector-${Date.now()}.svg`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(svgUrl);
+    } else {
+      handleDownloadPNG();
+    }
   };
 
   return (
@@ -69,10 +87,20 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
           level="H"
           includeMargin={false}
         />
+        <div className="hidden">
+          <QRCodeSVG
+            value={url}
+            size={1024}
+            fgColor={fgColor}
+            bgColor={bgColor}
+            level="H"
+            includeMargin={true}
+          />
+        </div>
       </div>
 
       {/* URL Link pill */}
-      <div className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-[#081329] border border-[#1b2d55] rounded-xl text-xs min-w-0">
+      <div className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-[#081224] border border-[#1b2d55] rounded-xl text-xs min-w-0">
         <span className="truncate text-slate-300 font-mono text-[11px] min-w-0 flex-1 text-left">{url}</span>
         <button
           onClick={handleCopyLink}
@@ -85,22 +113,33 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
 
       {/* Download / Share Buttons */}
       {showDownloadButtons && (
-        <div className="grid grid-cols-2 gap-2 w-full pt-1">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleDownloadPNG}
-            leftIcon={<Download className="w-3.5 h-3.5 text-[#38BDF8]" />}
-          >
-            Download PNG
-          </Button>
+        <div className="space-y-2 w-full pt-1">
+          <div className="grid grid-cols-2 gap-2 w-full">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDownloadPNG}
+              leftIcon={<Download className="w-3.5 h-3.5 text-[#38BDF8]" />}
+            >
+              For Screens (PNG)
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDownloadSVG}
+              leftIcon={<Printer className="w-3.5 h-3.5 text-purple-400" />}
+            >
+              For Print (SVG)
+            </Button>
+          </div>
           <Button
             variant="primary"
             size="sm"
+            className="w-full"
             onClick={handleCopyLink}
             leftIcon={<Share2 className="w-3.5 h-3.5" />}
           >
-            Share Link
+            Share Profile Link
           </Button>
         </div>
       )}

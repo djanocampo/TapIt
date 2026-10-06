@@ -353,6 +353,41 @@ export async function deleteSupabaseCard(idOrToken: string, cardToken?: string):
   }
 }
 
+export async function deleteSupabaseInvite(idOrToken: string, cardToken?: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const clean = idOrToken.trim();
+    const upper = clean.toUpperCase();
+    const withPrefix = upper.startsWith('INV-') ? upper : `INV-${upper}`;
+    const withoutPrefix = upper.startsWith('INV-') ? upper.replace(/^INV-/, '') : upper;
+
+    let filter = `id.eq.${clean},invite_token.eq.${clean},invite_token.eq.${upper},invite_token.eq.${withPrefix},invite_token.eq.${withoutPrefix}`;
+    if (cardToken) {
+      filter += `,card_token.eq.${cardToken.trim()}`;
+    }
+
+    const { error } = await supabase.from('user_invites').delete().or(filter);
+    if (error) {
+      console.warn('[Supabase Delete] user_invites delete warning:', error.message);
+    }
+
+    // Also clean up any unassigned card in Supabase that was created for this invite
+    if (cardToken) {
+      try {
+        await supabase
+          .from('nfc_cards')
+          .delete()
+          .eq('card_token', cardToken.trim())
+          .is('user_id', null);
+      } catch (err) {
+        console.warn('[Supabase Delete] Unassigned card cleanup warning:', err);
+      }
+    }
+  } catch (err) {
+    console.warn('[Supabase Delete] Invite deletion network error:', err);
+  }
+}
+
 export async function deleteSupabaseUser(userId: string): Promise<void> {
   if (!isSupabaseConfigured()) return;
   try {

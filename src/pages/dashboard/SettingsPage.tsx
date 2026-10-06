@@ -22,7 +22,9 @@ import {
   Trash2,
   RotateCw,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { triggerConfetti } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
@@ -40,7 +42,8 @@ export const SettingsPage: React.FC = () => {
     logout, 
     profiles, 
     links, 
-    cards 
+    cards,
+    currentRole
   } = useTapIt();
 
   const [name, setName] = useState(currentUser?.name || '');
@@ -55,6 +58,7 @@ export const SettingsPage: React.FC = () => {
   const [passError, setPassError] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
+  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
 
   const [notifyTaps, setNotifyTaps] = useState(true);
   const [notifyClicks, setNotifyClicks] = useState(true);
@@ -126,87 +130,16 @@ export const SettingsPage: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="glow"
-          size="sm"
-          onClick={() => setIsCacheModalOpen(true)}
-          leftIcon={<HardDrive className="w-4 h-4 text-bits-cyan" />}
-        >
-          Storage Cache Inspector ({approxKb} KB)
-        </Button>
-      </div>
-
-      {/* Local Storage Cache & Offline Hydration Manager */}
-      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-6 sm:p-8 shadow-card-bits space-y-4 backdrop-blur-xl">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <HardDrive className="w-4 h-4 text-bits-cyan" />
-            Local Storage Cache & State Hydration
-          </h3>
-          <span className="text-xs font-mono font-bold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-3 py-1 rounded-full shadow-glow-cyan">
-            ● Hydrated Locally First
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-300 leading-relaxed">
-          TapIt operates with an offline-first storage engine. All your profiles, registered NFC tags, and telemetry events are saved directly in your browser&apos;s LocalStorage and hydrated first upon page refresh.
-        </p>
-
-        {/* Live Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-          <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.08] text-center">
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">Cached Storage</span>
-            <span className="text-base font-extrabold text-cyan-300 font-mono">{approxKb} KB</span>
-          </div>
-          <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.08] text-center">
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">Total Keys</span>
-            <span className="text-base font-extrabold text-white font-mono">{metrics.keysCount}</span>
-          </div>
-          <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.08] text-center">
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">Saved Profiles</span>
-            <span className="text-base font-extrabold text-purple-300 font-mono">{profiles.length}</span>
-          </div>
-          <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.08] text-center">
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">NFC Cards</span>
-            <span className="text-base font-extrabold text-emerald-300 font-mono">{cards.length}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 pt-2">
+        {currentRole === 'admin' && (
           <Button
-            variant="danger"
-            size="sm"
-            onClick={() => {
-              if (window.confirm('Wipe all local storage cache and hard-reload the site?')) {
-                clearLocalStorageCache({ keepSession: false, reload: true });
-              }
-            }}
-            leftIcon={<Trash2 className="w-4 h-4" />}
-          >
-            Clear Local Storage Cache & Hard Reload
-          </Button>
-
-          <Button
-            variant="secondary"
+            variant="glow"
             size="sm"
             onClick={() => setIsCacheModalOpen(true)}
-            leftIcon={<HardDrive className="w-4 h-4" />}
+            leftIcon={<HardDrive className="w-4 h-4 text-bits-cyan" />}
           >
-            Open Cache Inspector
+            Storage Cache Inspector ({approxKb} KB)
           </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              reloadFromStorage();
-              triggerConfetti();
-            }}
-            leftIcon={<RotateCw className="w-3.5 h-3.5 text-cyan-400" />}
-          >
-            Sync from LocalStorage
-          </Button>
-        </div>
+        )}
       </div>
 
       {/* Profile Details Form */}
@@ -428,6 +361,102 @@ export const SettingsPage: React.FC = () => {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Storage & Diagnostics (Advanced) Collapsible Accordion */}
+      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl shadow-card-bits overflow-hidden backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={() => setIsDiagnosticsOpen((prev) => !prev)}
+          className="w-full p-5 sm:p-6 flex items-center justify-between text-left hover:bg-white/[0.02] transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+              <HardDrive className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Storage & Diagnostics (Advanced)
+                </h3>
+                <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">
+                  {approxKb} KB Cached
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                {isDiagnosticsOpen ? 'Inspect local device storage, cache metrics, and offline state hydration.' : 'Offline storage cache, key counts, and browser synchronization diagnostics.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-1 rounded-lg bg-white/[0.05] text-slate-400">
+            {isDiagnosticsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
+        </button>
+
+        {isDiagnosticsOpen && (
+          <div className="p-6 pt-2 border-t border-white/[0.06] space-y-4">
+            <p className="text-xs text-slate-300 leading-relaxed">
+              TapIt operates with an offline-first storage engine. All your profiles, registered NFC tags, and telemetry events are saved directly in your browser&apos;s LocalStorage and hydrated first upon page refresh.
+            </p>
+
+            {/* Live Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+              <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.08] text-center">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Cached Storage</span>
+                <span className="text-base font-extrabold text-cyan-300 font-mono">{approxKb} KB</span>
+              </div>
+              <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.08] text-center">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Total Keys</span>
+                <span className="text-base font-extrabold text-white font-mono">{metrics.keysCount}</span>
+              </div>
+              <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.08] text-center">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Saved Profiles</span>
+                <span className="text-base font-extrabold text-purple-300 font-mono">{profiles.length}</span>
+              </div>
+              <div className="bg-[#050b18] p-3 rounded-2xl border border-white/[0.08] text-center">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">NFC Cards</span>
+                <span className="text-base font-extrabold text-emerald-300 font-mono">{cards.length}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm('Wipe all local storage cache and hard-reload the site?')) {
+                    clearLocalStorageCache({ keepSession: false, reload: true });
+                  }
+                }}
+                leftIcon={<Trash2 className="w-4 h-4" />}
+              >
+                Clear Local Storage Cache & Hard Reload
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsCacheModalOpen(true)}
+                leftIcon={<HardDrive className="w-4 h-4" />}
+              >
+                Open Cache Inspector
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  reloadFromStorage();
+                  triggerConfetti();
+                }}
+                leftIcon={<RotateCw className="w-3.5 h-3.5 text-cyan-400" />}
+              >
+                Sync from LocalStorage
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* LOCAL STORAGE CACHE MODAL */}

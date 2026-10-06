@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { useTapIt } from '../../store';
-import { User, CardMaterial } from '../../types';
+import { User, CardMaterial, UserInvite } from '../../types';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { Tabs } from '../../components/ui/Tabs';
+import { InviteVoucherModal } from '../../components/admin/InviteVoucherModal';
+import { downloadQRVoucher } from '../../lib/voucherGenerator';
 import { 
   Users, 
   Search, 
@@ -34,14 +37,20 @@ import {
   RotateCw,
   Trash2,
   AlertTriangle,
-  KeyRound
+  KeyRound,
+  QrCode,
+  Download,
+  CreditCard,
+  Clock
 } from 'lucide-react';
 import { formatRelativeTime, triggerConfetti } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const UserManagementPage: React.FC = () => {
-  const { allUsers, toggleUserStatus, createInvite, deleteUser, requestPasswordReset } = useTapIt();
+  const { allUsers, invites, toggleUserStatus, createInvite, deleteInvite, deleteUser, requestPasswordReset } = useTapIt();
+  const [activeTab, setActiveTab] = useState<'users' | 'invites'>('users');
   const [searchQuery, setSearchQuery] = useState('');
+  const [inviteSearchQuery, setInviteSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
 
@@ -79,6 +88,27 @@ export const UserManagementPage: React.FC = () => {
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState('');
   const [generatedCardToken, setGeneratedCardToken] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Wizard voucher download state
+  const [isDownloadingWizardVoucher, setIsDownloadingWizardVoucher] = useState(false);
+  const wizardQrCanvasRef = useRef<HTMLDivElement>(null);
+
+  // Voucher Preview Modal State
+  const [selectedVoucherInvite, setSelectedVoucherInvite] = useState<UserInvite | null>(null);
+  const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
+
+  // Quick Voucher Download from Row State
+  const [downloadingInviteId, setDownloadingInviteId] = useState<string | null>(null);
+  const [offscreenVoucherData, setOffscreenVoucherData] = useState<{
+    invite: UserInvite;
+    url: string;
+  } | null>(null);
+  const offscreenCanvasRef = useRef<HTMLDivElement>(null);
+
+  // Delete Invite Modal State
+  const [inviteToDelete, setInviteToDelete] = useState<UserInvite | null>(null);
+  const [isDeleteInviteModalOpen, setIsDeleteInviteModalOpen] = useState(false);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
   // Clear timers helper
   const clearNfcTimers = () => {
@@ -333,6 +363,73 @@ export const UserManagementPage: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleQuickDownloadVoucher = async (inv: UserInvite) => {
+    try {
+      setDownloadingInviteId(inv.id);
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+      const url = `${origin}/invite/${inv.inviteToken}`;
+      setOffscreenVoucherData({ invite: inv, url });
+
+      // Wait 60ms for offscreen canvas to mount
+      await new Promise((r) => setTimeout(r, 60));
+      const canvasEl = offscreenCanvasRef.current?.querySelector('canvas');
+      if (!canvasEl) throw new Error('Offscreen canvas failed to render');
+
+      await downloadQRVoucher(canvasEl, {
+        userName: inv.initialName,
+        cardToken: inv.cardToken,
+        material: inv.material,
+        inviteToken: inv.inviteToken,
+        inviteUrl: url,
+      });
+    } catch (err) {
+      console.error('Failed to download voucher:', err);
+    } finally {
+      setDownloadingInviteId(null);
+      setOffscreenVoucherData(null);
+    }
+  };
+
+  const handleCopyRowInviteUrl = async (inv: UserInvite) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    const url = `${origin}/invite/${inv.inviteToken}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedInviteId(inv.id);
+    setTimeout(() => setCopiedInviteId(null), 2000);
+  };
+
+  const handleDownloadWizardVoucher = async () => {
+    try {
+      setIsDownloadingWizardVoucher(true);
+      const canvas = wizardQrCanvasRef.current?.querySelector('canvas');
+      if (!canvas) throw new Error('Wizard QR Canvas not found');
+
+      const tokenFromUrl = generatedInviteUrl.split('/invite/')[1] || generatedCardToken;
+      await downloadQRVoucher(canvas, {
+        userName: wizardName,
+        cardToken: generatedCardToken,
+        material: wizardMaterial,
+        inviteToken: tokenFromUrl,
+        inviteUrl: generatedInviteUrl,
+      });
+    } catch (err) {
+      console.error('Error downloading wizard voucher:', err);
+    } finally {
+      setIsDownloadingWizardVoucher(false);
+    }
+  };
+
+  const pendingInvites = (invites || []).filter((inv) => !inv.isUsed);
+
+  const filteredInvites = pendingInvites.filter((inv) => {
+    const q = inviteSearchQuery.toLowerCase();
+    return (
+      inv.initialName.toLowerCase().includes(q) ||
+      inv.cardToken.toLowerCase().includes(q) ||
+      inv.inviteToken.toLowerCase().includes(q)
+    );
+  });
+
   // Exclude admin accounts — admin oversees the system and should never appear as a regular user
   const nonAdminUsers = allUsers.filter((user) => user.role !== 'admin');
 
@@ -376,149 +473,358 @@ export const UserManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-4 sm:p-6 shadow-card-bits flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
-        <div className="w-full sm:w-80">
-          <Input
-            placeholder="Search by name, email, or username..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            leftIcon={<Search className="w-4 h-4" />}
-          />
-        </div>
-
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="flex-1 sm:flex-initial bg-bits-midnight border border-bits-horizon/40 text-base sm:text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:border-bits-cyan focus:outline-none"
-          >
-            <option value="all">All Roles</option>
-            <option value="user">User</option>
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex-1 sm:flex-initial bg-bits-midnight border border-bits-horizon/40 text-base sm:text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:border-bits-cyan focus:outline-none"
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="suspended">Suspended</option>
-          </select>
-        </div>
+      {/* Directory Navigation Tabs */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <Tabs
+          tabs={[
+            {
+              id: 'users',
+              label: 'Registered Accounts',
+              icon: <Users className="w-4 h-4" />,
+              badge: nonAdminUsers.length,
+            },
+            {
+              id: 'invites',
+              label: 'Pending Invites & Card Stickers',
+              icon: <QrCode className="w-4 h-4" />,
+              badge: pendingInvites.length > 0 ? `${pendingInvites.length} Pending` : 0,
+            },
+          ]}
+          activeTab={activeTab}
+          onChange={(tab) => setActiveTab(tab as 'users' | 'invites')}
+        />
       </div>
 
-      {/* Users Table */}
-      <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl shadow-card-bits overflow-hidden backdrop-blur-xl">
-        <div className="overflow-x-auto touch-pan-x">
-          <table className="w-full min-w-[580px] text-left text-xs">
-            <thead>
-              <tr className="border-b border-bits-vapor/10 bg-bits-midnight/80 text-slate-400 uppercase tracking-wider font-semibold">
-                <th className="py-3.5 px-4 font-medium">User Profile</th>
-                <th className="py-3.5 px-4 font-medium hidden sm:table-cell">Role & Permissions</th>
-                <th className="py-3.5 px-4 font-medium">Status</th>
-                <th className="py-3.5 px-4 font-medium hidden md:table-cell">Joined</th>
-                <th className="py-3.5 px-4 font-medium text-right">Account Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.06] text-slate-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-white/[0.03] transition">
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-10 h-10 rounded-full object-cover border border-cyan-500/30"
-                      />
-                      <div>
-                        <p className="font-bold text-white flex items-center gap-1.5">
-                          {user.name}
-                          <span className="text-[10px] font-mono text-cyan-400">(@{user.username})</span>
-                        </p>
-                        <p className="text-[11px] text-slate-400">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
+      {/* =========================================================
+          TAB 1: REGISTERED MEMBERS DIRECTORY
+          ========================================================= */}
+      {activeTab === 'users' && (
+        <div className="space-y-6">
+          {/* Filter and Search Bar */}
+          <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-4 sm:p-6 shadow-card-bits flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
+            <div className="w-full sm:w-80">
+              <Input
+                placeholder="Search by name, email, or username..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                leftIcon={<Search className="w-4 h-4" />}
+              />
+            </div>
 
-                  <td className="py-3.5 px-4 hidden sm:table-cell">
-                    {user.role === 'admin' ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
-                        <ShieldCheck className="w-3 h-3 text-cyan-400" />
-                        Admin (Full Access)
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-400/40">
-                        <UserIcon className="w-3 h-3 text-sky-400" />
-                        User (Dashboard Access)
-                      </span>
-                    )}
-                  </td>
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="flex-1 sm:flex-initial bg-bits-midnight border border-bits-horizon/40 text-base sm:text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:border-bits-cyan focus:outline-none"
+              >
+                <option value="all">All Roles</option>
+                <option value="user">User</option>
+              </select>
 
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                        user.status === 'active'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                      }`}
-                    >
-                      {user.status}
-                    </span>
-                  </td>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="flex-1 sm:flex-initial bg-bits-midnight border border-bits-horizon/40 text-base sm:text-xs font-semibold text-white rounded-xl px-3 py-2.5 focus:border-bits-cyan focus:outline-none"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+          </div>
 
-                  <td className="py-3.5 px-4 hidden md:table-cell text-slate-400">
-                    {formatRelativeTime(user.createdAt)}
-                  </td>
+          {/* Users Table */}
+          <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl shadow-card-bits overflow-hidden backdrop-blur-xl">
+            <div className="overflow-x-auto touch-pan-x">
+              <table className="w-full min-w-[580px] text-left text-xs">
+                <thead>
+                  <tr className="border-b border-bits-vapor/10 bg-bits-midnight/80 text-slate-400 uppercase tracking-wider font-semibold">
+                    <th className="py-3.5 px-4 font-medium">User Profile</th>
+                    <th className="py-3.5 px-4 font-medium hidden sm:table-cell">Role & Permissions</th>
+                    <th className="py-3.5 px-4 font-medium">Status</th>
+                    <th className="py-3.5 px-4 font-medium hidden md:table-cell">Joined</th>
+                    <th className="py-3.5 px-4 font-medium text-right">Account Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.06] text-slate-200">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-white/[0.03] transition">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-10 h-10 rounded-full object-cover border border-cyan-500/30"
+                          />
+                          <div>
+                            <p className="font-bold text-white flex items-center gap-1.5">
+                              {user.name}
+                              <span className="text-[10px] font-mono text-cyan-400">(@{user.username})</span>
+                            </p>
+                            <p className="text-[11px] text-slate-400">{user.email}</p>
+                          </div>
+                        </div>
+                      </td>
 
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant={user.status === 'active' ? 'secondary' : 'primary'}
-                        size="xs"
-                        onClick={() => toggleUserStatus(user.id)}
-                      >
-                        {user.status === 'active' ? 'Suspend' : 'Reactivate'}
-                      </Button>
+                      <td className="py-3.5 px-4 hidden sm:table-cell">
+                        {user.role === 'admin' ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
+                            <ShieldCheck className="w-3 h-3 text-cyan-400" />
+                            Admin (Full Access)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-400/40">
+                            <UserIcon className="w-3 h-3 text-sky-400" />
+                            User (Dashboard Access)
+                          </span>
+                        )}
+                      </td>
 
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const res = await requestPasswordReset(user.email);
-                          if (res.success && res.resetUrl) {
-                            setResetUser(user);
-                            setResetUrl(res.resetUrl);
-                            setIsResetCopied(false);
-                          }
-                        }}
-                        className="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/25 text-cyan-400 border border-cyan-500/20 hover:border-cyan-500/40 transition shadow-sm"
-                        title="Generate Password Reset Link"
-                      >
-                        <KeyRound className="w-3.5 h-3.5" />
-                      </button>
-
-                      {user.role !== 'admin' && user.id !== 'usr_admin_001' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUserToDelete(user);
-                            setIsDeleteModalOpen(true);
-                          }}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/20 hover:border-rose-500/40 transition shadow-sm"
-                          title="Delete User Account"
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                            user.status === 'active'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          }`}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                          {user.status}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 hidden md:table-cell text-slate-400">
+                        {formatRelativeTime(user.createdAt)}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant={user.status === 'active' ? 'secondary' : 'primary'}
+                            size="xs"
+                            onClick={() => toggleUserStatus(user.id)}
+                          >
+                            {user.status === 'active' ? 'Suspend' : 'Reactivate'}
+                          </Button>
+
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const res = await requestPasswordReset(user.email);
+                              if (res.success && res.resetUrl) {
+                                setResetUser(user);
+                                setResetUrl(res.resetUrl);
+                                setIsResetCopied(false);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/25 text-cyan-400 border border-cyan-500/20 hover:border-cyan-500/40 transition shadow-sm"
+                            title="Generate Password Reset Link"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
+                          </button>
+
+                          {user.role !== 'admin' && user.id !== 'usr_admin_001' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUserToDelete(user);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/20 hover:border-rose-500/40 transition shadow-sm"
+                              title="Delete User Account"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* =========================================================
+          TAB 2: PENDING INVITATIONS & VOUCHERS
+          ========================================================= */}
+      {activeTab === 'invites' && (
+        <div className="space-y-6">
+          {/* Invites Search & Info Bar */}
+          <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-4 sm:p-6 shadow-card-bits flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
+            <div className="w-full sm:w-96">
+              <Input
+                placeholder="Search invites by name, card ID, or token..."
+                value={inviteSearchQuery}
+                onChange={(e) => setInviteSearchQuery(e.target.value)}
+                leftIcon={<Search className="w-4 h-4" />}
+              />
+            </div>
+
+            <div className="text-xs text-slate-300 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
+              <span>
+                {pendingInvites.length} unactivated card{pendingInvites.length === 1 ? '' : 's'} awaiting member registration
+              </span>
+            </div>
+          </div>
+
+          {/* Invites Table or Empty State */}
+          {pendingInvites.length === 0 ? (
+            <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-12 text-center shadow-card-bits backdrop-blur-xl space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto shadow-glow-cyan">
+                <Sparkles className="w-7 h-7" />
+              </div>
+              <div className="space-y-1.5 max-w-md mx-auto">
+                <h3 className="text-base font-bold text-white font-display">
+                  All Smart Cards Claimed & Activated
+                </h3>
+                <p className="text-xs text-slate-400">
+                  There are currently no pending invitations. Every provisioned smart card has been activated by its registered member.
+                </p>
+              </div>
+              <div className="pt-2">
+                <Button
+                  variant="glow"
+                  size="sm"
+                  onClick={handleOpenWizard}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  Provision New Member & Card
+                </Button>
+              </div>
+            </div>
+          ) : filteredInvites.length === 0 ? (
+            <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-10 text-center shadow-card-bits backdrop-blur-xl space-y-2">
+              <p className="text-sm font-bold text-white">No invitations match "{inviteSearchQuery}"</p>
+              <p className="text-xs text-slate-400">Try searching with a different name or card ID token.</p>
+            </div>
+          ) : (
+            <div className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl shadow-card-bits overflow-hidden backdrop-blur-xl">
+              <div className="overflow-x-auto touch-pan-x">
+                <table className="w-full min-w-[640px] text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-bits-vapor/10 bg-bits-midnight/80 text-slate-400 uppercase tracking-wider font-semibold">
+                      <th className="py-3.5 px-4 font-medium">Recipient Member</th>
+                      <th className="py-3.5 px-4 font-medium">Pre-Bound Smart Card</th>
+                      <th className="py-3.5 px-4 font-medium hidden md:table-cell">Invitation Link</th>
+                      <th className="py-3.5 px-4 font-medium hidden sm:table-cell">Issued</th>
+                      <th className="py-3.5 px-4 font-medium text-right">Voucher & Onboarding Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.06] text-slate-200">
+                    {filteredInvites.map((inv) => {
+                      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+                      const rowInviteUrl = `${origin}/invite/${inv.inviteToken}`;
+                      const isRowCopied = copiedInviteId === inv.id;
+                      const isRowDownloading = downloadingInviteId === inv.id;
+
+                      return (
+                        <tr key={inv.id} className="hover:bg-white/[0.03] transition">
+                          {/* Member Name */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 text-cyan-300 font-bold text-sm flex items-center justify-center shrink-0">
+                                {inv.initialName?.slice(0, 2).toUpperCase() || 'MB'}
+                              </div>
+                              <div>
+                                <p className="font-bold text-white text-sm">
+                                  {inv.initialName}
+                                </p>
+                                <p className="text-[11px] text-cyan-400 font-mono">
+                                  Token: {inv.inviteToken}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Card ID & Material */}
+                          <td className="py-3.5 px-4">
+                            <div className="space-y-1">
+                              <span className="font-mono font-bold text-white bg-slate-900 border border-slate-700 px-2 py-0.5 rounded text-[11px] inline-block">
+                                {inv.cardToken}
+                              </span>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                <CreditCard className="w-3 h-3 text-cyan-400" />
+                                <span className="capitalize">{inv.material.replace('-', ' ')}</span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Link Preview & 1-Click Copy */}
+                          <td className="py-3.5 px-4 hidden md:table-cell">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyRowInviteUrl(inv)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#050c18] border border-cyan-500/30 text-cyan-300 font-mono text-[11px] hover:border-cyan-400 transition group max-w-[200px]"
+                              title="Click to copy invite link"
+                            >
+                              <span className="truncate">{rowInviteUrl}</span>
+                              {isRowCopied ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-300 shrink-0" />
+                              )}
+                            </button>
+                          </td>
+
+                          {/* Issued Date */}
+                          <td className="py-3.5 px-4 hidden sm:table-cell text-slate-400">
+                            {formatRelativeTime(inv.createdAt)}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {/* View QR Code Modal */}
+                              <Button
+                                variant="secondary"
+                                size="xs"
+                                onClick={() => {
+                                  setSelectedVoucherInvite(inv);
+                                  setIsVoucherModalOpen(true);
+                                }}
+                                leftIcon={<QrCode className="w-3.5 h-3.5 text-cyan-400" />}
+                              >
+                                View QR
+                              </Button>
+
+                              {/* 1-Click Download Sticker PNG */}
+                              <Button
+                                variant="glow"
+                                size="xs"
+                                onClick={() => handleQuickDownloadVoucher(inv)}
+                                isLoading={isRowDownloading}
+                                leftIcon={<Download className="w-3.5 h-3.5" />}
+                              >
+                                Save Sticker
+                              </Button>
+
+                              {/* Revoke / Delete Invite */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInviteToDelete(inv);
+                                  setIsDeleteInviteModalOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/20 hover:border-rose-500/40 transition shadow-sm"
+                                title="Revoke Pending Invitation"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* =========================================================
           ADD USER WIZARD MODAL (STEP 1 & STEP 2)
@@ -852,28 +1158,46 @@ export const UserManagementPage: React.FC = () => {
 
             {/* QR Code & Summary Preview */}
             <div className="p-4 rounded-2xl bg-[#060e1e] border border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="space-y-2 text-center sm:text-left">
-                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">
-                  Scan to Complete Registration:
-                </span>
-                <p className="text-xs text-slate-300 max-w-xs">
-                  The user can scan this QR code on their phone to input their Name, Email, and Password.
-                </p>
-                <div className="pt-1">
+              <div className="space-y-3 text-center sm:text-left">
+                <div>
+                  <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">
+                    Scan to Complete Registration:
+                  </span>
+                  <p className="text-xs text-slate-300 max-w-xs mt-0.5">
+                    The user can scan this QR code on their phone to input their Name, Email, and Password.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button
+                    variant="glow"
+                    size="sm"
+                    type="button"
+                    onClick={handleDownloadWizardVoucher}
+                    isLoading={isDownloadingWizardVoucher}
+                    leftIcon={<Download className="w-3.5 h-3.5 text-cyan-300" />}
+                  >
+                    Save / Download Card Sticker (PNG)
+                  </Button>
+
                   <a
                     href={generatedInviteUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-cyan-400 font-bold hover:underline"
+                    className="inline-flex items-center gap-1 text-xs text-cyan-400 font-bold hover:underline py-1.5 px-2"
                   >
-                    <span>Open Link in New Tab</span>
+                    <span>Open in New Tab</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
+
+                <p className="text-[11px] text-slate-400">
+                  Minimal print-ready sticker with TapIt branding, <strong>{wizardName || 'Member'}</strong>'s name, and <em>"scan me first to finish registration"</em>.
+                </p>
               </div>
 
-              <div className="p-3 bg-white rounded-2xl shadow-xl shrink-0">
-                <QRCodeSVG value={generatedInviteUrl} size={110} level="M" />
+              <div ref={wizardQrCanvasRef} className="p-3 bg-white rounded-2xl shadow-xl shrink-0">
+                <QRCodeCanvas value={generatedInviteUrl} size={110} level="H" includeMargin={false} />
               </div>
             </div>
 
@@ -1043,6 +1367,83 @@ export const UserManagementPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* =========================================================
+          MEMBER QR VOUCHER PREVIEW & DOWNLOAD MODAL
+          ========================================================= */}
+      <InviteVoucherModal
+        isOpen={isVoucherModalOpen}
+        onClose={() => {
+          setIsVoucherModalOpen(false);
+          setSelectedVoucherInvite(null);
+        }}
+        invite={selectedVoucherInvite}
+        onRevoke={(inv) => {
+          setIsVoucherModalOpen(false);
+          setInviteToDelete(inv);
+          setIsDeleteInviteModalOpen(true);
+        }}
+      />
+
+      {/* =========================================================
+          REVOKE PENDING INVITATION CONFIRMATION MODAL
+          ========================================================= */}
+      <Modal
+        isOpen={isDeleteInviteModalOpen}
+        onClose={() => {
+          setIsDeleteInviteModalOpen(false);
+          setInviteToDelete(null);
+        }}
+        title="Revoke Pending Invitation"
+        description="Are you sure you want to cancel this pending invitation?"
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-200 text-xs">
+            The temporary invitation link for <strong>{inviteToDelete?.initialName}</strong> (Card {inviteToDelete?.cardToken}) will be revoked immediately and cannot be used to activate.
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setIsDeleteInviteModalOpen(false);
+                setInviteToDelete(null);
+              }}
+            >
+              Keep Invite
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                if (inviteToDelete) {
+                  deleteInvite(inviteToDelete.id);
+                  setIsDeleteInviteModalOpen(false);
+                  setInviteToDelete(null);
+                }
+              }}
+            >
+              Revoke Invitation
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Offscreen Canvas Container for Instant 1-Click Voucher PNG Generation */}
+      <div 
+        ref={offscreenCanvasRef} 
+        style={{ position: 'fixed', left: -9999, top: -9999, pointerEvents: 'none', opacity: 0 }}
+      >
+        {offscreenVoucherData && (
+          <QRCodeCanvas
+            value={offscreenVoucherData.url}
+            size={320}
+            level="H"
+            includeMargin={false}
+          />
+        )}
+      </div>
     </div>
   );
 };

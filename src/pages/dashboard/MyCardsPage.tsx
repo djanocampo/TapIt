@@ -6,6 +6,7 @@ import { NFCCardPreview } from '../../components/nfc/NFCCardPreview';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { Toggle } from '../../components/ui/Toggle';
 import { 
   CreditCard, 
   Plus, 
@@ -25,18 +26,11 @@ import { formatNumber, triggerConfetti } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const MyCardsPage: React.FC = () => {
-  const { cards, profiles, currentRole, claimCard, updateCard, deleteCard, toggleCardStatus, reassignCard } = useTapIt();
+  const { cards, profiles, currentRole, updateCard, deleteCard, toggleCardStatus, reassignCard } = useTapIt();
 
   // Manage Modal State
   const [selectedCard, setSelectedCard] = useState<NFCCard | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
-  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
-
-  // Form states
-  const [claimToken, setClaimToken] = useState('');
-  const [claimProfileId, setClaimProfileId] = useState(profiles[0]?.id || '');
-  const [claimName, setClaimName] = useState('');
-  const [claimError, setClaimError] = useState('');
 
   // Edit modal form states
   const [editName, setEditName] = useState('');
@@ -50,27 +44,6 @@ export const MyCardsPage: React.FC = () => {
     setEditProfileId(card.profileId || profiles[0]?.id || '');
     setEditMaterial(card.material);
     setIsManageModalOpen(true);
-  };
-
-  const handleClaimCard = (e: React.FormEvent) => {
-    e.preventDefault();
-    setClaimError('');
-
-    if (!claimToken.trim()) {
-      setClaimError('Please enter a valid card token.');
-      return;
-    }
-
-    const res = claimCard(claimToken.trim(), claimProfileId, claimName.trim() || undefined);
-    if (!res.success) {
-      setClaimError(res.message);
-      return;
-    }
-
-    triggerConfetti();
-    setIsClaimModalOpen(false);
-    setClaimToken('');
-    setClaimName('');
   };
 
   const handleSaveManage = (e: React.FormEvent) => {
@@ -102,14 +75,10 @@ export const MyCardsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setIsClaimModalOpen(true)}
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
-            Claim Card
-          </Button>
+          <div className="text-xs font-semibold text-slate-300 bg-white/[0.05] border border-white/[0.08] px-3.5 py-1.5 rounded-xl flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>{cards.length} {cards.length === 1 ? 'Smart Card' : 'Smart Cards'} Linked</span>
+          </div>
         </div>
       </div>
 
@@ -119,31 +88,54 @@ export const MyCardsPage: React.FC = () => {
           <div className="w-16 h-16 rounded-2xl bg-bits-azure/20 border border-bits-cyan/30 flex items-center justify-center mx-auto text-bits-cyan shadow-glow-cyan">
             <CreditCard className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-white font-display">No Physical Smart Cards Claimed Yet</h3>
+          <h3 className="text-lg font-bold text-white font-display">No Physical Smart Cards Linked Yet</h3>
           <p className="text-sm text-slate-400 max-w-md mx-auto">
-            Ready to set up your NFC card? Click &ldquo;Claim Card&rdquo; with your hardware token to link it to your profile.
+            Your physical smart cards are provisioned and registered by our team. Once you receive your card and complete your activation link, it will automatically appear here ready to route to your profiles.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsClaimModalOpen(true)}
-              leftIcon={<Plus className="w-4 h-4" />}
-            >
-              Claim Card
-            </Button>
+            <Link to="/dashboard/profiles">
+              <Button variant="secondary" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5" />}>
+                Manage Digital Profiles
+              </Button>
+            </Link>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cards.map((card) => {
             const assignedProfile = profiles.find((p) => p.id === card.profileId);
+            const isPaused = card.status !== 'active';
+            const isUnassigned = !assignedProfile;
 
             return (
               <div
                 key={card.id}
                 className="bg-bits-navy/90 border border-bits-vapor/15 rounded-3xl p-5 shadow-card-bits space-y-4 flex flex-col justify-between backdrop-blur-xl hover:border-bits-cyan/30 transition"
               >
+                {/* Traffic-Light Status Pill */}
+                <div className="flex items-center justify-between gap-2 pb-1">
+                  {isPaused ? (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/15 border border-rose-500/30 text-rose-300">
+                      <span className="w-2 h-2 rounded-full bg-rose-500" />
+                      <span>🔴 Paused / Disabled</span>
+                    </div>
+                  ) : isUnassigned ? (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      <span>🟡 Unassigned Profile</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>🟢 Connected & Ready</span>
+                    </div>
+                  )}
+
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {card.taps} {card.taps === 1 ? 'tap' : 'taps'}
+                  </span>
+                </div>
+
                 <div>
                   <NFCCardPreview
                     card={card}
@@ -153,29 +145,59 @@ export const MyCardsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Direct On-Card Destination Selector */}
+                <div className="space-y-1.5 p-3 rounded-2xl bg-[#050c18] border border-white/[0.06]">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+                    <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-400">
+                      <Radio className="w-3 h-3 text-cyan-400" />
+                      When tapped, open:
+                    </span>
+                    {assignedProfile && (
+                      <Link
+                        to={`/@${assignedProfile.slug}`}
+                        target="_blank"
+                        className="text-[10px] text-cyan-400 hover:underline flex items-center gap-0.5"
+                      >
+                        Preview <ExternalLink className="w-2.5 h-2.5" />
+                      </Link>
+                    )}
+                  </div>
+                  <select
+                    value={card.profileId || ''}
+                    onChange={(e) => {
+                      reassignCard(card.id, e.target.value);
+                      triggerConfetti();
+                    }}
+                    className="w-full rounded-xl bg-slate-900 border border-slate-700/80 px-3 py-2 text-xs font-bold text-white focus:border-cyan-400 focus:outline-none transition cursor-pointer"
+                  >
+                    {profiles.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} Profile (@{p.slug})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Status Bar & Quick Action Controls */}
-                <div className="pt-3 border-t border-bits-vapor/10 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="text-xs text-slate-400">
-                    Status:{' '}
-                    <strong className={card.status === 'active' ? 'text-bits-cyan' : 'text-rose-400'}>
-                      {card.status}
-                    </strong>
+                <div className="pt-2 border-t border-bits-vapor/10 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Toggle
+                      checked={card.status === 'active'}
+                      onChange={() => toggleCardStatus(card.id)}
+                    />
+                    <span className="text-xs font-semibold text-slate-300 select-none">
+                      {card.status === 'active' ? 'Active' : 'Disabled'}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Button
-                      variant={card.status === 'active' ? 'danger' : 'outline'}
-                      size="xs"
-                      onClick={() => toggleCardStatus(card.id)}
-                    >
-                      {card.status === 'active' ? 'Disable' : 'Reactivate'}
-                    </Button>
-                    <Button
                       variant="secondary"
                       size="xs"
                       onClick={() => handleOpenManage(card)}
+                      leftIcon={<Edit3 className="w-3.5 h-3.5" />}
                     >
-                      Configure
+                      Settings
                     </Button>
                   </div>
                 </div>
@@ -185,58 +207,7 @@ export const MyCardsPage: React.FC = () => {
         </div>
       )}
 
-      {/* CLAIM / REGISTER CARD MODAL */}
-      <Modal
-        isOpen={isClaimModalOpen}
-        onClose={() => setIsClaimModalOpen(false)}
-        title="Register & Connect NFC Card"
-        description="Enter the unique token found on your TapIt NFC card or keyfob packaging."
-        maxWidth="md"
-      >
-        <form onSubmit={handleClaimCard} className="space-y-4">
-          <Input
-            label="NFC Card Token"
-            placeholder="NFC Card Token"
-            value={claimToken}
-            onChange={(e) => setClaimToken(e.target.value)}
-            helperText="Located on the back of your card or in the URL after /t/"
-            required
-          />
 
-          <Input
-            label="Card Nickname (Optional)"
-            placeholder="Card Nickname (Optional)"
-            value={claimName}
-            onChange={(e) => setClaimName(e.target.value)}
-          />
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Assign to Profile:
-            </label>
-            <select
-              value={claimProfileId}
-              onChange={(e) => setClaimProfileId(e.target.value)}
-              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3.5 py-2.5 text-base sm:text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
-            >
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} Profile (@{p.slug})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3">
-            <Button variant="secondary" type="button" onClick={() => setIsClaimModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit">
-              Claim & Activate Card
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       {/* MANAGE CARD MODAL */}
       {selectedCard && (

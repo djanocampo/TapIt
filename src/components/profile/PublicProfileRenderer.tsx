@@ -188,7 +188,7 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
         color: theme.textColor,
       }}
       className={`min-h-full min-h-[100dvh] w-full max-w-full flex flex-col items-center justify-between transition-all duration-300 ${getFontClass()} ${
-        isEmbed ? 'py-6 px-3' : 'pt-[max(1.25rem,env(safe-area-inset-top,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))] px-4 sm:px-6 max-w-md mx-auto sm:rounded-3xl sm:shadow-2xl sm:border sm:border-white/10'
+        isEmbed ? 'py-6 px-3' : 'pt-[max(1.25rem,env(safe-area-inset-top,0px))] pb-24 sm:pb-[max(2rem,env(safe-area-inset-bottom,0px))] px-4 sm:px-6 max-w-md mx-auto sm:rounded-3xl sm:shadow-2xl sm:border sm:border-white/10'
       }`}
     >
       {/* Top Header Bar */}
@@ -298,6 +298,22 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
             {profile.bio}
           </p>
         )}
+
+        {/* Primary Save Contact Action Button */}
+        <div className="w-full max-w-sm pt-2">
+          <button
+            type="button"
+            onClick={handleDownloadContact}
+            className={`w-full min-h-[52px] py-3.5 px-5 flex items-center justify-center gap-2.5 text-sm font-bold transition-all duration-200 shadow-lg hover:opacity-95 active:scale-[0.98] ${getButtonShapeClass()}`}
+            style={{
+              backgroundColor: theme.accentColor,
+              color: '#030712',
+            }}
+          >
+            <Download className="w-4 h-4 shrink-0 stroke-[2.5]" />
+            <span>Save Contact (.vcf)</span>
+          </button>
+        </div>
       </div>
 
       {/* Links List */}
@@ -322,27 +338,27 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
                   }
                   onLinkClick && onLinkClick(link);
                 }}
-                className={`w-full p-3.5 flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold transition-all duration-200 group hover:scale-[1.02] active:scale-[0.98] ${getButtonShapeClass()}`}
-              style={{
-                backgroundColor: theme.cardBg,
-                border: `1px solid ${theme.cardBorder}`,
-                color: theme.textColor,
-              }}
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div
-                  className="p-2 rounded-lg shrink-0 transition-colors group-hover:scale-110"
-                  style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}
-                >
-                  {renderIcon(link.icon)}
+                className={`w-full min-h-[52px] p-3.5 flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold transition-all duration-200 group hover:scale-[1.02] active:scale-[0.98] ${getButtonShapeClass()}`}
+                style={{
+                  backgroundColor: theme.cardBg,
+                  border: `1px solid ${theme.cardBorder}`,
+                  color: theme.textColor,
+                }}
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div
+                    className="p-2 rounded-lg shrink-0 transition-colors group-hover:scale-110"
+                    style={{ backgroundColor: theme.badgeBg, color: theme.accentColor }}
+                  >
+                    {renderIcon(link.icon)}
+                  </div>
+                  <span className="truncate block font-medium">{link.title}</span>
                 </div>
-                <span className="truncate block font-medium">{link.title}</span>
-              </div>
-              <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
-            </a>
-          );
-        })
-      )}
+                <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
+              </a>
+            );
+          })
+        )}
       </div>
 
       {/* Social Media Footer Bar */}
@@ -436,6 +452,48 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
           BITS Tap™ Contactless Infrastructure
         </span>
       </div>
+
+      {/* Sticky Mobile Floating Action Bar (FAB) for Instant Contact Save */}
+      {!isEmbed && (
+        <div className="fixed bottom-4 left-4 right-4 sm:hidden z-40 max-w-md mx-auto pointer-events-none">
+          <div
+            className="p-2 rounded-2xl backdrop-blur-xl border shadow-2xl flex items-center gap-2 pointer-events-auto"
+            style={{
+              backgroundColor: `${theme.cardBg}ee`,
+              borderColor: theme.cardBorder || 'rgba(255, 255, 255, 0.15)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={handleDownloadContact}
+              className="flex-1 min-h-[48px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider transition active:scale-[0.98] shadow-md"
+              style={{
+                backgroundColor: theme.accentColor,
+                color: '#030712',
+              }}
+            >
+              <Download className="w-4 h-4 stroke-[2.5]" />
+              <span>Save Contact (.vcf)</span>
+            </button>
+
+            {onOpenShare && (
+              <button
+                type="button"
+                onClick={onOpenShare}
+                className="w-12 h-12 rounded-xl flex items-center justify-center border transition active:scale-95"
+                style={{
+                  backgroundColor: theme.cardBg,
+                  borderColor: theme.cardBorder,
+                  color: theme.textColor,
+                }}
+                title="Share Profile"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

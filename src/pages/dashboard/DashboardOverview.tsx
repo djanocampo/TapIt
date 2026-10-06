@@ -37,6 +37,15 @@ export const DashboardOverview: React.FC = () => {
   const totalViews = analyticsEvents.filter(e => e.eventType === 'profile_view').length;
   const uniqueVisitors = new Set(analyticsEvents.map(e => e.id)).size;
 
+  // Onboarding Checklist calculation
+  const hasAvatarAndBio = Boolean(activeProfile.avatar && (activeProfile.headline || activeProfile.bio));
+  const hasLinks = profileLinks.length >= 3;
+  const hasLinkedCard = Boolean(cards.some(c => c.profileId === activeProfile.id && c.status === 'active'));
+  const completedSteps = (hasAvatarAndBio ? 1 : 0) + (hasLinks ? 1 : 0) + (hasLinkedCard ? 1 : 0);
+  const [isChecklistDismissed, setIsChecklistDismissed] = React.useState(() => {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('tapit_dismiss_checklist') === 'true' : false;
+  });
+
   // Dynamic greeting based on time of day
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -46,6 +55,13 @@ export const DashboardOverview: React.FC = () => {
     navigator.clipboard.writeText(`${origin}/@${activeProfile.slug}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDismissChecklist = () => {
+    setIsChecklistDismissed(true);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('tapit_dismiss_checklist', 'true');
+    }
   };
 
   return (
@@ -61,11 +77,17 @@ export const DashboardOverview: React.FC = () => {
             {greeting}, {currentUser.name.split(' ')[0]} 👋
           </h2>
           <p className="text-xs sm:text-sm text-slate-300">
-            Your digital identity is live and ready to connect. Here is your real-time networking telemetry.
+            Your digital identity is live and ready to connect. Here is your real-time networking overview.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 relative z-10 flex-wrap">
+          <Link to={`/@${activeProfile.slug}`} target="_blank">
+            <Button variant="glow" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />}>
+              View Live Profile
+            </Button>
+          </Link>
+
           <button
             type="button"
             onClick={handleCopyLink}
@@ -76,34 +98,137 @@ export const DashboardOverview: React.FC = () => {
             }`}
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-bits-cyan" />}
-            <span>{copied ? 'Copied Profile Link!' : 'Copy Profile Link'}</span>
+            <span>{copied ? 'Copied Link!' : 'Copy Link'}</span>
           </button>
 
           <Link to="/dashboard/cards">
-            <Button variant="glow" size="sm" leftIcon={<CreditCard className="w-4 h-4" />}>
-              My Cards
-            </Button>
-          </Link>
-
-          <Link to={`/@${activeProfile.slug}`} target="_blank">
-            <Button variant="secondary" size="sm" leftIcon={<ExternalLink className="w-4 h-4 text-bits-cyan" />}>
-              View Live Profile
+            <Button variant="secondary" size="sm" leftIcon={<CreditCard className="w-4 h-4 text-bits-cyan" />}>
+              My Cards ({cards.length})
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* 4 PRIMARY METRIC CARDS */}
+      {/* 3-STEP SETUP CHECKLIST (Visible until completed or dismissed) */}
+      {!isChecklistDismissed && completedSteps < 3 && (
+        <div className="bg-gradient-to-r from-[#081530] via-bits-navy/90 to-[#0a1b3d] border border-bits-cyan/30 rounded-3xl p-5 sm:p-6 shadow-card-bits relative overflow-hidden backdrop-blur-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-bits-vapor/15">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-bits-cyan/20 border border-bits-cyan/40 text-bits-cyan flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-white font-display flex items-center gap-2">
+                  Get Started in 3 Simple Steps
+                  <span className="text-xs font-mono font-bold text-bits-cyan bg-bits-azure/30 border border-bits-cyan/30 px-2 py-0.5 rounded-full">
+                    {completedSteps}/3 Done
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-300">
+                  Follow these steps to activate your digital card and share with prospective connections.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleDismissChecklist}
+              className="text-xs text-slate-400 hover:text-slate-200 self-end sm:self-auto transition cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4">
+            {/* Step 1 */}
+            <Link
+              to={`/dashboard/profiles/edit/${activeProfile.id}`}
+              className={`p-4 rounded-2xl border transition flex items-center justify-between gap-3 group ${
+                hasAvatarAndBio
+                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-300'
+                  : 'bg-bits-midnight/70 border-bits-vapor/15 hover:border-bits-cyan/40 text-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-bold text-xs ${
+                  hasAvatarAndBio ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/40' : 'bg-slate-800 text-slate-300 border border-slate-700'
+                }`}>
+                  {hasAvatarAndBio ? <Check className="w-4 h-4 stroke-[3]" /> : '1'}
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-white truncate">Complete Bio & Avatar</h4>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {hasAvatarAndBio ? 'Completed' : 'Add photo & title'}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs text-bits-cyan group-hover:translate-x-0.5 transition-transform">→</span>
+            </Link>
+
+            {/* Step 2 */}
+            <Link
+              to="/dashboard/links"
+              className={`p-4 rounded-2xl border transition flex items-center justify-between gap-3 group ${
+                hasLinks
+                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-300'
+                  : 'bg-bits-midnight/70 border-bits-vapor/15 hover:border-bits-cyan/40 text-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-bold text-xs ${
+                  hasLinks ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/40' : 'bg-slate-800 text-slate-300 border border-slate-700'
+                }`}>
+                  {hasLinks ? <Check className="w-4 h-4 stroke-[3]" /> : '2'}
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-white truncate">Add First 3 Links</h4>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {hasLinks ? `${profileLinks.length} destinations linked` : `${profileLinks.length}/3 links added`}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs text-bits-cyan group-hover:translate-x-0.5 transition-transform">→</span>
+            </Link>
+
+            {/* Step 3 */}
+            <Link
+              to="/dashboard/cards"
+              className={`p-4 rounded-2xl border transition flex items-center justify-between gap-3 group ${
+                hasLinkedCard
+                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-300'
+                  : 'bg-bits-midnight/70 border-bits-vapor/15 hover:border-bits-cyan/40 text-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-bold text-xs ${
+                  hasLinkedCard ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/40' : 'bg-slate-800 text-slate-300 border border-slate-700'
+                }`}>
+                  {hasLinkedCard ? <Check className="w-4 h-4 stroke-[3]" /> : '3'}
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-white truncate">Physical Smart Card</h4>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {hasLinkedCard ? 'Smart card active & linked' : 'Check card status & routing'}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs text-bits-cyan group-hover:translate-x-0.5 transition-transform">→</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 4 PRIMARY METRIC CARDS - Plain Language */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          title="Profile Views"
+          title="Profile Visits"
           value={totalViews}
           change={totalViews > 0 ? 100 : 0}
           icon={Eye}
           variant="cyan"
         />
         <MetricCard
-          title="NFC Taps"
+          title="Physical Card Taps"
           value={totalTaps}
           change={totalTaps > 0 ? 100 : 0}
           icon={Radio}
@@ -117,7 +242,7 @@ export const DashboardOverview: React.FC = () => {
           variant="electric"
         />
         <MetricCard
-          title="Unique Visitors"
+          title="New Connections"
           value={uniqueVisitors}
           change={uniqueVisitors > 0 ? 100 : 0}
           icon={Users}
@@ -167,7 +292,7 @@ export const DashboardOverview: React.FC = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-bits-cyan" />
-                Live Telemetry Feed
+                Recent Interactions
               </h3>
               <span className="w-2 h-2 rounded-full bg-bits-cyan animate-ping"></span>
             </div>
@@ -175,7 +300,7 @@ export const DashboardOverview: React.FC = () => {
             {notifications.length === 0 ? (
               <div className="text-center py-6 text-xs text-slate-400 space-y-1">
                 <p>No recent activity recorded yet.</p>
-                <p className="text-[11px] text-slate-500">Tap a physical NFC card or share your profile to see live telemetry stream.</p>
+                <p className="text-[11px] text-slate-500">Tap your NFC card or share your profile to see real-time connections appear here.</p>
               </div>
             ) : (
               <div className="space-y-3">

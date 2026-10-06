@@ -36,7 +36,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onOpenShareModal,
 }) => {
   const navigate = useNavigate();
-  const { currentUser, activeProfile, notifications, markNotificationAsRead, clearAllNotifications, logout, getStorageMetrics } = useTapIt();
+  const { currentUser, currentRole, activeProfile, notifications, markNotificationAsRead, clearAllNotifications, logout, getStorageMetrics } = useTapIt();
   const [showNotifications, setShowNotifications] = useState(false);
   const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
 
@@ -63,16 +63,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Local Storage Cache Quick Inspector */}
-        <button
-          type="button"
-          onClick={() => setIsCacheModalOpen(true)}
-          title="Inspect / Clear Local Storage Cache"
-          className="hidden sm:flex items-center gap-1.5 bg-[#0a142c] border border-[#1b2d55] hover:border-[#38BDF8] text-[#38BDF8] text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02] cursor-pointer"
-        >
-          <HardDrive className="w-3.5 h-3.5 text-[#38BDF8]" />
-          <span className="font-mono text-[11px] font-bold">{approxKb} KB</span>
-        </button>
+        {/* Local Storage Cache Quick Inspector (Admin Only) */}
+        {currentRole === 'admin' && (
+          <button
+            type="button"
+            onClick={() => setIsCacheModalOpen(true)}
+            title="Inspect / Clear Local Storage Cache"
+            className="hidden sm:flex items-center gap-1.5 bg-[#0a142c] border border-[#1b2d55] hover:border-[#38BDF8] text-[#38BDF8] text-xs px-2.5 py-1.5 rounded-xl transition font-medium shadow-sm hover:scale-[1.02] cursor-pointer"
+          >
+            <HardDrive className="w-3.5 h-3.5 text-[#38BDF8]" />
+            <span className="font-mono text-[11px] font-bold">{approxKb} KB</span>
+          </button>
+        )}
 
         {/* Live Public URL Preview Button */}
         <Link

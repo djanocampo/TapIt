@@ -38,6 +38,7 @@ import {
   syncSettingsToSupabase,
   deleteSupabaseRecord,
   deleteSupabaseCard,
+  deleteSupabaseInvite,
   deleteSupabaseUser,
   bindCardToUser,
   upsertSingleUser,
@@ -125,6 +126,7 @@ interface TapItContextType {
 
   // User Provisioning Wizard Actions
   createInvite: (initialName: string, material: CardMaterial, customCardToken?: string) => { invite: UserInvite; inviteUrl: string };
+  deleteInvite: (id: string, deleteAssociatedUnclaimedCard?: boolean) => void;
   getInviteByToken: (inviteToken: string) => UserInvite | undefined;
   completeInviteRegistration: (inviteToken: string, data: { name: string; username: string; email: string; password?: string }) => Promise<{ success: boolean; user?: User; message: string }>;
   registerUser: (data: { name: string; username: string; email: string; password?: string }) => Promise<{ success: boolean; user?: User; message: string }>;
@@ -901,6 +903,66 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const inviteUrl = `${origin}/invite/${inviteToken}`;
 
     return { invite: newInvite, inviteUrl };
+  };
+
+  const deleteInvite = (id: string, deleteAssociatedUnclaimedCard: boolean = true) => {
+    let targetCardToken: string | undefined;
+
+    const clean = id.trim().toLowerCase();
+    const cleanWithoutPrefix = clean.startsWith('inv-') ? clean.replace(/^inv-/, '') : clean;
+    const cleanWithPrefix = clean.startsWith('inv-') ? clean : `inv-${clean}`;
+
+    setInvites(prev => {
+      const target = prev.find(inv => {
+        const invId = (inv.id || '').toLowerCase();
+        const invTok = (inv.inviteToken || '').toLowerCase();
+        return (
+          invId === clean ||
+          invTok === clean ||
+          invTok === cleanWithoutPrefix ||
+          invTok === cleanWithPrefix
+        );
+      });
+
+      if (target) {
+        targetCardToken = target.cardToken;
+      }
+
+      const updated = prev.filter(inv => {
+        const invId = (inv.id || '').toLowerCase();
+        const invTok = (inv.inviteToken || '').toLowerCase();
+        return !(
+          invId === clean ||
+          invTok === clean ||
+          invTok === cleanWithoutPrefix ||
+          invTok === cleanWithPrefix
+        );
+      });
+
+      return updated;
+    });
+
+    // Also clean up any unassigned orphan card created for this invite
+    if (deleteAssociatedUnclaimedCard) {
+      setCards(prev => {
+        const updated = prev.filter(c => {
+          if (
+            targetCardToken &&
+            c.cardToken.toLowerCase() === targetCardToken.toLowerCase() &&
+            c.status === 'unclaimed' &&
+            !c.userId
+          ) {
+            return false;
+          }
+          return true;
+        });
+        void syncCardsToSupabase(updated);
+        return updated;
+      });
+    }
+
+    // Permanently remove from Supabase Layer 2
+    void deleteSupabaseInvite(id, targetCardToken);
   };
 
   const getInviteByToken = (inviteToken: string) => {
@@ -1701,6 +1763,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         recordCardTap,
 
         createInvite,
+        deleteInvite,
         getInviteByToken,
         completeInviteRegistration,
         registerUser,
