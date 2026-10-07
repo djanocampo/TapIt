@@ -4,7 +4,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { QRCodeGenerator } from '../qr/QRCodeGenerator';
 import { Copy, Check, Share2, Smartphone, Download } from 'lucide-react';
-import { copyToClipboard, downloadVCard } from '../../lib/utils';
+import { copyToClipboard, downloadVCard, getAppBaseUrl } from '../../lib/utils';
 
 interface ShareProfileModalProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ export const ShareProfileModal: React.FC<ShareProfileModalProps> = ({
   profile,
 }) => {
   const [copied, setCopied] = useState(false);
-  const profileUrl = `${window.location.origin}/@${profile.slug}`;
+  const profileUrl = `${getAppBaseUrl()}/@${profile.slug}`;
 
   const handleCopy = async () => {
     await copyToClipboard(profileUrl);

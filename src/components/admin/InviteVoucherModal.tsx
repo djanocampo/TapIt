@@ -13,7 +13,7 @@ import {
   Printer,
   Trash2
 } from 'lucide-react';
-import { copyToClipboard } from '../../lib/utils';
+import { copyToClipboard, getAppBaseUrl } from '../../lib/utils';
 
 interface InviteVoucherModalProps {
   invite: UserInvite | null;
@@ -35,7 +35,7 @@ export const InviteVoucherModal: React.FC<InviteVoucherModalProps> = ({
 
   if (!invite) return null;
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+  const origin = getAppBaseUrl();
   const inviteUrl = `${origin}/invite/${invite.inviteToken}`;
 
   const handleCopy = async () => {

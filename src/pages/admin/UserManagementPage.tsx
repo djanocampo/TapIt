@@ -43,7 +43,7 @@ import {
   CreditCard,
   Clock
 } from 'lucide-react';
-import { formatRelativeTime, triggerConfetti } from '../../lib/utils';
+import { formatRelativeTime, triggerConfetti, getAppBaseUrl } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const UserManagementPage: React.FC = () => {
@@ -265,7 +265,7 @@ export const UserManagementPage: React.FC = () => {
 
   // Actual NFC Hardware Write Call
   const executeHardwareNFCWrite = async () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    const origin = getAppBaseUrl();
     const targetUrl = `${origin}/t/${wizardCardToken}`;
 
     try {
@@ -366,7 +366,7 @@ export const UserManagementPage: React.FC = () => {
   const handleQuickDownloadVoucher = async (inv: UserInvite) => {
     try {
       setDownloadingInviteId(inv.id);
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+      const origin = getAppBaseUrl();
       const url = `${origin}/invite/${inv.inviteToken}`;
       setOffscreenVoucherData({ invite: inv, url });
 
@@ -391,7 +391,7 @@ export const UserManagementPage: React.FC = () => {
   };
 
   const handleCopyRowInviteUrl = async (inv: UserInvite) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    const origin = getAppBaseUrl();
     const url = `${origin}/invite/${inv.inviteToken}`;
     await navigator.clipboard.writeText(url);
     setCopiedInviteId(inv.id);
@@ -715,7 +715,7 @@ export const UserManagementPage: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-white/[0.06] text-slate-200">
                     {filteredInvites.map((inv) => {
-                      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+                      const origin = getAppBaseUrl();
                       const rowInviteUrl = `${origin}/invite/${inv.inviteToken}`;
                       const isRowCopied = copiedInviteId === inv.id;
                       const isRowDownloading = downloadingInviteId === inv.id;

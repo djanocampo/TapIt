@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
+import { getAppBaseUrl } from '../../lib/utils';
 
 export const QRCodeStudioPage: React.FC = () => {
   const { profiles, activeProfile, setActiveProfileId, qrCodes, recordQRScan } = useTapIt();
@@ -43,7 +44,7 @@ export const QRCodeStudioPage: React.FC = () => {
     setQrColor(currentProf.theme.accentColor || '#38bdf8');
   }, [currentProf.id]);
 
-  const profileUrl = `${window.location.origin}/@${currentProf.slug}`;
+  const profileUrl = `${getAppBaseUrl()}/@${currentProf.slug}`;
 
   const handlePrint = () => {
     window.print();

@@ -45,6 +45,23 @@ export function triggerConfetti() {
 }
 
 /**
+ * Safely resolves the public application base URL with a 3-tier fallback:
+ * 1. Environment variable VITE_PUBLIC_APP_URL (e.g. https://tapit.boundlessits.com)
+ * 2. Browser origin (window.location.origin)
+ * 3. Fallback domain ('https://tapit.app')
+ */
+export function getAppBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_PUBLIC_APP_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return window.location.origin;
+  }
+  return 'https://tapit.app';
+}
+
+/**
  * Generate a standard vCard (.vcf) format string
  */
 export function generateVCard(profile: Profile): string {
@@ -76,7 +93,7 @@ export function generateVCard(profile: Profile): string {
   if (profile.bio) {
     vcard += `NOTE:${profile.bio.replace(/\n/g, '\\n')}\r\n`;
   }
-  vcard += `URL;type=TapItProfile:${window.location.origin}/@${profile.slug}\r\n`;
+  vcard += `URL;type=TapItProfile:${getAppBaseUrl()}/@${profile.slug}\r\n`;
   vcard += 'END:VCARD\r\n';
 
   return vcard;

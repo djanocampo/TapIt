@@ -47,7 +47,7 @@ import {
   Video,
   Share2
 } from 'lucide-react';
-import { triggerConfetti } from '../../lib/utils';
+import { triggerConfetti, getAppBaseUrl } from '../../lib/utils';
 import { LinkItem, LinkCategory, ProfileThemeConfig, Profile } from '../../types';
 
 const PRESET_ICONS = [
@@ -351,7 +351,7 @@ export const ProfileEditorPage: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+              const origin = getAppBaseUrl();
               navigator.clipboard.writeText(`${origin}/@${targetProfile.slug}`);
               setCopiedLink(true);
               setTimeout(() => setCopiedLink(false), 2000);

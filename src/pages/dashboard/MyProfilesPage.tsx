@@ -22,7 +22,7 @@ import {
   Share2,
   CopyCheck
 } from 'lucide-react';
-import { triggerConfetti } from '../../lib/utils';
+import { triggerConfetti, getAppBaseUrl } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const MyProfilesPage: React.FC = () => {
@@ -36,7 +36,7 @@ export const MyProfilesPage: React.FC = () => {
 
   const handleCopyProfileLink = (profile: Profile, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    const origin = getAppBaseUrl();
     const profileUrl = `${origin}/@${profile.slug}`;
     
     navigator.clipboard.writeText(profileUrl);

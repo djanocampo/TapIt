@@ -1,0 +1,75 @@
+{
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.minimax.io/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "sk-cp-hAlalPKNZIRekXddODRi9usZBKaAwDGUjdaJWlkxj0jKtrk12L9drDsme_cMes_1k3N8PomcAbvNzZnZqkv4FigktTtqlRNCIBlwxI_oDS8IgSZs735HeWc",
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "1000000",
+    "ANTHROPIC_MODEL": "MiniMax-M3.1-Flash-Preview[1m]",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "MiniMax-M3.1-Flash-Preview[1m]",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "MiniMax-M3.1-Flash-Preview[1m]",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "MiniMax-M2.7-highspeed"
+  },
+  "modelPicker": {
+    "options": [
+      {
+        "model": "MiniMax-M3.1-Flash-Preview[1m]",
+        "label": "MiniMax-M3.1-Flash-Preview [1M]",
+        "description": "1M context - Frontier multimodal coding & thinking"
+      },
+      {
+        "model": "MiniMax-M3.1-Flash-Preview",
+        "label": "MiniMax-M3.1-Flash-Preview",
+        "description": "Frontier multimodal coding with tunable thinking depth"
+      },
+      {
+        "model": "MiniMax-M3[1m]",
+        "label": "MiniMax-M3 [1M]",
+        "description": "1M context - Frontier multimodal coding model"
+      },
+      {
+        "model": "MiniMax-M3",
+        "label": "MiniMax-M3",
+        "description": "Frontier multimodal coding model"
+      },
+      {
+        "model": "MiniMax-M2.7",
+        "label": "MiniMax-M2.7",
+        "description": "204.8K context - Recursive self-improvement (~60 tps)"
+      },
+      {
+        "model": "MiniMax-M2.7-highspeed",
+        "label": "MiniMax-M2.7-highspeed",
+        "description": "204.8K context - High speed inference (~100 tps)"
+      },
+      {
+        "model": "MiniMax-M2.5",
+        "label": "MiniMax-M2.5",
+        "description": "204.8K context - Peak performance & code refactoring"
+      },
+      {
+        "model": "MiniMax-M2.5-highspeed",
+        "label": "MiniMax-M2.5-highspeed",
+        "description": "204.8K context - High speed (~100 tps)"
+      },
+      {
+        "model": "MiniMax-M2.1",
+        "label": "MiniMax-M2.1",
+        "description": "204.8K context - Multi-language programming (230B)"
+      },
+      {
+        "model": "MiniMax-M2.1-highspeed",
+        "label": "MiniMax-M2.1-highspeed",
+        "description": "204.8K context - Agile & fast (~100 tps)"
+      },
+      {
+        "model": "MiniMax-M2",
+        "label": "MiniMax-M2",
+        "description": "204.8K context - Agentic reasoning"
+      }
+    ],
+    "replaceBuiltInOptions": true
+  }
+}

@@ -51,6 +51,7 @@ import {
 } from '../services/dualLayerSync';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { hashPassword, verifyPassword, generateSecureToken } from '../utils/crypto';
+import { getAppBaseUrl } from '../lib/utils';
 
 export interface RemoteHydrationPayload {
   users?: User[];
@@ -899,7 +900,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return updated;
     });
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    const origin = getAppBaseUrl();
     const inviteUrl = `${origin}/invite/${inviteToken}`;
 
     return { invite: newInvite, inviteUrl };
@@ -1436,7 +1437,7 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPasswordResets(prev => [newReset, ...prev.filter(r => r.token !== token)]);
     void syncSinglePasswordResetToSupabase(newReset);
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    const origin = getAppBaseUrl();
     const resetUrl = `${origin}/reset-password?token=${token}`;
 
     return {

@@ -27,7 +27,7 @@ import {
   Link2,
   RotateCcw
 } from 'lucide-react';
-import { triggerConfetti } from '../../lib/utils';
+import { triggerConfetti, getAppBaseUrl } from '../../lib/utils';
 
 interface WebNFCWriterModalProps {
   isOpen: boolean;
@@ -70,7 +70,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   const armingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const defaultOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://192.168.254.138:5173';
+  const defaultOrigin = getAppBaseUrl();
   const [customHost, setCustomHost] = useState<string>(defaultOrigin);
 
   // Synchronize selectedCardId when card prop changes

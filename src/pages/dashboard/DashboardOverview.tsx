@@ -20,7 +20,7 @@ import {
   Zap,
   ExternalLink
 } from 'lucide-react';
-import { formatRelativeTime } from '../../lib/utils';
+import { formatRelativeTime, getAppBaseUrl } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const DashboardOverview: React.FC = () => {
@@ -51,7 +51,7 @@ export const DashboardOverview: React.FC = () => {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   const handleCopyLink = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tapit.app';
+    const origin = getAppBaseUrl();
     navigator.clipboard.writeText(`${origin}/@${activeProfile.slug}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
