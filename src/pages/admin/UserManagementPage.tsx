@@ -265,8 +265,38 @@ export const UserManagementPage: React.FC = () => {
 
   // Actual NFC Hardware Write Call
   const executeHardwareNFCWrite = async () => {
-    const origin = getAppBaseUrl();
-    const targetUrl = `${origin}/t/${wizardCardToken}`;
+    let origin = getAppBaseUrl();
+    if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
+      origin = `https://${origin}`;
+    }
+    origin = origin.replace(/\/+$/, '');
+
+    // Sanitize token: remove spaces, slashes, or extract from full URL if pasted
+    let cleanToken = (wizardCardToken || '').trim();
+    if (cleanToken.includes('/t/')) {
+      cleanToken = cleanToken.split('/t/').pop()?.split('/')[0]?.split('?')[0] || cleanToken;
+    } else if (cleanToken.includes('/T/')) {
+      cleanToken = cleanToken.split('/T/').pop()?.split('/')[0]?.split('?')[0] || cleanToken;
+    }
+    cleanToken = cleanToken.replace(/\s+/g, '');
+
+    if (!cleanToken) {
+      setNfcState('error');
+      setNfcStatusMessage('Card token cannot be empty. Please enter or generate a token.');
+      return;
+    }
+
+    const safeToken = encodeURIComponent(cleanToken);
+    const targetUrl = `${origin}/t/${safeToken}`;
+
+    // Validate absolute URL format strictly before Web NFC write
+    try {
+      new URL(targetUrl);
+    } catch {
+      setNfcState('error');
+      setNfcStatusMessage(`Invalid target URL: "${targetUrl}". Please verify token formatting.`);
+      return;
+    }
 
     try {
       setNfcState('listening');
@@ -339,6 +369,8 @@ export const UserManagementPage: React.FC = () => {
         setNfcStatusMessage('NFC permission was denied in your browser settings.');
       } else if (err.name === 'NotReadableError') {
         setNfcStatusMessage('NFC device is unavailable. Please make sure NFC is enabled in phone settings.');
+      } else if (err.message?.includes('Cannot parse data for url record') || err.name === 'SyntaxError') {
+        setNfcStatusMessage(`URL record parsing failed. Target URL "${targetUrl}" could not be parsed by Web NFC. Please verify your token.`);
       } else {
         setNfcStatusMessage(err.message || 'Writing was interrupted. Please hold card firmly to device.');
       }
@@ -904,11 +936,15 @@ export const UserManagementPage: React.FC = () => {
                 <Input
                   value={wizardCardToken}
                   onChange={(e) => {
-                    setWizardCardToken(e.target.value.toUpperCase());
+                    let val = e.target.value.toUpperCase().replace(/\s+/g, '');
+                    if (val.includes('/T/')) {
+                      val = val.split('/T/').pop()?.split('/')[0]?.split('?')[0] || val;
+                    }
+                    setWizardCardToken(val);
                     setNfcState('idle');
                   }}
-                  placeholder="Physical NFC Smart Card Token"
-                  helperText={`Target dynamic token URL: tapit.app/t/${wizardCardToken}`}
+                  placeholder="Physical NFC Smart Card Token (e.g. TAP-XXXXXX)"
+                  helperText={`Target dynamic token URL: ${getAppBaseUrl()}/t/${wizardCardToken || 'TAP-XXXXXX'}`}
                   required
                 />
 
@@ -1030,7 +1066,7 @@ export const UserManagementPage: React.FC = () => {
                           Writing NFC URL Record... Loading...
                         </p>
                         <p className="text-[11px] text-slate-300 font-mono">
-                          Writing record: tapit.app/t/{wizardCardToken}
+                          Writing record: {getAppBaseUrl()}/t/{wizardCardToken}
                         </p>
                       </div>
                     </div>
@@ -1060,7 +1096,7 @@ export const UserManagementPage: React.FC = () => {
                               Success! Physical NFC Card Programmed.
                             </p>
                             <p className="text-[11px] text-slate-300 font-mono">
-                              NFC chip target: tapit.app/t/{wizardCardToken}
+                              NFC chip target: {getAppBaseUrl()}/t/{wizardCardToken}
                             </p>
                           </div>
                         </div>

@@ -53,9 +53,13 @@ export function triggerConfetti() {
 export function getAppBaseUrl(): string {
   const envUrl = import.meta.env.VITE_PUBLIC_APP_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
-    return envUrl.trim().replace(/\/+$/, '');
+    let clean = envUrl.trim().replace(/\/+$/, '');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = `https://${clean}`;
+    }
+    return clean;
   }
-  if (typeof window !== 'undefined' && window.location.origin) {
+  if (typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null') {
     return window.location.origin;
   }
   return 'https://tapit.app';

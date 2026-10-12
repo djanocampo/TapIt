@@ -91,8 +91,12 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   const activeProfile = profiles.find(p => p.id === (targetProfileId || activeCard?.profileId)) || profiles[0];
 
   // Calculate Target URLs based on active host
-  const cleanHost = (customHost || defaultOrigin).replace(/\/+$/, '');
-  const dynamicUrl = `${cleanHost}/t/${currentToken}`;
+  let cleanHost = (customHost || defaultOrigin).trim().replace(/\/+$/, '');
+  if (!cleanHost.startsWith('http://') && !cleanHost.startsWith('https://')) {
+    cleanHost = `https://${cleanHost}`;
+  }
+  const cleanToken = encodeURIComponent(currentToken.trim().replace(/\s+/g, ''));
+  const dynamicUrl = `${cleanHost}/t/${cleanToken}`;
   const directUrl = activeProfile ? `${cleanHost}/@${activeProfile.slug}` : `${cleanHost}/@djan`;
   const cleanExternal = customExternalUrl.trim();
   const formattedExternalUrl = cleanExternal.startsWith('http://') || cleanExternal.startsWith('https://')
@@ -384,6 +388,15 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
 
   // Actual Hardware Write Action
   const executeWriteNFC = async () => {
+    // Validate target URL format strictly before Web NFC write
+    try {
+      new URL(targetUrl);
+    } catch {
+      setStatus('error');
+      setErrorMessage(`Invalid URL format: "${targetUrl}". Please verify the destination address.`);
+      return;
+    }
+
     try {
       setStatus('writing');
       setErrorMessage('');
@@ -464,6 +477,8 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
         setErrorMessage('NFC permission was denied. Please allow NFC permissions in your browser settings.');
       } else if (err.name === 'NotReadableError') {
         setErrorMessage('NFC device is disabled or unavailable. Please enable NFC in your phone settings.');
+      } else if (err.message?.includes('Cannot parse data for url record') || err.name === 'SyntaxError') {
+        setErrorMessage(`URL record parsing failed. Target URL "${targetUrl}" could not be parsed by Web NFC. Please verify destination URL.`);
       } else {
         setErrorMessage(err.message || 'Failed to write to NFC card. Please ensure the card is placed firmly against your phone NFC antenna.');
       }
