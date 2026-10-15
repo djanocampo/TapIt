@@ -42,7 +42,7 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   card,
   profile,
 }) => {
-  const { cards, profiles, claimCard } = useTapIt();
+  const { cards, profiles, claimCard, allUsers, currentUser } = useTapIt();
   
   // Selection & Custom Token States
   const [selectedCardId, setSelectedCardId] = useState<string>(card?.id || (cards[0]?.id || 'custom'));
@@ -97,7 +97,9 @@ export const WebNFCWriterModal: React.FC<WebNFCWriterModalProps> = ({
   }
   const cleanToken = encodeURIComponent(currentToken.trim().replace(/\s+/g, ''));
   const dynamicUrl = `${cleanHost}/t/${cleanToken}`;
-  const directUrl = activeProfile ? `${cleanHost}/@${activeProfile.slug}` : `${cleanHost}/@djan`;
+  const profileOwner = allUsers.find((u) => u.id === activeProfile?.userId);
+  const directUsername = profileOwner?.username || currentUser?.username || 'user';
+  const directUrl = activeProfile ? `${cleanHost}/${directUsername}/${activeProfile.slug}` : `${cleanHost}/${directUsername}/personal`;
   const cleanExternal = customExternalUrl.trim();
   const formattedExternalUrl = cleanExternal.startsWith('http://') || cleanExternal.startsWith('https://')
     ? cleanExternal

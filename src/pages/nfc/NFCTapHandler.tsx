@@ -13,10 +13,11 @@ import tapItLogo from '../../assets/tapit-logo.png';
 export const NFCTapHandler: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { allCards, recordCardTap, allProfiles } = useTapIt();
+  const { allCards, recordCardTap, allProfiles, allUsers } = useTapIt();
 
   const [status, setStatus] = useState<'resolving' | 'active' | 'unclaimed' | 'disabled' | 'not_found' | 'cooldown'>('resolving');
   const [targetSlug, setTargetSlug] = useState<string>('');
+  const [targetUrl, setTargetUrl] = useState<string>('');
   const [profileName, setProfileName] = useState<string>('');
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
 
@@ -83,7 +84,22 @@ export const NFCTapHandler: React.FC = () => {
               const slug = prof.slug || 'profile';
               const name = prof.display_name || prof.name || 'Profile';
 
+              // Resolve owner username for user-scoped navigation
+              let ownerUsername = '';
+              if (prof?.user_id) {
+                const { data: u } = await supabase.from('users').select('username').eq('id', prof.user_id).maybeSingle();
+                if (u?.username) {
+                  ownerUsername = u.username;
+                } else {
+                  const lu = allUsers.find((user) => user.id === prof.user_id);
+                  if (lu?.username) ownerUsername = lu.username;
+                }
+              }
+
+              const destinationPath = ownerUsername ? `/${ownerUsername}/${slug}?src=nfc` : `/@${slug}?src=nfc`;
+
               setTargetSlug(slug);
+              setTargetUrl(destinationPath);
               setProfileName(name);
 
               // Non-blocking fire-and-forget background analytics and counter updates
@@ -116,14 +132,14 @@ export const NFCTapHandler: React.FC = () => {
                   if (isMounted) setCooldownSeconds(count);
                   if (count <= 0) {
                     clearInterval(interval);
-                    if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+                    if (isMounted) navigate(destinationPath, { replace: true });
                   }
                 }, 1000);
                 return;
               } else {
                 // Smooth transition floor so the contactless animation renders elegantly
                 setTimeout(() => {
-                  if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+                  if (isMounted) navigate(destinationPath, { replace: true });
                 }, 350);
                 return;
               }
@@ -170,9 +186,12 @@ export const NFCTapHandler: React.FC = () => {
           }
           const slug = prof.slug || 'profile';
           const name = prof.displayName || prof.name || 'Profile';
+          const owner = allUsers.find((u) => u.id === prof.userId);
+          const destinationPath = owner?.username ? `/${owner.username}/${slug}?src=nfc` : `/@${slug}?src=nfc`;
 
           if (!isMounted) return;
           setTargetSlug(slug);
+          setTargetUrl(destinationPath);
           setProfileName(name);
           recordCardTap(localCard.cardToken);
 
@@ -185,13 +204,13 @@ export const NFCTapHandler: React.FC = () => {
               if (isMounted) setCooldownSeconds(count);
               if (count <= 0) {
                 clearInterval(interval);
-                if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+                if (isMounted) navigate(destinationPath, { replace: true });
               }
             }, 1000);
             return;
           } else {
             setTimeout(() => {
-              if (isMounted) navigate(`/@${slug}?src=nfc`, { replace: true });
+              if (isMounted) navigate(destinationPath, { replace: true });
             }, 350);
             return;
           }
@@ -279,7 +298,7 @@ export const NFCTapHandler: React.FC = () => {
             <Button
               variant="glow"
               size="md"
-              onClick={() => navigate(`/@${targetSlug}?src=nfc`, { replace: true })}
+              onClick={() => navigate(targetUrl || `/@${targetSlug}?src=nfc`, { replace: true })}
               className="w-full justify-center"
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >

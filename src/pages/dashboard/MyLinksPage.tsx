@@ -86,6 +86,7 @@ const ICON_PICKER_OPTIONS = [
 
 export const MyLinksPage: React.FC = () => {
   const { 
+    currentUser,
     profiles, 
     activeProfile, 
     setActiveProfileId, 
@@ -219,7 +220,7 @@ export const MyLinksPage: React.FC = () => {
             Add Link
           </Button>
 
-          <Link to={`/@${activeProfile.slug}`} target="_blank">
+          <Link to={`/${currentUser.username}/${activeProfile.slug}`} target="_blank">
             <Button variant="secondary" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5 text-bits-cyan" />}>
               Open
             </Button>

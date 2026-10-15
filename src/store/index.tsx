@@ -379,7 +379,14 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Profile Operations
   const createProfile = (data: Partial<Profile>): Profile => {
     const newId = `prof_${Date.now()}`;
-    const slug = (data.slug || `profile-${Date.now().toString().slice(-4)}`).toLowerCase().trim().replace(/[^a-z0-9_-]/g, '');
+    let slug = (data.slug || `profile-${Date.now().toString().slice(-4)}`).toLowerCase().trim().replace(/[^a-z0-9_-]/g, '');
+    
+    // Ensure slug is unique among this user's profiles
+    const existingSameUser = profiles.find(p => p.userId === currentUser.id && p.slug.toLowerCase() === slug);
+    if (existingSameUser) {
+      slug = `${slug}-${Date.now().toString().slice(-3)}`;
+    }
+
     const newProfile: Profile = {
       id: newId,
       userId: currentUser.id,
@@ -414,6 +421,20 @@ export const TapItProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateProfile = async (id: string, updates: Partial<Profile>): Promise<{ success: boolean; profile?: Profile; message?: string }> => {
     const cleanId = id.startsWith('prof_usr_') ? id.replace('prof_usr_', 'prof_') : id;
+
+    // Check for user-scoped slug collision (slugs only need to be unique per user)
+    if (updates.slug) {
+      const cleanSlug = updates.slug.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '');
+      const slugCollision = profiles.find(
+        p => p.id !== id && p.id !== cleanId && p.userId === currentUser.id && p.slug.toLowerCase() === cleanSlug
+      );
+      if (slugCollision) {
+        return {
+          success: false,
+          message: `You already have another persona ("${slugCollision.name}") using the slug "${cleanSlug}". Please choose another slug for this persona.`
+        };
+      }
+    }
 
     // Deterministically find the existing profile in state or build fallback
     const matchedProf = profiles.find(p => p.id === id) ||

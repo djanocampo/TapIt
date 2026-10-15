@@ -4,21 +4,31 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { QRCodeGenerator } from '../qr/QRCodeGenerator';
 import { Copy, Check, Share2, Smartphone, Download } from 'lucide-react';
-import { copyToClipboard, downloadVCard, getAppBaseUrl } from '../../lib/utils';
+import { useTapIt } from '../../store';
+import { copyToClipboard, downloadVCard, getProfilePublicUrl } from '../../lib/utils';
 
 interface ShareProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   profile: Profile;
+  username?: string;
 }
 
 export const ShareProfileModal: React.FC<ShareProfileModalProps> = ({
   isOpen,
   onClose,
   profile,
+  username,
 }) => {
+  const { allUsers, currentUser } = useTapIt();
   const [copied, setCopied] = useState(false);
-  const profileUrl = `${getAppBaseUrl()}/@${profile.slug}`;
+  
+  const ownerUsername =
+    username ||
+    allUsers.find((u) => u.id === profile.userId)?.username ||
+    currentUser?.username ||
+    '';
+  const profileUrl = getProfilePublicUrl(ownerUsername, profile.slug);
 
   const handleCopy = async () => {
     await copyToClipboard(profileUrl);
@@ -80,7 +90,7 @@ export const ShareProfileModal: React.FC<ShareProfileModalProps> = ({
           <Button
             variant="secondary"
             size="md"
-            onClick={() => downloadVCard(profile)}
+            onClick={() => downloadVCard(profile, ownerUsername)}
             leftIcon={<Download className="w-4 h-4" />}
           >
             Save vCard (.vcf)

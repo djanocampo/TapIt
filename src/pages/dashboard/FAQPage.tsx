@@ -111,7 +111,7 @@ const FAQS_DATA: FAQItem[] = [
               My Profiles (Personas)
             </p>
             <p className="text-slate-400 leading-relaxed">
-              Your overall digital identities (e.g., Executive Business, Creative Portfolio, or Personal Social). Each has its own avatar photo, bio, color theme, and unique web link (<code className="text-cyan-400 font-mono">/@your-slug</code>).
+              Your overall digital identities (e.g., Executive Business, Creative Portfolio, or Personal Social). Each has its own avatar photo, bio, color theme, and unique web link (<code className="text-cyan-400 font-mono">/your-username/your-slug</code>).
             </p>
           </div>
           <div className="p-3.5 rounded-2xl bg-[#050c18] border border-white/[0.08]">
@@ -196,6 +196,51 @@ const FAQS_DATA: FAQItem[] = [
           <li>Under <strong className="text-white">Personal Credentials</strong>, update your Full Name, Username, or Email Address and click <strong className="text-cyan-400">Save Account Changes</strong>.</li>
           <li>Under <strong className="text-white">Security & Password</strong>, enter your current password, type your new password, and click <strong className="text-purple-400">Update Password</strong>.</li>
         </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'q9-install-app',
+    category: 'account',
+    question: 'How do I install the TapIt app on my smartphone (iPhone & Android)?',
+    shortAnswer: 'TapIt is a Progressive Web App (PWA). You can install it directly to your home screen without downloading from an app store.',
+    detailedAnswer: (
+      <div className="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+        <p>
+          <strong className="text-white">TapIt is built as a progressive web application (PWA)</strong>, which means you get instant 1-tap launch, full offline capabilities, and zero App Store / Play Store friction.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* iOS Safari */}
+          <div className="p-3.5 rounded-2xl bg-[#050c18] border border-cyan-500/20 space-y-2">
+            <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+              <span>🍎 iPhone & iPad (Safari)</span>
+            </span>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-300 leading-relaxed">
+              <li>Open <strong className="text-white">Safari</strong> and visit your TapIt dashboard.</li>
+              <li>Tap the <strong className="text-cyan-400">Share</strong> button at the bottom of the screen (the square with an arrow pointing up).</li>
+              <li>Scroll down and tap <strong className="text-white">&quot;Add to Home Screen&quot;</strong>.</li>
+              <li>Tap <strong className="text-cyan-400">Add</strong> in the top-right corner.</li>
+            </ol>
+          </div>
+
+          {/* Android Chrome */}
+          <div className="p-3.5 rounded-2xl bg-[#050c18] border border-cyan-500/20 space-y-2">
+            <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+              <span>⚡ Android (Chrome & Edge)</span>
+            </span>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-300 leading-relaxed">
+              <li>Open <strong className="text-white">Google Chrome</strong> and visit your TapIt dashboard.</li>
+              <li>Tap the <strong className="text-cyan-400">&quot;Install App&quot;</strong> banner at the bottom of the screen.</li>
+              <li>Or tap the <strong className="text-white">3-dot menu (⋮)</strong> at top-right and select <strong className="text-white">&quot;Install app&quot;</strong> or &quot;Add to Home screen&quot;.</li>
+              <li>Tap <strong className="text-cyan-400">Install</strong> to confirm.</li>
+            </ol>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-400">
+          Once installed, TapIt will live on your home screen with its own dedicated app icon, runs full-screen without browser address bars, and provides instant access to your digital cards and QR studio.
+        </p>
       </div>
     ),
   },
@@ -458,7 +503,7 @@ export const FAQPage: React.FC = () => {
                   How Connections Save You in 1 Tap
                 </h4>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  When someone taps your card or scans your QR code, your public profile opens directly at <code className="text-cyan-400 font-mono">tapit.app/@your-slug</code>.
+                  When someone taps your card or scans your QR code, your public profile opens directly at <code className="text-cyan-400 font-mono">tapit.app/your-username/your-slug</code>.
                 </p>
                 <ul className="text-xs text-slate-400 space-y-1.5 list-disc list-inside">
                   <li>They tap the primary button: <strong className="text-cyan-400">Save Contact (.vcf)</strong>.</li>

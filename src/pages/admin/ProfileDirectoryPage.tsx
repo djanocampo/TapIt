@@ -257,7 +257,7 @@ export const ProfileDirectoryPage: React.FC = () => {
                                         )}
                                       </h4>
                                       <p className="text-[11px] text-cyan-400 font-mono truncate">
-                                        tapit.app/@{prof.slug}
+                                        tapit.app/{user.username}/{prof.slug}
                                       </p>
                                     </div>
                                   </div>
@@ -302,7 +302,7 @@ export const ProfileDirectoryPage: React.FC = () => {
                               {/* Card Bottom Actions */}
                               <div className="pt-3 border-t border-white/[0.06] flex items-center justify-end">
                                 <Link
-                                  to={`/@${prof.slug}`}
+                                  to={`/${user.username}/${prof.slug}`}
                                   target="_blank"
                                   className="text-[11px] font-bold text-cyan-400 hover:underline flex items-center gap-1"
                                 >

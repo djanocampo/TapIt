@@ -36,7 +36,7 @@ export const DemoBar: React.FC = () => {
         </button>
 
         <Link
-          to={`/@${activeProfile.slug}`}
+          to={`/${currentUser.username}/${activeProfile.slug}`}
           target="_blank"
           className="text-slate-300 hover:text-cyan-400 hidden md:flex items-center gap-1 px-2.5 py-1 hover:bg-slate-800/60 rounded-full transition"
         >

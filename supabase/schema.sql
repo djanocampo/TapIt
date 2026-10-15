@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
+  slug TEXT NOT NULL,
   display_name TEXT NOT NULL DEFAULT '',
   headline TEXT DEFAULT '',
   bio TEXT DEFAULT '',
@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   is_archived BOOLEAN NOT NULL DEFAULT FALSE,
   socials JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT profiles_user_slug_unique UNIQUE (user_id, slug)
 );
 
 -- ------------------------------------------------------------------------------
@@ -242,7 +243,7 @@ CREATE INDEX IF NOT EXISTS idx_password_resets_user_id ON public.password_resets
 -- ------------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
-CREATE INDEX IF NOT EXISTS idx_profiles_slug ON public.profiles(slug);
+CREATE INDEX IF NOT EXISTS idx_profiles_user_slug ON public.profiles(user_id, slug);
 CREATE INDEX IF NOT EXISTS idx_nfc_cards_token ON public.nfc_cards(card_token);
 CREATE INDEX IF NOT EXISTS idx_qr_codes_token ON public.qr_codes(token);
 CREATE INDEX IF NOT EXISTS idx_user_invites_token ON public.user_invites(invite_token);

@@ -78,13 +78,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* Live Public URL Preview Button */}
         <Link
-          to={`/@${activeProfile.slug}`}
+          to={`/${currentUser.username}/${activeProfile.slug}`}
           target="_blank"
           className="flex items-center justify-center gap-1.5 bg-[#124294]/30 border border-[#1B55C6]/60 hover:border-[#38BDF8]/60 text-[#E0F2FE] text-xs px-3 py-2 min-h-[40px] rounded-xl transition font-medium shadow-sm active:scale-95"
-          title={`Open live profile @${activeProfile.slug}`}
+          title={`Open live profile ${currentUser.username}/${activeProfile.slug}`}
         >
           <Smartphone className="w-4 h-4 text-[#38BDF8] shrink-0" />
-          <span className="hidden sm:inline">tapit.app/@{activeProfile.slug}</span>
+          <span className="hidden sm:inline">tapit.app/{currentUser.username}/{activeProfile.slug}</span>
           <ExternalLink className="w-3.5 h-3.5 ml-0.5 opacity-80 shrink-0" />
         </Link>
 

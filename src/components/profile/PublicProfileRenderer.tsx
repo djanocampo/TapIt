@@ -42,6 +42,7 @@ import { sanitizeUrl } from '../../utils/crypto';
 interface PublicProfileRendererProps {
   profile: Profile;
   links: LinkItem[];
+  username?: string;
   onLinkClick?: (link: LinkItem) => void;
   onOpenShare?: () => void;
   isEmbed?: boolean;
@@ -77,6 +78,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
   profile,
   links,
+  username,
   onLinkClick,
   onOpenShare,
   isEmbed = false,
@@ -91,6 +93,10 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
     .sort((a, b) => a.position - b.position);
 
   const { allProfiles, allUsers } = useTapIt();
+  const ownerUsername =
+    username ||
+    allUsers.find((u) => u.id === profile.userId)?.username ||
+    '';
 
   // Dynamically resolve user djanocampo's business profile URL
   const djanBusinessUrl = React.useMemo(() => {
@@ -114,13 +120,13 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
           p.name?.toLowerCase().includes('company') ||
           p.slug?.toLowerCase().includes('company')
       );
-      if (businessProf) return `/@${businessProf.slug}`;
+      if (businessProf) return `/${djanUser.username}/${businessProf.slug}`;
 
       const activeOrFirst = userProfs.find((p) => p.isActive) || userProfs[0];
       if (activeOrFirst && (activeOrFirst.slug?.includes('business') || activeOrFirst.name?.toLowerCase().includes('business'))) {
-        return `/@${activeOrFirst.slug}`;
+        return `/${djanUser.username}/${activeOrFirst.slug}`;
       }
-      return `/@${djanUser.username}/business`;
+      return `/${djanUser.username}/business`;
     }
 
     // 2. Direct slug or name match in allProfiles
@@ -133,10 +139,13 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
         p.slug?.toLowerCase() === 'djanocampo-business' ||
         p.slug?.toLowerCase() === 'djan-business'
     );
-    if (directProf) return `/@${directProf.slug}`;
+    if (directProf) {
+      const pUser = allUsers.find((u) => u.id === directProf.userId);
+      return pUser?.username ? `/${pUser.username}/${directProf.slug}` : `/@${directProf.slug}`;
+    }
 
     // 3. Fallback direct route that connects to djanocampo's business profile
-    return '/@djanocampo/business';
+    return '/djanocampo/business';
   }, [allProfiles, allUsers]);
 
   // Dynamic button shape classes
@@ -172,7 +181,7 @@ export const PublicProfileRenderer: React.FC<PublicProfileRendererProps> = ({
   };
 
   const handleDownloadContact = () => {
-    downloadVCard(profile);
+    downloadVCard(profile, ownerUsername);
   };
 
   const renderIcon = (iconName: string) => {

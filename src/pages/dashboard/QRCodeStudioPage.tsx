@@ -22,10 +22,10 @@ import {
 } from 'lucide-react';
 import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
-import { getAppBaseUrl } from '../../lib/utils';
+import { getAppBaseUrl, getProfilePublicUrl } from '../../lib/utils';
 
 export const QRCodeStudioPage: React.FC = () => {
-  const { profiles, activeProfile, setActiveProfileId, qrCodes, recordQRScan } = useTapIt();
+  const { currentUser, profiles, activeProfile, setActiveProfileId, qrCodes, recordQRScan } = useTapIt();
 
   const [selectedProfileId, setSelectedProfileId] = useState(activeProfile.id);
   const currentProf = profiles.find((p) => p.id === selectedProfileId) || activeProfile;
@@ -44,7 +44,7 @@ export const QRCodeStudioPage: React.FC = () => {
     setQrColor(currentProf.theme.accentColor || '#38bdf8');
   }, [currentProf.id]);
 
-  const profileUrl = `${getAppBaseUrl()}/@${currentProf.slug}`;
+  const profileUrl = getProfilePublicUrl(currentUser?.username, currentProf.slug);
 
   const handlePrint = () => {
     window.print();
@@ -332,7 +332,7 @@ export const QRCodeStudioPage: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{currentProf.displayName}</h4>
                   <p className="text-[10px] text-slate-500 truncate max-w-[140px]">{currentProf.headline}</p>
-                  <p className="text-[9px] font-mono font-bold text-cyan-600 mt-0.5">tapit.app/@{currentProf.slug}</p>
+                  <p className="text-[9px] font-mono font-bold text-cyan-600 mt-0.5">tapit.app/{currentUser?.username || 'user'}/{currentProf.slug}</p>
                 </div>
               </div>
             ))}

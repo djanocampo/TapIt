@@ -502,6 +502,7 @@ export async function upsertSingleProfile(profile: Profile): Promise<boolean> {
       const { data: bySlug } = await supabase
         .from('profiles')
         .select('id, user_id, slug')
+        .eq('user_id', row.user_id)
         .eq('slug', row.slug)
         .maybeSingle();
 

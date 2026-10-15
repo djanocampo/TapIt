@@ -66,9 +66,25 @@ export function getAppBaseUrl(): string {
 }
 
 /**
+ * Build the canonical public profile URL for a user's persona: <domain>/<username>/<slug>
+ */
+export function getProfilePublicUrl(username?: string, slug?: string): string {
+  const base = getAppBaseUrl();
+  const cleanUser = (username || '').replace(/^@/, '').trim();
+  const cleanSlug = (slug || '').replace(/^@/, '').trim();
+  if (cleanUser && cleanSlug) {
+    return `${base}/${cleanUser}/${cleanSlug}`;
+  }
+  if (cleanSlug) {
+    return `${base}/@${cleanSlug}`;
+  }
+  return base;
+}
+
+/**
  * Generate a standard vCard (.vcf) format string
  */
-export function generateVCard(profile: Profile): string {
+export function generateVCard(profile: Profile, username?: string): string {
   const nameParts = profile.displayName.split(' ');
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
   const firstName = nameParts[0] || profile.displayName;
@@ -97,14 +113,15 @@ export function generateVCard(profile: Profile): string {
   if (profile.bio) {
     vcard += `NOTE:${profile.bio.replace(/\n/g, '\\n')}\r\n`;
   }
-  vcard += `URL;type=TapItProfile:${getAppBaseUrl()}/@${profile.slug}\r\n`;
+  const profileUrl = getProfilePublicUrl(username, profile.slug);
+  vcard += `URL;type=TapItProfile:${profileUrl}\r\n`;
   vcard += 'END:VCARD\r\n';
 
   return vcard;
 }
 
-export function downloadVCard(profile: Profile) {
-  const vcard = generateVCard(profile);
+export function downloadVCard(profile: Profile, username?: string) {
+  const vcard = generateVCard(profile, username);
   const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

@@ -26,7 +26,7 @@ import { formatNumber, triggerConfetti } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const MyCardsPage: React.FC = () => {
-  const { cards, profiles, currentRole, updateCard, deleteCard, toggleCardStatus, reassignCard } = useTapIt();
+  const { currentUser, cards, profiles, currentRole, updateCard, deleteCard, toggleCardStatus, reassignCard } = useTapIt();
 
   // Manage Modal State
   const [selectedCard, setSelectedCard] = useState<NFCCard | null>(null);
@@ -154,7 +154,7 @@ export const MyCardsPage: React.FC = () => {
                     </span>
                     {assignedProfile && (
                       <Link
-                        to={`/@${assignedProfile.slug}`}
+                        to={`/${currentUser.username}/${assignedProfile.slug}`}
                         target="_blank"
                         className="text-[10px] text-cyan-400 hover:underline flex items-center gap-0.5"
                       >

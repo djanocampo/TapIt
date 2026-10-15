@@ -9,7 +9,7 @@ import { triggerConfetti } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const AppearancePage: React.FC = () => {
-  const { activeProfile, updateProfile, links, profiles, setActiveProfileId } = useTapIt();
+  const { currentUser, activeProfile, updateProfile, links, profiles, setActiveProfileId } = useTapIt();
 
   const handleSelectTheme = (theme: any) => {
     updateProfile(activeProfile.id, { theme });
@@ -53,7 +53,7 @@ export const AppearancePage: React.FC = () => {
             ))}
           </select>
 
-          <Link to={`/@${activeProfile.slug}`} target="_blank">
+          <Link to={`/${currentUser.username}/${activeProfile.slug}`} target="_blank">
             <Button variant="secondary" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5 text-bits-cyan" />}>
               Preview Public
             </Button>

@@ -47,7 +47,7 @@ import {
   Video,
   Share2
 } from 'lucide-react';
-import { triggerConfetti, getAppBaseUrl } from '../../lib/utils';
+import { triggerConfetti, getAppBaseUrl, getProfilePublicUrl } from '../../lib/utils';
 import { LinkItem, LinkCategory, ProfileThemeConfig, Profile } from '../../types';
 
 const PRESET_ICONS = [
@@ -351,8 +351,8 @@ export const ProfileEditorPage: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              const origin = getAppBaseUrl();
-              navigator.clipboard.writeText(`${origin}/@${targetProfile.slug}`);
+              const profileUrl = getProfilePublicUrl(currentUser?.username, targetProfile.slug);
+              navigator.clipboard.writeText(profileUrl);
               setCopiedLink(true);
               setTimeout(() => setCopiedLink(false), 2000);
             }}
@@ -374,7 +374,7 @@ export const ProfileEditorPage: React.FC = () => {
             </span>
           )}
 
-          <Link to={`/@${targetProfile.slug}`} target="_blank">
+          <Link to={`/${currentUser?.username || 'user'}/${targetProfile.slug}`} target="_blank">
             <Button variant="secondary" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5" />}>
               <span className="hidden xs:inline">Open </span>Public
             </Button>
@@ -483,7 +483,7 @@ export const ProfileEditorPage: React.FC = () => {
                       value={formData.slug}
                       onChange={(e) => handleChange('slug', e.target.value)}
                       placeholder="Custom URL Slug"
-                      helperText={`tapit.app/@${formData.slug}`}
+                      helperText={`tapit.app/${currentUser?.username || 'user'}/${formData.slug}`}
                       required
                     />
                   </div>

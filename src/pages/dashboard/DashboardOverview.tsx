@@ -20,7 +20,7 @@ import {
   Zap,
   ExternalLink
 } from 'lucide-react';
-import { formatRelativeTime, getAppBaseUrl } from '../../lib/utils';
+import { formatRelativeTime, getAppBaseUrl, getProfilePublicUrl } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const DashboardOverview: React.FC = () => {
@@ -51,8 +51,8 @@ export const DashboardOverview: React.FC = () => {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   const handleCopyLink = () => {
-    const origin = getAppBaseUrl();
-    navigator.clipboard.writeText(`${origin}/@${activeProfile.slug}`);
+    const profileUrl = getProfilePublicUrl(currentUser.username, activeProfile.slug);
+    navigator.clipboard.writeText(profileUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -82,7 +82,7 @@ export const DashboardOverview: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 relative z-10 flex-wrap">
-          <Link to={`/@${activeProfile.slug}`} target="_blank">
+          <Link to={`/${currentUser.username}/${activeProfile.slug}`} target="_blank">
             <Button variant="glow" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />}>
               View Live Profile
             </Button>

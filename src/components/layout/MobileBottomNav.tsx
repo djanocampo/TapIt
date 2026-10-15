@@ -254,7 +254,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
 
                   {/* Open Public Profile */}
                   <a
-                    href={`/@${activeProfile.slug}`}
+                    href={`/${currentUser.username}/${activeProfile.slug}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-500/30 text-cyan-300 transition text-left"
@@ -265,7 +265,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ type }) => {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-white">View Live Public Profile</p>
-                        <p className="text-[10px] text-cyan-400 font-mono">tapit.app/@{activeProfile.slug}</p>
+                        <p className="text-[10px] text-cyan-400 font-mono">tapit.app/{currentUser.username}/{activeProfile.slug}</p>
                       </div>
                     </div>
                     <ExternalLink className="w-4 h-4 text-cyan-400" />

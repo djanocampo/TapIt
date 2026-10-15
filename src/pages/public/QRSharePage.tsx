@@ -4,11 +4,11 @@ import { useTapIt } from '../../store';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { QrCode, Palette, Share2, Sparkles, Layers, Download, Check } from 'lucide-react';
-import { getAppBaseUrl } from '../../lib/utils';
+import { getAppBaseUrl, getProfilePublicUrl } from '../../lib/utils';
 
 export const QRSharePage: React.FC = () => {
-  const { profiles, activeProfile } = useTapIt();
-  const [customUrl, setCustomUrl] = useState(`${getAppBaseUrl()}/@${activeProfile.slug}`);
+  const { currentUser, profiles, activeProfile } = useTapIt();
+  const [customUrl, setCustomUrl] = useState(getProfilePublicUrl(currentUser?.username, activeProfile.slug));
   const [qrFgColor, setQrFgColor] = useState('#06b6d4');
   const [qrBgColor, setQrBgColor] = useState('#070a13');
   const [qrTitle, setQrTitle] = useState(activeProfile.displayName);
@@ -25,7 +25,7 @@ export const QRSharePage: React.FC = () => {
   const handleSelectProfile = (profileSlug: string) => {
     const p = profiles.find((prof) => prof.slug === profileSlug);
     if (p) {
-      setCustomUrl(`${getAppBaseUrl()}/@${p.slug}`);
+      setCustomUrl(getProfilePublicUrl(currentUser?.username, p.slug));
       setQrTitle(p.displayName);
       setQrSubtitle(p.headline);
       setQrFgColor(p.theme.accentColor || '#38BDF8');
@@ -65,7 +65,7 @@ export const QRSharePage: React.FC = () => {
                     className="p-2.5 rounded-xl border border-[#1b2d55] hover:border-[#38BDF8]/60 bg-[#081329] text-left text-xs font-semibold transition cursor-pointer"
                   >
                     <span className="block truncate text-white">{p.name}</span>
-                    <span className="text-[10px] text-[#38BDF8] font-mono">@{p.slug}</span>
+                    <span className="text-[10px] text-[#38BDF8] font-mono">/{currentUser?.username || 'user'}/{p.slug}</span>
                   </button>
                 ))}
               </div>

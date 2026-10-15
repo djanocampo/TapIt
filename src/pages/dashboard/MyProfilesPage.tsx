@@ -22,11 +22,11 @@ import {
   Share2,
   CopyCheck
 } from 'lucide-react';
-import { triggerConfetti, getAppBaseUrl } from '../../lib/utils';
+import { triggerConfetti, getAppBaseUrl, getProfilePublicUrl } from '../../lib/utils';
 import { BitsInfinityEmblem } from '../../components/common/BitsBrandElements';
 
 export const MyProfilesPage: React.FC = () => {
-  const { profiles, activeProfile, setActiveProfileId, createProfile, duplicateProfile, deleteProfile, toggleProfileArchive, links } = useTapIt();
+  const { currentUser, profiles, activeProfile, setActiveProfileId, createProfile, duplicateProfile, deleteProfile, toggleProfileArchive, links } = useTapIt();
   const navigate = useNavigate();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -36,8 +36,7 @@ export const MyProfilesPage: React.FC = () => {
 
   const handleCopyProfileLink = (profile: Profile, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const origin = getAppBaseUrl();
-    const profileUrl = `${origin}/@${profile.slug}`;
+    const profileUrl = getProfilePublicUrl(currentUser.username, profile.slug);
     
     navigator.clipboard.writeText(profileUrl);
     setCopiedId(profile.id);
@@ -139,7 +138,7 @@ export const MyProfilesPage: React.FC = () => {
                       {/* Profile Public URL + 1-Click Copy Badge */}
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-cyan-400 font-mono truncate">
-                          tapit.app/@{profile.slug}
+                          tapit.app/{currentUser.username}/{profile.slug}
                         </span>
                         <button
                           type="button"
@@ -168,7 +167,7 @@ export const MyProfilesPage: React.FC = () => {
                   </div>
 
                   <Link
-                    to={`/@${profile.slug}`}
+                    to={`/${currentUser.username}/${profile.slug}`}
                     target="_blank"
                     className="p-2 rounded-xl bg-[#050c18] border border-white/[0.08] text-slate-400 hover:text-white transition shrink-0"
                     title="View public profile in new tab"

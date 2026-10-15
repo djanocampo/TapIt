@@ -44,16 +44,21 @@ export const PublicProfilePage: React.FC = () => {
     if (!cleanUsername) return null;
 
     // 1. If both username and profileSlug are provided (e.g. /djanocampo/business)
-    if (userParam && slugParam && userParam !== slugParam) {
+    if (userParam && slugParam) {
       const user = allUsers.find((u) => u.username.toLowerCase() === userParam);
       if (user) {
         const userProfs = allProfiles.filter((p) => p.userId === user.id);
-        const match = userProfs.find(
-          (p) =>
-            p.slug.toLowerCase() === slugParam ||
-            p.name.toLowerCase() === slugParam ||
-            p.name.toLowerCase().includes(slugParam)
-        );
+        const match =
+          userProfs.find(
+            (p) =>
+              p.slug.toLowerCase() === slugParam ||
+              p.id.toLowerCase() === slugParam
+          ) ||
+          userProfs.find(
+            (p) =>
+              p.name.toLowerCase() === slugParam ||
+              p.name.toLowerCase().includes(slugParam)
+          );
         if (match) return match;
         return userProfs.find((p) => p.isActive) || userProfs[0] || null;
       }
@@ -102,7 +107,7 @@ export const PublicProfilePage: React.FC = () => {
           let foundProfileRow: any = null;
 
           // 1. If both user and profile slug are provided (e.g. /djanocampo/personal)
-          if (userParam && slugParam && userParam !== slugParam) {
+          if (userParam && slugParam) {
             const { data: userData } = await supabase
               .from('users')
               .select('id')
@@ -120,6 +125,10 @@ export const PublicProfilePage: React.FC = () => {
                   userProfs.find(
                     (p: any) =>
                       p.slug?.toLowerCase() === slugParam ||
+                      p.id?.toLowerCase() === slugParam
+                  ) ||
+                  userProfs.find(
+                    (p: any) =>
                       p.name?.toLowerCase() === slugParam ||
                       p.name?.toLowerCase().includes(slugParam)
                   ) ||
@@ -271,6 +280,7 @@ export const PublicProfilePage: React.FC = () => {
         <PublicProfileRenderer
           profile={targetProfile}
           links={activeLinks}
+          username={userParam || allUsers.find((u) => u.id === targetProfile.userId)?.username}
           onLinkClick={(link) => recordLinkClick(link.id, targetProfile.id, source)}
           onOpenShare={() => setIsShareOpen(true)}
           isEmbed={false}
@@ -282,6 +292,7 @@ export const PublicProfilePage: React.FC = () => {
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
         profile={targetProfile}
+        username={userParam || allUsers.find((u) => u.id === targetProfile.userId)?.username}
       />
     </div>
   );

@@ -214,7 +214,7 @@ export const CardInventoryPage: React.FC = () => {
                             {assignedProfile.name}
                           </span>
                           <span className="text-[11px] text-slate-400 font-mono block">
-                            tapit.app/@{assignedProfile.slug}
+                            tapit.app/{assignedUser ? `${assignedUser.username}/${assignedProfile.slug}` : `@${assignedProfile.slug}`}
                           </span>
                         </div>
                       ) : (
